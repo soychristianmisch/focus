@@ -1448,13 +1448,19 @@ function dayOrder(){
   for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
   return order;
 }
-const stOk=o=>wStat==='Todos'||o.status===wStat;
+const stOk=o=>wStat==='Todos'?(wHoy||o.status!=='Completado'):o.status===wStat;
+const rootProject=p=>{let x=p,n=0;while(x&&x.parent&&n++<10){const q=project(x.parent);if(!q)break;x=q;}return x;};
+function railGroups(list){
+  const areas=[...s.areas];for(const o of list){const ar=project(o.project)?.area;if(ar&&!areas.includes(ar))areas.push(ar);}
+  const g=new Map();
+  for(const o of list){const p=project(o.project),r=p?rootProject(p):null,k=r?.id||'';if(!g.has(k))g.set(k,{proj:r,items:[]});g.get(k).items.push(o);}
+  const rank=x=>[areas.indexOf(x.proj?.area),s.projects.indexOf(x.proj)];
+  return [...g.values()].sort((a,b)=>{const A=rank(a),B=rank(b);return A[0]-B[0]||A[1]-B[1];});
+}
 function wList(){
   if(wHoy)return ['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];
   if(wArea==='__daily')return [''];
-  const areas=[...s.areas];for(const o of s.objectives){const ar=project(o.project)?.area;if(ar&&!areas.includes(ar))areas.push(ar);}
-  const ids=[];
-  for(const ar of areas)if(wArea==='Todas'||wArea===ar)ids.push(...s.objectives.filter(o=>project(o.project)?.area===ar&&stOk(o)).map(o=>o.id));
+  const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
   if(wArea==='Todas')ids.unshift('');
   return ids;
 }
@@ -1467,7 +1473,7 @@ function railItem(k,sel){
   const o=objective(k),p=project(o.project),area=p?.area||'',pr=progressOf(o);
   const left=sumMin(s.tasks.filter(t=>t.objective===k&&!t.done),minutesLeft),td=sumMin(queue(selectedDate).filter(t=>t.objective===k&&!t.done));
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem" aria-current="'+sel+'">'+stIcon(o,'span','',true)+
-    '<div class="rt"><b>'+esc(o.name)+prio(o)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span><small>'+esc(p?.name??'')+'</small></div>'+
+    '<div class="rt"><b>'+esc(o.name)+prio(o)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span>'+(p&&rootProject(p)===p?'':'<small>'+esc(p?.name??'')+'</small>')+'</div>'+
     '<div class="rb">'+pr.bar+'<small class="num">'+(wHoy?'hoy '+hrs(td):hrs(left))+'</small></div></div></div>';
 }
 function workCenter(ids){
@@ -1487,12 +1493,13 @@ const DAILYPILL=()=>'<button class="fpill daily" style="--ac:'+DAILY_TONE+'" dat
 function viewTrabajo(){
   const ids=wList(),curSel=wHoy?wObj:(ids.includes(wObj)?wObj:ids[0]);
   const nObj=a=>a==='Todas'?s.objectives.filter(stOk).length:s.objectives.filter(o=>project(o.project)?.area===a&&stOk(o)).length;
-  const nSt=st=>st==='Todos'?s.objectives.length:s.objectives.filter(o=>o.status===st).length;
+  const nSt=st=>st==='Todos'?s.objectives.filter(o=>o.status!=='Completado').length:s.objectives.filter(o=>o.status===st).length;
   const nHoy=dayOrder().filter(k=>k).length;
   const top='<div class="wtop"><button class="hoytog" data-act="wToggleHoy" aria-pressed="'+wHoy+'">Hoy<b class="cnt">'+nHoy+'</b></button><span class="vsep"></span>'+
     ['Todas','__daily',...s.areas].map(a=>a==='__daily'?DAILYPILL():'<button class="fpill'+(a==='Todas'?' all':'')+'" style="--ac:'+(a==='Todas'?'var(--ink)':areaTone(a))+'" data-act="wArea" data-id="'+esc(a)+'" aria-pressed="'+(!wHoy&&wArea===a)+'">'+esc(a)+'<b class="cnt">'+nObj(a)+'</b></button>').join('')+'<span class="grow"></span><div class="stfilter" role="group" aria-label="Filtrar por estado">'+['Todos',...STATUS].map(st=>'<button class="stf s-'+slug(st)+'" data-act="wStat" data-id="'+st+'" aria-pressed="'+(wStat===st)+'">'+(st==='Todos'?'':STI_DOT(st))+st+'<b class="cnt">'+nSt(st)+'</b></button>').join('')+'</div></div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
-  const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;return ids.map(k=>{let h='';if(!wHoy){const ar=k===''?'Día a día':(project(objective(k).project)?.area||'Sin área');if(ar!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(ar))+'"><i></i>'+esc(ar)+'</div>';last=ar;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
+  const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
+    return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
   return '<div class="work'+(wHoy?' hoyon':'')+'">'+top+'<div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+(wHoy?execPanel():'')+'</div></div>';
 }
@@ -1821,7 +1828,7 @@ function viewPlan(){
   const plan=computePlan(),on=s.objectives.filter(o=>o.sched),off=s.objectives.filter(o=>!o.sched);
   const start=o=>spanBar(o,plan)?.start??'9999';
   const ar=[...s.areas];for(const o of off){const x=project(o.project)?.area;if(x&&!ar.includes(x))ar.push(x);}
-  const offHtml=ar.map(a=>{const l=off.filter(o=>project(o.project)?.area===a);return l.length?'<div class="rhead" style="--ac:'+areaTone(a)+'"><i></i>'+esc(a)+'</div>'+l.map(o=>planItem(o,plan)).join(''):'';}).join('');
+  const offHtml=railGroups(off).map(g=>'<div class="rhead" style="--ac:'+areaTone(g.proj?.area)+'"><i></i>'+esc(g.proj?.name||'Sin área')+'</div>'+g.items.map(o=>planItem(o,plan)).join('')).join('');
   return '<div class="plan2"><aside class="wrail plrail"><div class="rhead">Con fecha<b class="cnt">'+on.length+'</b></div>'+
     '<div class="pzone" data-pz="1">'+(on.length?on.map(o=>planItem(o,plan)).join(''):'<p class="pzhint">Arrastra aquí un proyecto para ponerlo en el calendario.</p>')+'</div>'+
     '<div class="rhead">Sin fecha<b class="cnt">'+off.length+'</b></div>'+
@@ -1925,7 +1932,7 @@ function viewInbox(){
 /* ---------- render ---------- */
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
-  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica','Inbox'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'briefcase',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span>'+(v==='Proyectos'?'Áreas':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</button>').join('')+'</nav>'+
+  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica','Inbox'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'briefcase',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span>'+(v==='Proyectos'?'Áreas':v==='Trabajo'?'Focus':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</button>').join('')+'</nav>'+
     (t?'<button class="runchip'+(r.over?' over':'')+'" data-act="float" id="runchip" title="Abrir ventana flotante"><span class="dot"></span><b data-hclock>'+r.text+'</b><span>'+esc(t.name)+'</span></button>':'<button class="btn" data-act="float" title="Ventana flotante del temporizador">Ventana flotante ↗</button>')+
     (typeof cloudBadge==='function'?cloudBadge():'')+'<button class="iconbtn" data-act="theme" id="themebtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">'+(document.documentElement.dataset.theme==='dark'?ICON.sun:ICON.moon)+'</button>'+
     '<button class="iconbtn" data-act="settings" aria-label="Ajustes" title="Ajustes">'+ICON.gear+'</button>';
