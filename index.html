@@ -979,6 +979,13 @@ button.gl.sti:hover{filter:brightness(.96)}
 .fl-b.run{background:var(--pause);color:var(--pause-ink)}
 .fl-b.ok{background:var(--bg3);color:var(--mute)}
 .fl-b.ok:hover{background:color-mix(in srgb,var(--play) 18%,var(--card));color:var(--play)}
+
+/* v34 cabecera de proyecto */
+.btags .oprops.inl{display:inline-flex;flex-wrap:wrap;gap:2px 4px;padding:0;margin:0}
+.btags .oprops.inl .p{padding:2px 8px;border-radius:999px;font-size:12px;color:var(--mute);background:transparent}
+.btags .oprops.inl button.p:hover{background:var(--bg3);color:var(--ink)}
+.btags .atag.pick{display:inline-flex;align-items:center;gap:4px}
+.btags .atag.pick svg{width:11px;height:11px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1311,12 +1318,12 @@ function bubble(o,today=false,embed=false){
   const openAll=all.filter(t=>!t.done);
   const todayMin=sumMin(inDay.filter(t=>!t.done),minutesLeft),leftMin=sumMin(openAll,minutesLeft),totalMin=sumMin(all);
   let body='';
+  let propsH='';
   if(!daily&&!today){
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
-    body+='<div class="oprops">'+
-      '<span class="p static" title="El estado se calcula según las tareas">'+ic('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/>')+'<b>Estado</b><span class="tag '+tagClass(o.status)+'">'+esc(o.status)+'</span></span>'+
+    propsH='<span class="oprops inl">'+
       '<button class="p" data-act="menu" data-kind="deadline" data-id="'+o.id+'">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'<b>Deadline</b>'+(o.deadline?esc(fmt({day:'numeric',month:'short'},dateAt(o.deadline))):'—')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
-      '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'<b>Tiempo total</b>'+hrs(totalMin)+'</span></div>';
+      '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'<b>Tiempo total</b>'+hrs(totalMin)+'</span></span>';
   }
   if(embed)body+='<button class="viewall top" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   let lastSec='';
@@ -1348,7 +1355,8 @@ function bubble(o,today=false,embed=false){
   const lines=(today||embed)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
-  const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="area" data-id="'+proj.id+'" title="Cambiar de área">'+esc(area)+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></button>':'')+(proj?'<button class="pnote" data-act="projNote" data-id="'+proj.id+'" title="Abrir la página del área principal">'+esc(proj.name)+' · nota ›</button>':'')+'</div>';
+  const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
+  const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal">Nota principal ›</button>':'')+propsH+'</div>';
   return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre')+prio(o))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
@@ -1516,8 +1524,10 @@ function viewTrabajo(){
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
   const top='<div class="wtop"><button class="hoytog" data-act="wToggleHoy" aria-pressed="'+wHoy+'">'+glyph('calendar')+'Hoy<b class="cnt">'+nHoyT+'</b></button><span class="vsep"></span>'+
-    pill('wFilter','__daily',!wHoy&&wArea==='__daily',glyph('sun'),'Día a día',nDaily)+
-    ['Activo','Pausado','Esperando','Completado'].map(st=>pill('wFilter',st,!wHoy&&wArea==='Todas'&&wStat===st,svgI(STI[st]),SL[st],s.objectives.filter(o=>o.status===st).length)).join('')+'</div>';
+    pill('wFilter','Todos',!wHoy&&wArea==='Todas'&&wStat==='Todos',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos',s.objectives.filter(o=>o.status!=='Completado').length)+
+    ['Activo','Pausado','Esperando'].map(st=>pill('wFilter',st,!wHoy&&wArea==='Todas'&&wStat===st,svgI(STI[st]),SL[st],s.objectives.filter(o=>o.status===st).length)).join('')+
+    pill('wFilter','__daily',!wHoy&&wArea==='__daily',glyph('sun'),'Día a día',nDaily)+'<span class="vsep"></span>'+
+    pill('wFilter','Completado',!wHoy&&wArea==='Todas'&&wStat==='Completado',svgI(STI.Completado),SL.Completado,s.objectives.filter(o=>o.status==='Completado').length)+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
     return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
@@ -2137,6 +2147,7 @@ function menuFor(kind,id,anchor){
   if(kind==='status')return openPop(anchor,STATUS.map(v=>pi('<span class="tag '+tagClass(v)+'">'+v+'</span>','setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"',o.status===v?'sel':'')).join(''));
   if(kind==='priority')return openPop(anchor,PRIORITY.map(v=>pi(v,'setProp','data-kind="obj" data-id="'+id+'" data-key="priority" data-val="'+v+'"',o.priority===v?'sel':'')).join(''));
   if(kind==='deadline')return openPop(anchor,calHtml(o,(o.deadline||day()).slice(0,7)),{id,ym:(o.deadline||day()).slice(0,7)});
+  if(kind==='objproj')return openPop(anchor,s.projects.map(q=>pi('<i class="adot" style="background:'+areaTone(q.area)+'"></i>'+(q.parent?'&nbsp;&nbsp;↳ ':'')+esc(q.name),'setProp','data-kind="obj" data-id="'+id+'" data-key="project" data-val="'+q.id+'"',o.project===q.id?'sel':'')).join(''));
   if(kind==='area')return openPop(anchor,s.areas.map(a=>pi('<i class="adot" style="background:'+areaTone(a)+'"></i>'+esc(a),'setProp','data-kind="proj" data-id="'+id+'" data-key="area" data-val="'+esc(a)+'"',p.area===a?'sel':'')).join('')+pl('Nueva área')+'<div class="pinput"><input data-pop-input="newarea" placeholder="Nombre y Enter" data-id="'+id+'"></div>');
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
