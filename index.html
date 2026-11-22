@@ -1696,7 +1696,7 @@ function bubble(o,today=false,embed=false){
 
 /* ---------- proyectos por áreas ---------- */
 const DEF_AREA_COLOR={'Ministerio':'#448361','Negocios':'#337ea9','Familia & casa':'#d9730d','Personal':'#9065b0','Iglesia':'#c14c8a'};
-const areaTone=a=>a===DAILY.id?DAILY_TONE:a==='Global'?PALETTE[0]:(s.areaColors?.[a]||DEF_AREA_COLOR[a]||PALETTE[(s.areas.indexOf(a)+4)%PALETTE.length]);
+const areaTone=a=>a===DAILY.id?DAILY_TONE:(!a)?'#b4b4ae':a==='Global'?PALETTE[0]:(s.areaColors?.[a]||DEF_AREA_COLOR[a]||PALETTE[(s.areas.indexOf(a)+4)%PALETTE.length]);
 function areaBar(){
   const daily=s.tasks.filter(t=>!t.objective&&!t.done).length;
   const tab=(id,name,n)=>'<button class="apill" style="--ac:'+areaTone(id)+'" data-act="selectArea" data-id="'+esc(id)+'" aria-current="'+(openArea===id)+'"><span class="nm">'+esc(name)+'</span><span class="cnt num">'+n+'</span></button>';
