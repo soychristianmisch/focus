@@ -1231,6 +1231,21 @@ button.gl.sti:hover{filter:brightness(.96)}
 .endz .ez.t:after{left:12px;background:var(--accent)}
 .endz .ez.s:after{left:-6px;background:var(--play)}
 .dnd .endz{pointer-events:none}
+
+/* v56 */
+.insm{display:block;position:relative;height:0;z-index:2}
+.insm .ez{position:absolute;left:0;right:0;height:9px;border:0;background:none;padding:0;cursor:pointer;opacity:0;transition:opacity .08s}
+.insm .ez.t{top:-9px}.insm .ez.s{top:0}
+.insm.lead .ez.t:only-child{top:-9px}
+.insm .ez:hover{opacity:1}
+.insm .ez:before{content:"";position:absolute;right:6px;height:2px;border-radius:2px}
+.insm .ez.t:before{left:34px;bottom:0;background:var(--accent);opacity:.55}
+.insm .ez.s:before{left:14px;top:0;background:var(--play);opacity:.6}
+.insm .ez:after{content:"+";position:absolute;width:16px;height:16px;border-radius:50%;color:#fff;font:600 13px/16px Inter,sans-serif;text-align:center}
+.insm .ez.t:after{left:12px;bottom:-7px;background:var(--accent)}
+.insm .ez.s:after{left:-6px;top:-7px;background:var(--play)}
+.dnd .insm{pointer-events:none}
+.wc-in>.colhead{margin-bottom:16px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1549,7 +1564,9 @@ function taskRow(t){
 }
 const insTask=(obj,sec,after,before,today)=>'<button class="ins" tabindex="-1" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'"'+(today?' data-today="1"':'')+' aria-label="Insertar tarea aquí"><i></i></button>';
 const insSection=(oid,before)=>'<button class="ins secins" tabindex="-1" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(before)+'" aria-label="Insertar sección aquí"><i></i></button>';
-const endZ=(obj,sec,nextSec,oid,onlyTask)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(onlyTask?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>';
+const insMid=(obj,sec,after,next,today,oid)=>'<div class="insm"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before=""'+(today?' data-today="1"':'')+' aria-label="Nueva tarea aquí"><i></i></button><button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="'+esc(sec)+'" data-from="'+esc(next)+'" aria-label="Nueva sección aquí"><i></i></button></div>';
+const insLead=(obj,sec,first,today,top,oid)=>'<div class="insm lead"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="" data-before="'+esc(first)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea arriba"><i></i></button>'+(top?(sec===''?'<button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="" data-from="'+esc(first)+'" aria-label="Nueva sección arriba"><i></i></button>':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(sec)+'" aria-label="Nueva sección arriba"><i></i></button>'):'')+'</div>';
+const endZ=(obj,sec,nextSec,oid,onlyTask,today)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>';
 const hrs=m=>dur(m);
 const STI={Esperando:'<circle cx="12" cy="12" r="7.5"/><path d="M12 8v4.2l2.8 1.6"/>',Activo:'<path d="M9.5 7.2v9.6l7.6-4.8z" fill="currentColor"/>',Pausado:'<path d="M9.5 7.5v9M14.5 7.5v9" stroke-width="2.6"/>',Completado:'<path d="M7.5 12.4l3 3 6-6.4" stroke-width="2.4"/>'};
 const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
@@ -1575,23 +1592,24 @@ function bubble(o,today=false,embed=false){
       '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
       '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
   }
-  let lastSec='';
+  let lastSec='',rendered=0;
   body+=['',...sections].map(sec=>{
     const list=open.filter(t=>t.section===sec);
     if(today&&!list.length)return '';
     if(!sec&&!list.length&&sections.length)return '';
-    lastSec=sec;
+    lastSec=sec;const isFirst=rendered++===0;
     let head='';
     if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+hrs(sumMin(list))+'</span>'+
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
-    const rows=list.length?insTask(oid,sec,'',list[0].id,today||embed)+list.map(t=>taskRow(t)+insTask(oid,sec,t.id,'',today||embed)).join(''):'';
+    const tm=today||embed;
+    const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
-      (today?'':endZ(oid,sec,sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id));
-    return (sec&&!today?insSection(o.id,sec)+'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
+      endZ(oid,sec,sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today);
+    return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
-  if(today)body+=endZ(oid,'','',o.id,true);
+  if(today&&!rendered)body+=endZ(oid,'','',o.id,true,true);
   if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?'<div class="tasks" data-mode="done">'+done.map(t=>taskRow(t)).join('')+'</div>':'');
   const hidden=all.some(t=>!inDay.includes(t))||sections.some(sc=>!inDay.some(t=>t.section===sc));
   if(today&&hidden)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
@@ -1749,6 +1767,11 @@ function railItem(k,sel){
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem">'+stIcon(o,'span','',true)+
     '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div></div>';
 }
+function dateHead(){
+  const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
+  return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
+    '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>';
+}
 function workCenter(ids){
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
   if(wHoy){
@@ -1759,7 +1782,7 @@ function workCenter(ids){
       (ids.length?'':'<p class="empty">Nada para hoy con este filtro. Quita el filtro de área, usa «＋ Añadir» o desactiva «Hoy» para elegir tareas.</p>')+
       '</div>';
   }
-  if(wArea!=='__daily')return '<div class="wc-in">'+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
+  if(wArea!=='__daily')return '<div class="wc-in">'+dateHead()+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
   const cur=ids.includes(wObj)?wObj:ids[0];
   return '<div class="wc-in">'+(cur===undefined?'<p class="empty">No hay proyectos con este filtro.</p>':'<div class="bubbles one">'+bubble(cur===''||cur===DAILY.id?DAILY:objective(cur))+'</div>')+'</div>';
 }
@@ -2522,6 +2545,17 @@ function onClick(e){
     case 'calToday':{if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
     case 'clearTaskDate':{const tt=task(id);closePop();if(tt){tt.days=[];save();}break;}
     case 'clearDeadline':{const o=objective(id);closePop();if(o){o.deadline='';save();}break;}
+    case 'splitSection':{
+      const o=objective(id);if(!o)break;
+      let n='Nueva sección',k=2;while(o.sections.includes(n))n='Nueva sección '+k++;
+      const sec=b.dataset.sec,from=b.dataset.from,oid=nobj(id);
+      const same=s.tasks.filter(x=>x.objective===oid&&x.section===sec&&!x.done);
+      const at=same.findIndex(x=>x.id===from);
+      const moved=at>=0?same.slice(at):[];
+      const idx=sec===''?0:o.sections.indexOf(sec)+1;
+      o.sections.splice(idx,0,n);moved.forEach(x=>{x.section=n;});
+      focusAfter={kind:'sec.name',id,select:true,attr:n};save();break;
+    }
     case 'dayCal':{const ym=selectedDate.slice(0,7);openPop(b,calHtmlD(ym),{day:true,ym});break;}
     case 'closePopOnly':closePop();break;
     case 'notionEdit':menuFor('objnotion',id,b);break;
