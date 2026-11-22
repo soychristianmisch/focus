@@ -1720,7 +1720,7 @@ function bubble(o,today=false,embed=false){
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     propsH='<span class="oprops inl">'+(daily?'':
       '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>')+
-      '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
+      '<span class="p" title="Tiempo que falta / tiempo total estimado del proyecto">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+(daily?'Restante: '+hrs(leftMin):'Restante: '+hrs(leftMin)+' / '+hrs(totalMin))+'</span></span>';
   }
   let lastSec='',rendered=0;
   body+=['',...sections].map(sec=>{
