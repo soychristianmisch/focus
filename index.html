@@ -1163,6 +1163,33 @@ button.gl.sti:hover{filter:brightness(.96)}
 /* v50 pausa en verde */
 .fl-b.run,.tplay.on,.play-round.is-running,.xbubble.compact .play-round.is-running{background:color-mix(in srgb,var(--play) 18%,var(--card));color:var(--play);box-shadow:none}
 .fl-b.run:hover,.tplay.on:hover,.play-round.is-running:hover{background:color-mix(in srgb,var(--play) 28%,var(--card));color:var(--play)}
+/* v51 */
+.wmode.hoy[aria-pressed=true]{background:var(--play);color:#fff;border-color:var(--play);border-width:1px;padding:6px 11px}
+
+/* v51 embed compact */
+.work.hoyon .bubble.emb .bhead{grid-template-columns:minmax(0,3fr) minmax(0,1fr) auto}
+.work.hoyon .bubble.emb .btags{flex-wrap:nowrap}
+.work.hoyon .bubble.emb .bh-r .bprog .prog{width:auto;flex:1}
+.work.hoyon .bubble.emb .bh-r .chips2{flex-wrap:wrap;gap:4px}
+.work.hoyon .bubble.emb .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.work.hoyon .bubble.emb .bhead{gap:8px 14px}
+.work.hoyon .bubble.emb .btags{margin-left:0;overflow:hidden}
+.work.hoyon .bubble.emb .btags .atag.pick{max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.work.hoyon .bubble.emb .bhead{grid-template-columns:minmax(0,65fr) minmax(0,35fr) auto}
+.work.hoyon .bubble.emb .bh-r .chips2{flex-wrap:nowrap;gap:4px}
+.work.hoyon .bubble.emb .bh-r .chipi{font-size:11px;padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.work.hoyon .bubble.emb .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.work.hoyon .bubble.emb .bh-r .chipi{font-size:10px;padding:1px 5px}
+.work.hoyon .bubble.emb .bh-r .chips2{gap:3px}
+.work.hoyon .bubble.emb .bh-r .chipi{overflow:visible;text-overflow:clip;flex:none}
+.work.hoyon .bubble.emb .bh-r .chips2{justify-content:flex-start}
+.work.hoyon .bubble.emb .btags{overflow:visible;padding-left:0}
+.work.hoyon .bubble.emb .btags .atag.pick{flex:none}
+.work.hoyon .bubble.emb .btags{gap:0}
+.work.hoyon .bubble.emb .btags .pnote,.work.hoyon .bubble.emb .btags .oprops.inl .p{font-size:11.5px;padding:2px 5px;gap:4px}
+.work.hoyon .bubble.emb .btags .atag.pick{margin-right:2px}
+.work.hoyon .bubble.emb .bhead{gap:8px 24px}
+.work.hoyon .bubble.emb .bh-r .chips2{margin-top:2px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1505,7 +1532,6 @@ function bubble(o,today=false,embed=false){
       '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
       '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
   }
-  if(embed)body+='<button class="viewall top" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   let lastSec='';
   body+=['',...sections].map(sec=>{
     const list=open.filter(t=>t.section===sec);
@@ -1537,7 +1563,7 @@ function bubble(o,today=false,embed=false){
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
   const nline=(daily||today)?'':'<div class="onotion"><span class="nlogo sm">N</span><input class="notion-in sm" data-onotion="'+o.id+'" value="'+esc(o.notion||'')+'" placeholder="Enlace de Notion de este proyecto" spellcheck="false">'+(o.notion?'<a class="nopen" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(!daily&&o.notion?'<a class="nbox" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion" aria-label="Abrir en Notion">N</a>':'')+'</div>'+tags+'</div>'+
+  return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(!daily&&o.notion?'<a class="nbox" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion" aria-label="Abrir en Notion">N</a>':'')+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+nline+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -1661,7 +1687,7 @@ function railGroups(list){
   return [...g.values()].sort((a,b)=>{const A=rank(a),B=rank(b);return A[0]-B[0]||A[1]-B[1];});
 }
 function wList(){
-  if(wHoy)return ['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];
+  if(wHoy){const l=['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];const op=k=>hoyOpen.has(k===''?DAILY.id:k)?0:1;return l.map((k,i)=>[k,i]).sort((x,y)=>op(x[0])-op(y[0])||x[1]-y[1]).map(x=>x[0]);}
   if(wArea==='__daily')return [''];
   if(wStat==='Completado'){const last=o=>Math.max(0,...s.tasks.filter(t=>t.objective===o.id).map(t=>+t.done||0));return s.objectives.filter(o=>o.status==='Completado').sort((x,y)=>last(y)-last(x)).map(o=>o.id);}
   const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
@@ -2360,7 +2386,7 @@ function onClick(e){
     case 'selectProject':{openProj=id;openObj='';projTab='Nota maestra';render();break;}
     case 'wToggleHoy':case 'wMode':{
       const m=b.dataset.act==='wToggleHoy'?'Hoy':id;
-      flipRender(()=>{wProj='';if(m==='Hoy'){wHoy=true;wStat='Todos';wArea='Todas';}else{wHoy=false;wArea='Todas';wStat=m;}render();});
+      flipRender(()=>{wProj='';if(m==='Hoy'){hoyOpen.clear();wHoy=true;wStat='Todos';wArea='Todas';}else{wHoy=false;wArea='Todas';wStat=m;}render();});
       const c=$('.wcenter');if(c)c.scrollTop=0;break;}
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
@@ -2375,7 +2401,7 @@ function onClick(e){
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
     case 'tlArrange':arrange();break;
-    case 'hoyOpen':flipRender(()=>{wHoy=false;wStat='Todos';wArea='Todas';wProj='';wObj=(id===DAILY.id)?'':id;render();});toBubble(id,520);break;
+    case 'hoyOpen':flipRender(()=>{hoyOpen.add(id);wObj=(id===DAILY.id)?'':id;render();});toBubble(id,520);break;
     case 'hoyClose':flipRender(()=>{hoyOpen.delete(id);render();});break;
     case 'tlMode':{const o=objective(id);if(o){o.mode=b.dataset.val;save();}break;}
     case 'clearSecWin':{const o=objective(id);closePop();if(o?.secWin){delete o.secWin[b.dataset.sec];save();}break;}
