@@ -1555,7 +1555,7 @@ function projPage(p){
    '<div class="pj-notion"><span class="nlogo">N</span><input class="notion-in" data-notion="'+p.id+'" value="'+esc(p.notion)+'" placeholder="Enlace de la nota de Notion de esta área principal" spellcheck="false">'+
    (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>'+
    '</header>'+
-   '<nav class="pj-nav">'+[['pj-res','Resumen'],['pj-obj','Proyectos'],['pj-tl','Línea de tiempo'],['pj-note','Nota maestra'],['pj-act','Actividad']].map(([i,t])=>'<button data-act="pjGo" data-id="'+i+'">'+t+'</button>').join('')+'</nav>'+
+   '<nav class="pj-nav">'+[['pj-res','Resumen'],['pj-obj','Proyectos'],['pj-tl','Línea de tiempo'],['pj-act','Actividad']].map(([i,t])=>'<button data-act="pjGo" data-id="'+i+'">'+t+'</button>').join('')+'</nav>'+
    '<section id="pj-res" class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Proyectos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
    '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div>'+
    (kids.length?'<div class="pj-card"><h3>Subáreas</h3><div class="pj-kids">'+kids.map(k=>{const ks=projStats(k);return '<button class="pj-kid" style="--ac:'+k.color+'" data-act="selectProject" data-id="'+k.id+'"><b>'+esc(k.name)+'</b><small>'+ks.objs.length+' proyectos · '+dur(ks.left)+' pendientes</small></button>';}).join('')+'</div></div>':'')+
@@ -1563,7 +1563,6 @@ function projPage(p){
    '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj'+(pjClosed.has(o.id)?' closed':'')+'" data-fold="'+o.id+'"><button class="foldbtn" data-act="pjFold" data-id="'+o.id+'" aria-label="Plegar o desplegar proyecto" title="Plegar o desplegar">'+ICON.caret+'</button>'+bubble(o)+'</div>').join('')||'<p class="empty">Esta área principal aún no tiene proyectos.</p>')+
    '<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Proyecto</button></section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
-   '<section id="pj-note" class="pj-sec"><h2>Nota maestra</h2><div class="rte" contenteditable="true" spellcheck="true" data-rte="'+p.id+'" data-empty="'+((p.notesHtml||'').replace(/<[^>]*>/g,'').trim()||/<(img|iframe|hr)/.test(p.notesHtml||'')?'0':'1')+'" data-ph="Escribe aquí. Usa «/» para elegir un bloque: títulos, listas, tareas, citas, vídeos…">'+(cleanHtml(p.notesHtml||'')||'<p><br></p>')+'</div></section>'+
    '<section id="pj-act" class="pj-sec"><h2>Actividad</h2>'+(ent.length?'<div class="pj-log">'+ent.map(e=>{const t=task(e.task);return '<div class="logrow"><span class="t">'+cap(fmt({weekday:'short',day:'numeric'},e.start))+' '+hour(e.start)+'–'+hour(e.end)+'</span><span class="nm">'+esc(t.name)+'</span><span class="d num">'+dur((e.end-e.start)/60000)+'</span></div>';}).join('')+'</div>':'<p class="empty">Aún no hay tiempo registrado en esta área principal.</p>')+'</section></div>';
 }
 function viewProyectos(){
@@ -2290,7 +2289,7 @@ function onClick(e){
     case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();break;
     case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();if(wHoy)document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
     case 'wProjBack':wProj='';render();break;
-    case 'projNote':{const p=project(id);if(!p)break;view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
+    case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
     case 'pjFold':{pjClosed.has(id)?pjClosed.delete(id):pjClosed.add(id);document.querySelector('.pj-obj[data-fold="'+id+'"]')?.classList.toggle('closed',pjClosed.has(id));break;}
     case 'addSubProject':{const par=project(id);if(!par)break;const p={id:uid(),name:'Nueva subárea',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};s.projects.push(p);openProj=p.id;focusAfter={kind:'proj.name',id:p.id,select:true};save();break;}
