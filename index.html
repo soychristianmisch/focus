@@ -1214,6 +1214,23 @@ button.gl.sti:hover{filter:brightness(.96)}
 .pinput input#onin{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;background:var(--card);color:var(--ink);min-width:260px}
 .bhead>.iconbtn svg{width:17px;height:17px}
 .pitem small,.pitem .pmore,.pitem .nbox{display:none}
+/* v55 */
+.prail .rhead{align-items:center}
+.prail .rhead .ahd{line-height:22px}
+.prail .rhead .rhb{align-items:center}
+.prail .rhead .addmini{display:grid;place-items:center;width:22px;height:22px;padding:0;line-height:1}
+.endz{position:relative;height:18px;margin:2px 0 0}
+.endz .ez{position:absolute;left:0;right:0;height:9px;border:0;background:none;padding:0;cursor:pointer;opacity:0;transition:opacity .08s}
+.endz .ez.t{top:0}.endz .ez.s{top:9px}
+.endz .ez:only-child{height:18px}
+.endz .ez:hover{opacity:1}
+.endz .ez:before{content:"";position:absolute;right:6px;height:2px;border-radius:2px}
+.endz .ez.t:before{left:34px;top:3px;background:var(--accent);opacity:.55}
+.endz .ez.s:before{left:14px;top:3px;background:var(--play);opacity:.6}
+.endz .ez:after{content:"+";position:absolute;width:16px;height:16px;border-radius:50%;color:#fff;font:600 13px/16px Inter,sans-serif;text-align:center;top:-4px}
+.endz .ez.t:after{left:12px;background:var(--accent)}
+.endz .ez.s:after{left:-6px;background:var(--play)}
+.dnd .endz{pointer-events:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1413,7 +1430,8 @@ const onDay=(t,d)=>t.days.includes(d);
 const queue=d=>{
   const ids=s.order[d]??[];
   const rank=t=>ids.includes(t.id)?ids.indexOf(t.id):ids.length;
-  return s.tasks.filter(t=>onDay(t,d)).sort((a,b)=>rank(a)-rank(b));
+  const td=day();
+  return s.tasks.filter(t=>onDay(t,d)||(d===td&&!t.done&&t.days.length&&t.days.some(x=>x<td))).sort((a,b)=>rank(a)-rank(b));
 };
 const elapsed=(id,now=Date.now())=>s.entries.filter(e=>e.task===id).reduce((a,e)=>a+Math.max(0,(e.end??now)-e.start),0);
 const bounds=new Map();
@@ -1531,6 +1549,7 @@ function taskRow(t){
 }
 const insTask=(obj,sec,after,before,today)=>'<button class="ins" tabindex="-1" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'"'+(today?' data-today="1"':'')+' aria-label="Insertar tarea aquí"><i></i></button>';
 const insSection=(oid,before)=>'<button class="ins secins" tabindex="-1" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(before)+'" aria-label="Insertar sección aquí"><i></i></button>';
+const endZ=(obj,sec,nextSec,oid,onlyTask)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(onlyTask?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>';
 const hrs=m=>dur(m);
 const STI={Esperando:'<circle cx="12" cy="12" r="7.5"/><path d="M12 8v4.2l2.8 1.6"/>',Activo:'<path d="M9.5 7.2v9.6l7.6-4.8z" fill="currentColor"/>',Pausado:'<path d="M9.5 7.5v9M14.5 7.5v9" stroke-width="2.6"/>',Completado:'<path d="M7.5 12.4l3 3 6-6.4" stroke-width="2.4"/>'};
 const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
@@ -1569,19 +1588,20 @@ function bubble(o,today=false,embed=false){
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
     const rows=list.length?insTask(oid,sec,'',list[0].id,today||embed)+list.map(t=>taskRow(t)+insTask(oid,sec,t.id,'',today||embed)).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
-      (today?'':'<button class="addrow" data-act="addTask" data-obj="'+esc(oid)+'" data-sec="'+esc(sec)+'" data-secdrop="1">＋ Nueva tarea</button>');
+      (today?'':endZ(oid,sec,sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id));
     return (sec&&!today?insSection(o.id,sec)+'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
-  if(!today)body+=(sections.length?insSection(o.id,''):'')+'<button class="addrow" data-act="addSection" data-id="'+o.id+'">＋ Nueva sección</button>';
+  if(today)body+=endZ(oid,'','',o.id,true);
   if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?'<div class="tasks" data-mode="done">'+done.map(t=>taskRow(t)).join('')+'</div>':'');
-  if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
+  const hidden=all.some(t=>!inDay.includes(t))||sections.some(sc=>!inDay.some(t=>t.section===sc));
+  if(today&&hidden)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:areaTone(area);
   const todayAll=inDay,todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
   const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>';
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
-  const lines=(today||embed)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
+  const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
@@ -1659,7 +1679,7 @@ function projRail(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
   return '<aside class="prail">'+areas.map(ar=>{
     const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id));
-    return '<div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="ahd"><i class="adot" style="background:'+areaTone(ar)+'"></i>'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nueva área principal en '+esc(ar)+'" aria-label="Nueva área principal">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área global" aria-label="Editar área global">'+ICON.more+'</button></span></div>'+
+    return '<div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nueva área principal en '+esc(ar)+'" aria-label="Nueva área principal">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área global" aria-label="Editar área global">'+ICON.more+'</button></span></div>'+
       (roots.length?roots.map(p=>projItem(p,0)).join(''):'<p class="pempty">Sin áreas principales</p>');
   }).join('')+'</aside>';
 }
@@ -1734,10 +1754,10 @@ function workCenter(ids){
   if(wHoy){
     const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
     return '<div class="wc-in"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
-      '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dateToday">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button><button class="btn line" data-act="addToDay">＋ Añadir</button></div>'+
+      '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>'+
       '<div class="bubbles one">'+ids.map(k=>k?bubble(objective(k),!hoyOpen.has(k),hoyOpen.has(k)):bubble(DAILY,!hoyOpen.has(DAILY.id),hoyOpen.has(DAILY.id))).join('')+'</div>'+
       (ids.length?'':'<p class="empty">Nada para hoy con este filtro. Quita el filtro de área, usa «＋ Añadir» o desactiva «Hoy» para elegir tareas.</p>')+
-      '<button class="addrow" style="padding-left:10px" data-act="addTask" data-obj="" data-sec="" data-today="1">＋ Nueva tarea suelta para hoy</button></div>';
+      '</div>';
   }
   if(wArea!=='__daily')return '<div class="wc-in">'+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
   const cur=ids.includes(wObj)?wObj:ids[0];
@@ -1823,10 +1843,10 @@ function planCol(){
   for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
   const open=list.filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
   return '<div class="hoyleft" data-scroll><div class="colhead"><div><h2>Proyectos del día</h2><span class="sub">'+esc(dl)+' · '+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
-    '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dateToday">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button><button class="btn line" data-act="addToDay">＋ Añadir</button></div>'+
+    '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>'+
     '<div class="bubbles one">'+order.map(k=>k?(objective(k)?bubble(objective(k),!hoyOpen.has(k),hoyOpen.has(k)):''):bubble(DAILY,!hoyOpen.has(DAILY.id),hoyOpen.has(DAILY.id))).join('')+'</div>'+
     (order.length?'':'<p class="empty">Nada planificado para este día. Usa «Añadir» para traer tareas de tus proyectos, o crea una tarea nueva.</p>')+
-    '<button class="addrow" style="padding-left:10px" data-act="addTask" data-obj="" data-sec="" data-today="1">＋ Nueva tarea suelta para hoy</button></div>';
+    '</div>';
 }
 function viewHoy(){return '<div class="hoy2">'+planCol()+execPanel()+'</div>';}
 
@@ -2203,7 +2223,7 @@ function syncStatus(d=s){
     const ts=d.tasks.filter(t=>t.objective===o.id);
     if(!ts.length){o.status='Esperando';continue;}
     const open=ts.filter(t=>!t.done);
-    o.status=!open.length?'Completado':open.some(t=>t.days.includes(today))?'Activo':open.some(t=>t.days.length)?'Pausado':'Esperando';
+    o.status=!open.length?'Completado':open.some(t=>t.days.includes(today)||t.days.some(x=>x<today))?'Activo':open.some(t=>t.days.length)?'Pausado':'Esperando';
   }
 }
 function render(){syncStatus();
@@ -2363,6 +2383,13 @@ function calHtml(o,ym){
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
     '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(o.deadline?'<button class="rm" data-act="clearDeadline" data-id="'+o.id+'">Quitar fecha</button>':'<span></span>')+'</div></div>';
 }
+function calHtmlD(ym){
+  const first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
+  while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===selectedDate?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
+  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+cap(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
+    '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
+    '<div class="cfoot"><button data-act="calToday">Ir a hoy</button><span></span></div></div>';
+}
 function calHtmlT(t,ym){
   const w=taskWhen(t),first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
   while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===w.d?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
@@ -2490,11 +2517,12 @@ function onClick(e){
     case 'setColor':{const p=project(id);if(p){p.color=b.dataset.val;save();}closePop();break;}
     case 'resetObj':{const o=objective(id);if(!o)break;const w=o.window,sw=o.secWin;delete o.window;delete o.secWin;save();notify('Proyecto restablecido a la secuencia automática',()=>{if(w)o.window=w;if(sw)o.secWin=sw;save();});break;}
     case 'togglePrio':{const o=objective(id);if(!o)break;if(o.priority==='Alta'){o.priority='Normal';if(o.deadline===day())o.deadline='';}else{o.priority='Alta';o.deadline=day();}save();break;}
-    case 'calNav':{if(!popCtx?.ym)break;let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
-    case 'calPick':{if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
-    case 'calToday':{if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
+    case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
+    case 'calPick':{if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
+    case 'calToday':{if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
     case 'clearTaskDate':{const tt=task(id);closePop();if(tt){tt.days=[];save();}break;}
     case 'clearDeadline':{const o=objective(id);closePop();if(o){o.deadline='';save();}break;}
+    case 'dayCal':{const ym=selectedDate.slice(0,7);openPop(b,calHtmlD(ym),{day:true,ym});break;}
     case 'closePopOnly':closePop();break;
     case 'notionEdit':menuFor('objnotion',id,b);break;
     case 'saveONotion':{const o=objective(id);let v=b.dataset.clear?'':($('#onin')?.value||'').trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;closePop();if(o){o.notion=v;save();render();}break;}
