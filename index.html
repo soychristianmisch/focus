@@ -1059,6 +1059,26 @@ button.gl.sti:hover{filter:brightness(.96)}
 .fl-b.big{width:56px;height:56px;box-shadow:none}
 .fl-b.big svg{width:24px;height:24px}
 .xtask .retake{margin-top:12px}
+/* v39 */
+.bhead,.bubble.tb .bhead{grid-template-columns:minmax(0,65fr) minmax(0,35fr) auto}
+.bh-title{align-items:center}
+.bh-title .oname{padding-top:0;padding-bottom:0}
+.bh-r .chips2,.bubble.tb .bh-r .chips2{flex-wrap:nowrap;gap:4px}
+.bh-r .chipi,.bubble.tb .bh-r .chipi{font-size:11px;padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bubble.tb .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.bhead>.lines{top:31px}
+.xtask .xtitle{margin:0}
+.xtask .est{margin:4px 0 0;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xtask .xline{margin-top:10px}
+.bubble.tb .bh-r .chipi{font-size:10px;padding:1px 5px}
+.bubble.tb .bh-r .chips2{gap:3px}
+.bubble.tb .bh-r .chipi{overflow:visible;text-overflow:clip;flex:none}
+.bubble.tb .bh-r .chips2{justify-content:flex-start}
+.bubble.tb .btags{overflow:visible;padding-left:0}
+.bubble.tb .btags .atag.pick{flex:none}
+.bubble.tb .btags{gap:0}
+.bubble.tb .btags .pnote,.bubble.tb .btags .oprops.inl .p{font-size:11.5px;padding:2px 5px;gap:4px}
+.bubble.tb .btags .atag.pick{margin-right:2px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1422,7 +1442,7 @@ function bubble(o,today=false,embed=false){
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:areaTone(area);
   const todayAll=inDay,todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
-  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi">Pendiente hoy '+hrs(todayLeft)+'</span>';
+  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>';
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones">'+ICON.more+'</button>':'<span></span>';
@@ -1638,7 +1658,7 @@ function execPanel(){
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
   const main='<section class="xcard xtask" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<div class="xwhere">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</div><h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">Estimación · '+Math.round(t.minutes)+' min</p>'+
+    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
