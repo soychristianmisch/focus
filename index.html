@@ -1481,6 +1481,7 @@ function normalizeSections(d){
 function migrate(d){
   d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];
   for(const k of ['projects','objectives','tasks','entries','plans','notes','inbox','paused'])d[k]??=[];
+  d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
   d.dailySections??=[];d.hoursOn??={};d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
   if(!Array.isArray(d.hours)||d.hours.length!==7)d.hours=Array(7).fill(10);
   d.projects.forEach((p,i)=>{
@@ -2713,7 +2714,7 @@ function onClick(e){
     }
     case 'inboxTo':{
       const idea=s.inbox.find(x=>x.id===id);closePop();if(!idea)break;
-      const oid=b.dataset.obj,o=objective(oid);
+      const oid=b.dataset.obj==='__daily'?'':b.dataset.obj,o=oid?objective(oid):null;
       s.tasks.push(mkTask(idea.text,10,oid,''));s.inbox=s.inbox.filter(x=>x.id!==id);save();notify('Tarea creada en '+(o?.name||'Día a día'));break;
     }
     case 'inboxSimp':case 'inboxSynth':{
