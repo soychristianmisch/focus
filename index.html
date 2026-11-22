@@ -1191,6 +1191,14 @@ button.gl.sti:hover{filter:brightness(.96)}
 .work.hoyon .bubble.emb .bhead{gap:8px 24px}
 .work.hoyon .bubble.emb .bh-r .chips2{margin-top:2px}
 .work.hoyon .wc-in{padding-bottom:60vh}
+/* v53 rail plano */
+.wrail{gap:4px}
+.ritem{align-items:center}
+.ritem .rt b{display:block;font-size:13.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ritem .rm{display:flex;flex-wrap:nowrap;align-items:center;gap:7px;margin-top:3px;min-width:0}
+.ritem .rm .atag{flex:0 1 auto;min-width:0;max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ritem .rm small{flex:none;white-space:nowrap}
+.wrail .ritem .rt b{display:block;-webkit-line-clamp:unset;overflow-wrap:normal}.wrail .ritem .rt{overflow:hidden}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1675,7 +1683,8 @@ function dayOrder(){
   const order=[];
   for(const t of queue(selectedDate)){if(t.done)continue;const k=t.objective||'';if(!order.includes(k))order.push(k);}
   for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
-  return order;
+  const ix=k=>k===''?-1:s.objectives.findIndex(o=>o.id===k);
+  return order.sort((x,y)=>ix(x)-ix(y));
 }
 const dlInfo=d=>{const t=day();return d===t?{txt:'Hoy',cls:' dl-hoy'}:d===shift(t,1)?{txt:'Mañana',cls:' dl-man'}:{txt:fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),cls:''};};
 const stOk=o=>wStat==='Todos'?(wHoy||o.status!=='Completado'):o.status===wStat;
@@ -1691,21 +1700,20 @@ function wList(){
   if(wHoy){const l=['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];return l;}
   if(wArea==='__daily')return [''];
   if(wStat==='Completado'){const last=o=>Math.max(0,...s.tasks.filter(t=>t.objective===o.id).map(t=>+t.done||0));return s.objectives.filter(o=>o.status==='Completado').sort((x,y)=>last(y)-last(x)).map(o=>o.id);}
-  const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
+  const ids=s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o)).map(o=>o.id);
   if(wArea==='Todas'&&wStat==='Todos')ids.unshift('');
   return ids;
 }
 function railItem(k,sel){
-  const id=k===''?DAILY.id:k;
+  const id=k===''?DAILY.id:k,q=queue(selectedDate);
   if(k===''){
-    const n=wHoy?queue(selectedDate).filter(t=>!t.objective&&!t.done).length:s.tasks.filter(t=>!t.objective&&!t.done).length;
-    return '<div class="ritem daily" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'" aria-current="'+sel+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm"><small>'+(wHoy?'Hoy: '+n+(n===1?' tarea':' tareas')+' · '+hrs(sumMin(queue(selectedDate).filter(t=>!t.objective&&!t.done),minutesLeft)):n+' pendientes')+'</small></div></div></div>';
+    const L=q.filter(t=>!t.objective&&!t.done),n=L.length;
+    return '<div class="ritem daily" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm">'+(n?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div></div>';
   }
-  const o=objective(k),p=project(o.project),area=p?.area||'',pr=progressOf(o);
-  const left=sumMin(s.tasks.filter(t=>t.objective===k&&!t.done),minutesLeft),nTd=queue(selectedDate).filter(t=>t.objective===k&&!t.done).length,td=sumMin(queue(selectedDate).filter(t=>t.objective===k&&!t.done));
-  return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem" aria-current="'+sel+'">'+stIcon(o,'span','',true)+
-    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(wHoy&&p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(o.deadline?(()=>{const x=dlInfo(o.deadline);return '<span class="dchip'+x.cls+'">'+esc(x.txt)+'</span>';})():'')+(p&&rootProject(p)===p?'':'<small>'+esc(p?.name??'')+'</small>')+'</div>'+
-    '<div class="rb">'+pr.bar+'<small class="num">'+(wHoy?'Hoy: '+nTd+(nTd===1?' tarea':' tareas')+' · '+hrs(td):hrs(left))+'</small></div></div></div>';
+  const o=objective(k),p=project(o.project),area=p?.area||'';
+  const L=q.filter(t=>t.objective===k&&!t.done);
+  return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem">'+stIcon(o,'span','',true)+
+    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div></div>';
 }
 function workCenter(ids){
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
@@ -1717,7 +1725,7 @@ function workCenter(ids){
       (ids.length?'':'<p class="empty">Nada para hoy con este filtro. Quita el filtro de área, usa «＋ Añadir» o desactiva «Hoy» para elegir tareas.</p>')+
       '<button class="addrow" style="padding-left:10px" data-act="addTask" data-obj="" data-sec="" data-today="1">＋ Nueva tarea suelta para hoy</button></div>';
   }
-  if(wStat!=='Completado'&&wArea!=='__daily')return '<div class="wc-in">'+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
+  if(wArea!=='__daily')return '<div class="wc-in">'+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
   const cur=ids.includes(wObj)?wObj:ids[0];
   return '<div class="wc-in">'+(cur===undefined?'<p class="empty">No hay proyectos con este filtro.</p>':'<div class="bubbles one">'+bubble(cur===''||cur===DAILY.id?DAILY:objective(cur))+'</div>')+'</div>';
 }
@@ -1734,8 +1742,7 @@ function viewTrabajo(){
   const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
   const top='<div class="wmodes">'+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
-  const rail='<aside class="wrail" data-scroll>'+top+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
-    return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
+  const rail='<aside class="wrail" data-scroll>'+top+ids.map(k=>railItem(k,false)).join('')+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
   const split=!wHoy&&wStat!=='Completado'&&!wProj;
   return '<div class="work'+(wHoy?' hoyon':'')+(split?' split2':'')+'"><div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+((wHoy||split)?execPanel():'')+'</div></div>';
@@ -2392,7 +2399,7 @@ function onClick(e){
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
     case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();$('.wcenter')&&($('.wcenter').scrollTop=0);break;
-    case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();toBubble(id);break;}
+    case 'wSelect':{toBubble(id);break;}
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
@@ -2748,14 +2755,13 @@ document.addEventListener('drop',e=>{
     else{const p=s.plans.find(x=>x.id===dr.id);if(p)placePlan(date,e.clientY,i.el,task(p.task),p);}
     return;
   }
-  if(i.type==='tobj'){reorderDay(dr.id,i.el.dataset.obj,i.after);return;}
+  if(i.type==='tobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref){mv(s.objectives,o,ref,i.after);save();}return;}
   if(i.type==='tldate'){flipTl(()=>moveByDate(dr.id,i.date));return;}
   if(i.type==='tlobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref)flipTl(()=>{mv(s.objectives,o,ref,i.after);save();});return;}
   if(i.type==='pitem'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){o.sched=!!ref.sched;mv(s.objectives,o,ref,i.after);save();}return;}
   if(i.type==='pzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.pz==='1';o.sched=on;s.objectives=s.objectives.filter(x=>x!==o);if(on)s.objectives.push(o);else s.objectives.push(o);save();}return;}
   if(i.type==='ritem'){
-    if(wHoy)reorderDay(dr.id,i.el.dataset.id,i.after);
-    else{const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){mv(s.objectives,o,ref,i.after);save();}}
+    {const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){mv(s.objectives,o,ref,i.after);save();}}
     return;
   }
   if(i.type==='task'){
