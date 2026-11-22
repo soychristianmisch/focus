@@ -999,6 +999,29 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bh-r .bprog{gap:8px}
 .bh-r .chips2{gap:4px}
 .bh-r .chipi{font-size:11px;padding:2px 7px}
+
+/* v36 */
+.dchip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--bg3);color:var(--mute);line-height:1.5}
+.dchip.dl-hoy{background:var(--play);color:#fff}
+.dchip.dl-man{background:#f2c94c;color:#1b1b1b}
+.btags .oprops.inl button.p.dl-hoy{background:var(--play);color:#fff}
+.btags .oprops.inl button.p.dl-hoy:hover{background:var(--play-hi,var(--play));color:#fff}
+.btags .oprops.inl button.p.dl-man{background:#f2c94c;color:#1b1b1b}
+.btags .oprops.inl button.p.dl-man:hover{background:#e8bb34;color:#1b1b1b}
+.ritem .rm:empty{display:none}
+.ritem .rt b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bh-title{align-items:flex-start}
+.bh-title .oname{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;flex:1;line-height:22px;padding-top:8px;padding-bottom:0}
+.bh-title .oname:focus{display:block;-webkit-line-clamp:unset;overflow:visible}
+.bhead{align-items:end}
+.bhead>.iconbtn{align-self:start}
+.bhead>.lines{top:30px}
+.bh-r{align-self:end}
+.bh-r .bprog{height:auto;margin:0}
+.bh-r .bprog .prog{flex:none;width:75%}
+.bh-r .chips2{margin:8px 0 0;min-height:24px}
+.bubble.tb .btags{flex-wrap:wrap}
+.bhead>.bh-l{align-self:start}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1332,10 +1355,10 @@ function bubble(o,today=false,embed=false){
   const todayMin=sumMin(inDay.filter(t=>!t.done),minutesLeft),leftMin=sumMin(openAll,minutesLeft),totalMin=sumMin(all);
   let body='';
   let propsH='';
-  if(!daily&&!today){
+  if(!daily){
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     propsH='<span class="oprops inl">'+
-      '<button class="p" data-act="menu" data-kind="deadline" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(fmt({day:'numeric',month:'short'},dateAt(o.deadline))):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
+      '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
       '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
   }
   if(embed)body+='<button class="viewall top" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
@@ -1370,7 +1393,7 @@ function bubble(o,today=false,embed=false){
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre')+prio(o))+'</div>'+tags+'</div>'+
+  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -1486,6 +1509,7 @@ function dayOrder(){
   for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
   return order;
 }
+const dlInfo=d=>{const t=day();return d===t?{txt:'Hoy',cls:' dl-hoy'}:d===shift(t,1)?{txt:'Mañana',cls:' dl-man'}:{txt:fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),cls:''};};
 const stOk=o=>wStat==='Todos'?(wHoy||o.status!=='Completado'):o.status===wStat;
 const rootProject=p=>{let x=p,n=0;while(x&&x.parent&&n++<10){const q=project(x.parent);if(!q)break;x=q;}return x;};
 function railGroups(list){
@@ -1511,7 +1535,7 @@ function railItem(k,sel){
   const o=objective(k),p=project(o.project),area=p?.area||'',pr=progressOf(o);
   const left=sumMin(s.tasks.filter(t=>t.objective===k&&!t.done),minutesLeft),td=sumMin(queue(selectedDate).filter(t=>t.objective===k&&!t.done));
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem" aria-current="'+sel+'">'+stIcon(o,'span','',true)+
-    '<div class="rt"><b>'+esc(o.name)+prio(o)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span>'+(p&&rootProject(p)===p?'':'<small>'+esc(p?.name??'')+'</small>')+'</div>'+
+    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(wHoy&&p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(o.deadline?(()=>{const x=dlInfo(o.deadline);return '<span class="dchip'+x.cls+'">'+esc(x.txt)+'</span>';})():'')+(p&&rootProject(p)===p?'':'<small>'+esc(p?.name??'')+'</small>')+'</div>'+
     '<div class="rb">'+pr.bar+'<small class="num">'+(wHoy?'hoy '+hrs(td):hrs(left))+'</small></div></div></div>';
 }
 function workCenter(ids){
@@ -1843,7 +1867,7 @@ function timeline(projects,embedded=false){
     let gEnd=Math.max(lx+CARDW,xOf(b.end)+px);
     for(const si of secInfo)gEnd=Math.max(gEnd,xOf(si.z)+px,xOf(si.a)+si.nm.length*6.5+110);
     const gw=gEnd-lx+30;
-    const card='<div class="tlcard" draggable="true" data-drag="tlobj" data-id="'+o.id+'" data-act="tlToggle" style="left:'+lx+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+' secciones · arrastra para moverlo en la cascada">'+stIcon(o)+'<div class="rt"><b>'+esc(o.name)+prio(o)+'</b><div class="rm"><span class="atag sm">'+esc(p.area)+'</span><small>'+esc(p.name)+' · '+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o.deadline?' · límite '+fmt({day:'numeric',month:'short'},dateAt(o.deadline)):'')+'</small>'+warn+'</div></div></div>';
+    const card='<div class="tlcard" draggable="true" data-drag="tlobj" data-id="'+o.id+'" data-act="tlToggle" style="left:'+lx+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+' secciones · arrastra para moverlo en la cascada">'+stIcon(o)+'<div class="rt"><b>'+esc(o.name)+'</b><div class="rm"><span class="atag sm">'+esc(p.area)+'</span><small>'+esc(p.name)+' · '+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o.deadline?' · límite '+fmt({day:'numeric',month:'short'},dateAt(o.deadline)):'')+'</small>'+warn+'</div></div></div>';
     let g='<div class="tl-group" data-obj="'+o.id+'" style="--pc:'+ac+'"><i class="gbub" style="left:'+(lx-10)+'px;width:'+gw+'px"></i><div class="tl-row o" style="height:'+CARDROW+'px"><div class="tl-track" style="--px:'+px+'px;--w:'+W+'px">'+card+'</div></div>';
     const segs=(ds,tp)=>ds.map(d=>'<i class="seg" style="left:'+(xOf(d)+1)+'px;width:'+(px-2)+'px;top:'+tp+'px"></i>').join('');
     const allDs=[...cells.keys()].sort();
@@ -1866,7 +1890,7 @@ function planItem(o,plan){
   const b=o.sched?spanBar(o,plan):null,f=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.','');
   const when=o.sched?(b?(b.start===b.end?f(b.start):f(b.start)+' – '+f(b.end)):'sin horas'):'';
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" draggable="true" data-drag="pitem" data-id="'+o.id+'">'+stIcon(o,'span','',true)+
-    '<div class="rt"><b>'+esc(o.name)+prio(o)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span><small>'+esc(p?.name??'')+'</small></div>'+
+    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span><small>'+esc(p?.name??'')+'</small></div>'+
     '<div class="rb">'+(when?'<small class="num pwhen">'+when+'</small>':'')+'<small class="num">'+hrs(left)+'</small></div></div></div>';
 }
 function viewPlan(){
@@ -2260,6 +2284,7 @@ function onClick(e){
     case 'pickIcon':openPop(b,'<div class="emojis">'+EMOJIS.map(x=>'<button data-act="setIcon" data-val="'+x+'">'+x+'</button>').join('')+'</div>',{kind:b.dataset.kind,id});break;
     case 'setIcon':{const c=popCtx;closePop();if(!c)break;const item=c.kind==='obj'?objective(c.id):project(c.id);if(item){item.icon=b.dataset.val;save();}break;}
     case 'menu':menuFor(b.dataset.kind,id,b);break;
+    case 'objDate':{const o=objective(id);if(o&&!o.deadline){o.deadline=day();save();}else menuFor('deadline',id,b);break;}
     case 'setProp':{
       const item=b.dataset.kind==='obj'?objective(id):project(id);closePop();if(!item)break;
       item[b.dataset.key]=b.dataset.val;if(b.dataset.kind==='proj'&&b.dataset.key==='area')openArea=b.dataset.val;save();break;
