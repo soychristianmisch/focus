@@ -2340,7 +2340,7 @@ function onClick(e){
     }
     case 'addObj':{
       const o={id:uid(),project:id,name:'Nuevo proyecto',icon:'🎯',status:'Esperando',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
-      s.objectives.push(o);wObj=o.id;wProj='';openObj=o.id;openProj='';focusAfter={kind:'obj.name',id:o.id,select:true};save();break;
+      s.objectives.push(o);wObj=o.id;wProj='';openObj=o.id;openProj=id;focusAfter={kind:'obj.name',id:o.id,select:true};save();break;
     }
     case 'addProject':{
       const area=s.areas.includes(id)?id:s.areas[0];
