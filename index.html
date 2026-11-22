@@ -1190,6 +1190,7 @@ button.gl.sti:hover{filter:brightness(.96)}
 .work.hoyon .bubble.emb .btags .atag.pick{margin-right:2px}
 .work.hoyon .bubble.emb .bhead{gap:8px 24px}
 .work.hoyon .bubble.emb .bh-r .chips2{margin-top:2px}
+.work.hoyon .wc-in{padding-bottom:60vh}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1687,7 +1688,7 @@ function railGroups(list){
   return [...g.values()].sort((a,b)=>{const A=rank(a),B=rank(b);return A[0]-B[0]||A[1]-B[1];});
 }
 function wList(){
-  if(wHoy){const l=['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];const op=k=>hoyOpen.has(k===''?DAILY.id:k)?0:1;return l.map((k,i)=>[k,i]).sort((x,y)=>op(x[0])-op(y[0])||x[1]-y[1]).map(x=>x[0]);}
+  if(wHoy){const l=['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];return l;}
   if(wArea==='__daily')return [''];
   if(wStat==='Completado'){const last=o=>Math.max(0,...s.tasks.filter(t=>t.objective===o.id).map(t=>+t.done||0));return s.objectives.filter(o=>o.status==='Completado').sort((x,y)=>last(y)-last(x)).map(o=>o.id);}
   const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
@@ -2401,8 +2402,8 @@ function onClick(e){
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
     case 'tlArrange':arrange();break;
-    case 'hoyOpen':flipRender(()=>{hoyOpen.add(id);wObj=(id===DAILY.id)?'':id;render();});toBubble(id,520);break;
-    case 'hoyClose':flipRender(()=>{hoyOpen.delete(id);render();});break;
+    case 'hoyOpen':hoyOpen.add(id);wObj=(id===DAILY.id)?'':id;render();toBubble(id,30);break;
+    case 'hoyClose':hoyOpen.delete(id);render();break;
     case 'tlMode':{const o=objective(id);if(o){o.mode=b.dataset.val;save();}break;}
     case 'clearSecWin':{const o=objective(id);closePop();if(o?.secWin){delete o.secWin[b.dataset.sec];save();}break;}
     case 'projTab':projTab=id;if(id==='Cronología')tlScroll='today';render();break;
