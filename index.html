@@ -1022,6 +1022,30 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bh-r .chips2{margin:8px 0 0;min-height:24px}
 .bubble.tb .btags{flex-wrap:wrap}
 .bhead>.bh-l{align-self:start}
+
+/* v37 panel compacto y tarjetas de Hoy */
+.xbubble.compact .xhead{padding:9px 16px;font-size:12px}
+.xbubble.compact .xbody{padding:12px 16px 14px}
+.xbubble.compact .xrow{display:flex;align-items:center;gap:14px;text-align:left}
+.xbubble.compact .xl{flex:1;min-width:0}
+.xbubble.compact h2{font-size:16px;line-height:1.25;margin:0 0 4px;text-align:left;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.xbubble.compact .clocklabel{font-size:11px;text-align:left}
+.xbubble.compact .clock{font-size:34px;margin:0;letter-spacing:-1.5px;text-align:left}
+.xbubble.compact .est{font-size:11.5px;margin:2px 0 0;text-align:left}
+.xbubble.compact .xr{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none}
+.xbubble.compact .play-round{width:58px;height:58px}
+.xbubble.compact .play-round svg{width:24px;height:24px}
+.xbubble.compact .play-round.is-running{box-shadow:0 0 0 5px color-mix(in srgb,var(--pause) 22%,transparent),inset 0 -3px 0 rgba(0,0,0,.12)}
+.xbubble.compact .finish-link{font-size:12px;padding:2px 6px}
+.xbubble.compact .retake{margin-top:10px}
+.bubble.tb .bhead{grid-template-columns:minmax(0,3fr) minmax(0,1fr) auto}
+.bubble.tb .btags{flex-wrap:nowrap}
+.bubble.tb .bh-r .bprog .prog{width:auto;flex:1}
+.bubble.tb .bh-r .chips2{flex-wrap:wrap;gap:4px}
+.bubble.tb .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.bubble.tb .bhead{gap:8px 14px}
+.bubble.tb .btags{margin-left:0;overflow:hidden}
+.bubble.tb .btags .atag.pick{max-width:130px;overflow:hidden;text-overflow:ellipsis}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1601,21 +1625,21 @@ function execPanel(){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xbubble" style="--pc:'+color+'"><div class="xhead"><span>'+(t?esc(p.name)+(o?' · '+esc(o.name):''):'Sin tarea en curso')+'</span><span>'+(running?'En marcha':t?.done?'Completada':'Preparada')+'</span></div>'+
-    '<div class="xbody">'+(t?'<h2>'+esc(t.name)+'</h2>'+clockMarkup(t)+'<p class="est">Estimación · '+Math.round(t.minutes)+' min</p>'+
+  const main='<section class="xbubble compact" style="--pc:'+color+'"><div class="xhead"><span>'+(t?esc(p.name)+(o?' · '+esc(o.name):''):'Sin tarea en curso')+'</span><span>'+(running?'En marcha':t?.done?'Completada':'Preparada')+'</span></div>'+
+    '<div class="xbody">'+(t?'<div class="xrow"><div class="xl"><h2>'+esc(t.name)+'</h2>'+clockMarkup(t)+'<p class="est">Estimación · '+Math.round(t.minutes)+' min</p></div><div class="xr">'+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="play-round'+(running?' is-running':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
-       '<button type="button" class="finish-link" data-act="finish" data-id="'+esc(t.id)+'" title="Completar (C)">'+ICON.check+' Completar tarea</button>')+
-      '<input class="noteinput" id="noteinput" data-note-task="'+esc(t.id)+'" placeholder="Nota rápida de esta sesión (Enter la guarda)">':
-      '<p class="empty" style="padding:30px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
+       '<button type="button" class="finish-link" data-act="finish" data-id="'+esc(t.id)+'" title="Completar (C)">'+ICON.check+' Completar</button>')+'</div></div>':
+      '<p class="empty" style="padding:14px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
     (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</div></section>';
   const hh=m=>new Date(m).toLocaleTimeString('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
   let ritmo;
   if(!st.pending)ritmo='<b class="good">Todo lo previsto está hecho.</b>';
   else if(!st.isToday)ritmo='Pendiente '+dur(st.pending)+' de '+dur(st.capm)+' de capacidad.';
   else ritmo=(st.gap>=st.pending*.25?'<b class="good">Vas bien.</b>':st.gap>=0?'<b class="warnc">Justo de tiempo.</b>':'<b class="badc">No cabe todo hoy.</b>')+' Hasta las '+esc(s.dayEnd||'20:00')+' quedan '+dur(st.avail)+'; pendiente '+dur(st.pending)+(st.gap>=0?' ('+dur(st.gap)+' de margen).':' (faltan '+dur(-st.gap)+').')+(st.isToday?' Si no paras, terminarías hacia las '+hh(st.finishAt)+'.':'');
-  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Pendiente</small><b class="num">'+dur(st.pending)+'</b></div><div><small>'+(st.free<0?'Sobre capacidad':'Libre')+'</small><b class="num" style="'+(st.free<0?'color:var(--red)':'')+'">'+dur(Math.abs(st.free))+'</b></div></div>'+
-    '<div class="capbar'+(st.free<0?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
+  const freeV=st.isToday?st.gap:st.free;
+  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Pendiente</small><b class="num">'+dur(st.pending)+'</b></div><div><small>'+(freeV<0?'Falta':'Libre')+(st.isToday?' hasta las '+esc(s.dayEnd||'20:00'):'')+'</small><b class="num" style="'+(freeV<0?'color:var(--red)':'')+'">'+dur(Math.abs(freeV))+'</b></div></div>'+
+    '<div class="capbar'+(freeV<0?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
     '<p class="ritmo">'+ritmo+'</p>'+
     '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span>'+(st.ratio!=null?'<span>Ritmo real<b class="num">'+Math.round(st.ratio)+' %</b><small>de lo estimado</small></span>':'')+'</div></section>';
   const objc='<section class="xcard"><h3>Avance por proyecto</h3>'+(st.objs.length?st.objs.map(g=>{
