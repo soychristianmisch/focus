@@ -1273,6 +1273,7 @@ function save(refresh=true){
 /* ---------- estado de interfaz ---------- */
 let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Activo';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
+const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
 const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set(), fresh=new Set();
 let tlScroll=null;
@@ -2801,7 +2802,7 @@ function updateFloat(){
 let lastMinute='';
 setInterval(()=>{
   const now=Date.now(),minute=day(now)+hour(now);
-  if(lastMinute&&minute!==lastMinute&&(view==='Hoy'||(view==='Trabajo'&&wHoy))&&!document.activeElement?.closest?.('[data-edit]')&&!drag&&!pop.classList.contains('open')){
+  if(lastMinute&&minute!==lastMinute&&(view==='Hoy'||(view==='Trabajo'&&wHoy))&&!typing()&&!drag&&!pop.classList.contains('open')){
     if(selectedDate===lastMinute.slice(0,10)&&selectedDate!==day(now))selectedDate=day(now);
     render();
   }
@@ -3045,7 +3046,7 @@ async function pull(force=false){
     if(!rows.length){await push(true);return;}
     const row=rows[0];
     if(!force&&row.updated_at===cloud.remoteTs){setCloud('ok');return;}
-    if(!force&&cloud.dirty){return;}
+    if(!force&&(cloud.dirty||typing()))return;
     if(!lsGet(SYNC_KEY)&&hasData(s)&&hasData(row.data))exportData();
     s=migrate(row.data);cloud.remoteTs=row.updated_at;lsSet(SYNC_KEY,row.updated_at);
     try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}
@@ -3066,7 +3067,7 @@ async function push(now=false){
     cloud.busy=false;
   };
   if(now)return go();
-  cloud.timer=setTimeout(go,1500);
+  const arm=()=>{cloud.timer=setTimeout(()=>{if(typing())arm();else go();},1500);};arm();
 }
 function cloudSaved(){if(!cloud.session)return;cloud.dirty=true;setCloud('sync');push();}
 
@@ -3118,6 +3119,8 @@ async function cloudInit(){
   else if(lsGet(OFF_KEY)!=='1')loginUI();
   setInterval(()=>{if(cloud.session&&!cloud.busy&&document.visibilityState==='visible')cloud.dirty?push(true):pull();},45000);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloud.session&&!cloud.dirty)pull();});
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&cloud.session&&cloud.dirty&&!cloud.busy)setTimeout(()=>push(true),250);});
+  document.addEventListener('focusout',()=>{setTimeout(()=>{if(cloud.session&&cloud.dirty&&!cloud.busy&&!typing())push(true);},300);});
   addEventListener('online',()=>{if(cloud.session)cloud.dirty?push(true):pull();});
   addEventListener('pagehide',()=>{if(cloud.session&&cloud.dirty){try{sb('/rest/v1/app_state?on_conflict=user_id',{method:'POST',keepalive:true,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:cloud.session.user_id,data:s,updated_at:new Date().toISOString()}});}catch{}}});
 }
