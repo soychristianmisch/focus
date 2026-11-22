@@ -1134,6 +1134,18 @@ button.gl.sti:hover{filter:brightness(.96)}
 .pitem .nbox{margin-left:4px;padding:0;background:transparent;cursor:pointer}
 .pitem .pmore{margin-left:2px}
 .pitem small{margin-left:auto}
+/* v48 */
+.wmodes{display:flex;gap:4px;position:sticky;top:-10px;z-index:3;margin:-10px -8px 8px;padding:12px 8px 8px;background:var(--bg)}
+.wmode{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 8px;border-radius:10px;border:0;background:transparent;color:var(--mute);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;min-width:0}
+.wmode svg{width:15px;height:15px;flex:none}
+.wmode span{overflow:hidden;text-overflow:ellipsis}
+.wmode:hover{background:var(--bg3)}
+.wmode[aria-pressed=true]{background:var(--bg3);color:var(--ink)}
+.wmode.hoy{background:color-mix(in srgb,var(--play) 13%,var(--card));color:var(--play)}
+.wmode.hoy:hover{background:color-mix(in srgb,var(--play) 22%,var(--card))}
+.wmode.hoy[aria-pressed=true]{background:var(--play);color:#fff}
+.work .hoyright{background:color-mix(in srgb,var(--play) 13%,var(--bg))}
+.work.hoyon .wcenter,.work.split2 .wcenter{border-right:0}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1634,6 +1646,7 @@ function railGroups(list){
 function wList(){
   if(wHoy)return ['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];
   if(wArea==='__daily')return [''];
+  if(wStat==='Completado'){const last=o=>Math.max(0,...s.tasks.filter(t=>t.objective===o.id).map(t=>+t.done||0));return s.objectives.filter(o=>o.status==='Completado').sort((x,y)=>last(y)-last(x)).map(o=>o.id);}
   const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
   if(wArea==='Todas'&&wStat==='Todos')ids.unshift('');
   return ids;
@@ -1674,17 +1687,14 @@ function viewTrabajo(){
   const SL={Activo:'Activos',Pausado:'Pausados',Esperando:'Esperando',Completado:'Completados'};
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
-  const top='<div class="wtop"><button class="hoytog" data-act="wToggleHoy" aria-pressed="'+wHoy+'">'+glyph('calendar')+'Hoy<b class="cnt">'+nHoyT+'</b></button><span class="vsep"></span>'+
-    pill('wFilter','Todos',!wHoy&&wArea==='Todas'&&wStat==='Todos',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos',s.objectives.filter(o=>o.status!=='Completado').length)+
-    ['Activo','Pausado','Esperando'].map(st=>pill('wFilter',st,!wHoy&&wArea==='Todas'&&wStat===st,svgI(STI[st]),SL[st],s.objectives.filter(o=>o.status===st).length)).join('')+
-    pill('wFilter','__daily',!wHoy&&wArea==='__daily',glyph('sun'),'Día a día',nDaily)+'<span class="vsep"></span>'+
-    pill('wFilter','Completado',!wHoy&&wArea==='Todas'&&wStat==='Completado',svgI(STI.Completado),SL.Completado,s.objectives.filter(o=>o.status==='Completado').length)+'</div>';
+  const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+label+'">'+icon+'<span>'+label+'</span></button>';
+  const top='<div class="wmodes">'+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Completados')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
-  const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
+  const rail='<aside class="wrail" data-scroll>'+top+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
     return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
   const split=!wHoy&&wStat!=='Completado'&&!wProj;
-  return '<div class="work'+(wHoy?' hoyon':'')+(split?' split2':'')+'">'+top+'<div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+(wHoy?execPanel():split?execPanel(true):'')+'</div></div>';
+  return '<div class="work'+(wHoy?' hoyon':'')+(split?' split2':'')+'"><div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+((wHoy||split)?execPanel():'')+'</div></div>';
 }
 
 /* ---------- Hoy ---------- */
@@ -2331,11 +2341,14 @@ function onClick(e){
     case 'selectArea':openArea=id;openProj='';openObj='';render();window.scrollTo(0,0);break;
     case 'selectObj':openObj=id;openProj='';render();break;
     case 'selectProject':{openProj=id;openObj='';projTab='Nota maestra';render();break;}
-    case 'wToggleHoy':wHoy=true;wProj='';render();break;
+    case 'wToggleHoy':case 'wMode':{
+      const m=b.dataset.act==='wToggleHoy'?'Hoy':id;
+      flipRender(()=>{wProj='';if(m==='Hoy'){wHoy=true;wStat='Todos';wArea='Todas';}else{wHoy=false;wArea='Todas';wStat=m;}render();});
+      const c=$('.wcenter');if(c)c.scrollTop=0;break;}
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
     case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();$('.wcenter')&&($('.wcenter').scrollTop=0);break;
-    case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
+    case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();toBubble(id);break;}
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
@@ -2345,7 +2358,7 @@ function onClick(e){
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
     case 'tlArrange':arrange();break;
-    case 'hoyOpen':flipRender(()=>{hoyOpen.add(id);render();});break;
+    case 'hoyOpen':flipRender(()=>{wHoy=false;wStat='Todos';wArea='Todas';wProj='';wObj=(id===DAILY.id)?'':id;render();});toBubble(id,520);break;
     case 'hoyClose':flipRender(()=>{hoyOpen.delete(id);render();});break;
     case 'tlMode':{const o=objective(id);if(o){o.mode=b.dataset.val;save();}break;}
     case 'clearSecWin':{const o=objective(id);closePop();if(o?.secWin){delete o.secWin[b.dataset.sec];save();}break;}
@@ -2852,7 +2865,7 @@ function updateFloat(){
 let lastMinute='';
 setInterval(()=>{
   const now=Date.now(),minute=day(now)+hour(now);
-  if(lastMinute&&minute!==lastMinute&&(view==='Hoy'||(view==='Trabajo'&&wHoy))&&!typing()&&!drag&&!pop.classList.contains('open')){
+  if(lastMinute&&minute!==lastMinute&&(view==='Hoy'||(view==='Trabajo'&&(wHoy||wStat!=='Completado')))&&!typing()&&!drag&&!pop.classList.contains('open')){
     if(selectedDate===lastMinute.slice(0,10)&&selectedDate!==day(now))selectedDate=day(now);
     render();
   }
@@ -3055,6 +3068,11 @@ document.addEventListener('paste',e=>{
   }else document.execCommand('insertText',false,t);
   rteSave(r);
 });
+
+function toBubble(id,delay=0){
+  setTimeout(()=>{const c=$('.wcenter'),el=document.querySelector('.bubble[data-obj="'+id+'"]');if(!c||!el)return;
+    const top=el.getBoundingClientRect().top-c.getBoundingClientRect().top+c.scrollTop-18;c.scrollTo({top:Math.max(0,top),behavior:'smooth'});},delay);
+}
 
 
 /* ---------- nube (Supabase) ---------- */
