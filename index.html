@@ -1253,16 +1253,6 @@ button.gl.sti:hover{filter:brightness(.96)}
 .flcard h3{margin:0 0 8px}
 .flcard .xtitle{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:20px;-webkit-line-clamp:unset}
 .flcard .xline{margin-top:8px}
-/* v59 ventana flotante en verde */
-.flcard{background:var(--play);color:#fff}
-.flcard h3,.flcard .est{color:rgba(255,255,255,.78)}
-.flcard .xtitle,.flcard .xclock{color:#fff}
-.flcard .xclock.over{color:#ffd9d6}
-.flcard .fl-b,.flcard .fl-b.run{background:#fff;color:var(--play);box-shadow:none}
-.flcard .fl-b:hover,.flcard .fl-b.run:hover{background:rgba(255,255,255,.88);color:var(--play)}
-.flcard .fl-b.ok{background:rgba(255,255,255,.2);color:#fff}
-.flcard .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
-.flcard .timer-done{color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2995,7 +2985,7 @@ async function openFloat(){
     floating.document.title='Focus · Ejecución';
     floating.document.documentElement.dataset.theme=document.documentElement.dataset.theme;
     const st=floating.document.createElement('style');
-    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--play)} :root{padding:0}';
+    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--card)} :root{padding:0}';
     floating.document.head.append(st);
     floating.document.addEventListener('click',onClick);
     floating.addEventListener('pagehide',()=>floating=null,{once:true});
