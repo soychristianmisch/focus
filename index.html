@@ -1121,11 +1121,25 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bhead>.onotion{grid-column:1/-1;margin:2px 0 0 0}
 .work.split2 .bubble .bhead{gap:8px 24px}
 .work.split2 .bubble .bh-r .chips2{margin-top:2px}
+/* v47 */
+.pitem{position:relative}
+.pitem .pmore{margin-left:auto;flex:none;width:24px;height:24px;border-radius:7px;border:0;background:transparent;color:var(--faint);display:grid;place-items:center;cursor:pointer;padding:0;opacity:.55}
+.pitem .pmore svg{width:16px;height:16px}
+.pitem:hover .pmore,.pitem.sel .pmore{opacity:1}
+.pitem .pmore:hover{background:var(--bg3);color:var(--ink)}
+.pitem small{margin-left:0}
+.swatches{width:216px;gap:7px}
+.swatches button{width:26px;height:26px}
+.pinput input[data-pname]{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:13px;background:var(--card);color:var(--ink)}
+.pitem .nbox{margin-left:4px;padding:0;background:transparent;cursor:pointer}
+.pitem .pmore{margin-left:2px}
+.pitem small{margin-left:auto}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
 <script>'use strict';
 const KEY='focus.cloud.v1', THEME_KEY='enfoque.theme', ZONE='Europe/Madrid';
+const PALETTE_ALL=['#787774','#9f6b53','#d9730d','#cb912f','#448361','#337ea9','#9065b0','#c14c8a','#d44c47','#4a4a4a','#5b6b7a','#a89f91','#b0793b','#e07a3f','#e0a43a','#b5a642','#8aa04a','#5f9e57','#2f8f6b','#2f9e9a','#3a9cb8','#4a86d8','#4f6bd6','#6c5ce0','#8a63d2','#b05ccc','#d1559d','#e0607e','#c44f5a','#8c3b3b'];
 const PALETTE=['#787774','#9f6b53','#d9730d','#cb912f','#448361','#337ea9','#9065b0','#c14c8a','#d44c47'];
 const MAIN_AREAS=['Ministerio','Negocios','Familia & casa','Personal','Iglesia'];
 const EMOJIS=['🔥','🚀','🎯','📖','✨','🧭','🏠','🧺','🧾','🤝','🗺️','🎬','🎙️','✉️','💻','📣','📈','🧠','🛠️','🌱','💡','📅','🎨','🏃','💬','🔒','🌍','📦','🎓','🙏','❤️','⭐','🧩','📝','📚','💰','🛒','📷','🎵','⚙️'];
@@ -1274,7 +1288,7 @@ function migrate(d){
   if(!Array.isArray(d.hours)||d.hours.length!==7)d.hours=Array(7).fill(10);
   d.projects.forEach((p,i)=>{
     delete p.image;p.icon||=PROJ_ICON[p.id]||'📁';
-    if(!PALETTE.includes(p.color))p.color=PROJ_COLOR[p.id]||PALETTE[(i+4)%PALETTE.length];
+    if(!PALETTE_ALL.includes(p.color))p.color=PROJ_COLOR[p.id]||PALETTE[(i+4)%PALETTE.length];
     p.notes??='';p.description??='';p.notion??='';p.parent??='';if(p.notesHtml==null)p.notesHtml=p.notes?p.notes.split(/\n+/).map(l=>'<p>'+esc(l)+'</p>').join(''):'';
     if(!d.areas.includes(p.area))d.areas.push(p.area);
   });
@@ -1560,7 +1574,7 @@ function pjChart(st){
 }
 function projItem(p,depth){
   const st=projStats(p),sel=p.id===openProj;
-  return '<button class="pitem'+(sel?' sel':'')+'" style="--ac:'+p.color+';padding-left:'+(12+depth*18)+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span><small>'+(st.left?dur(st.left):'')+'</small></button>'+
+  return '<div class="pitem'+(sel?' sel':'')+'" role="button" tabindex="0" style="--ac:'+p.color+';padding-left:'+(12+depth*18)+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span><small>'+(st.left?dur(st.left):'')+'</small>'+(p.notion?'<button class="nbox" data-act="openNotion" data-id="'+p.id+'" title="Abrir en Notion" aria-label="Abrir en Notion">N</button>':'')+'<button class="pmore" data-act="menu" data-kind="projedit" data-id="'+p.id+'" aria-label="Editar área principal">'+ICON.more+'</button></div>'+
     kidsOf(p.id).map(k=>projItem(k,depth+1)).join('');
 }
 function projRail(){
@@ -1579,10 +1593,8 @@ function projPage(p){
   const ent=s.entries.filter(e=>e.end&&st.oids.includes(task(e.task)?.objective)).sort((x,y)=>y.start-x.start).slice(0,8);
   const hasN=!!p.notion;
   return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+
-   '<header class="pj-head"><div class="pj-crumb">'+(()=>{const path=[];let q=par,n=0;while(q&&n++<6){path.unshift(q.name);q=q.parent?project(q.parent):null;}return [p.area,...path].map(esc).join(' <i>›</i> ');})()+'</div><div class="pj-t">'+editable('proj.name',p.id,p.name,'','ptitle','Área principal sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div>'+
+   '<header class="pj-head"><div class="pj-t">'+editable('proj.name',p.id,p.name,'','ptitle','Área principal sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div>'+
    '<div class="pj-props"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'"><i class="adot" style="background:'+areaTone(p.area)+'"></i>'+esc(p.area)+'</button>'+
-   '<button class="p" data-act="menu" data-kind="parent" data-id="'+p.id+'">'+(par?'Dentro de · '+esc(par.name):'Nivel superior')+'</button>'+
-   '<button class="p" data-act="menu" data-kind="color" data-id="'+p.id+'"><span class="swatch" style="--pc:'+p.color+'"></span>Color</button>'+
    '<button class="iconbtn" data-act="menu" data-kind="projmore" data-id="'+p.id+'" aria-label="Más opciones">'+ICON.more+'</button></div>'+
    '<div class="pj-notion"><span class="nlogo">N</span><input class="notion-in" data-notion="'+p.id+'" value="'+esc(p.notion)+'" placeholder="Enlace de la nota de Notion de esta área principal" spellcheck="false">'+
    (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>'+
@@ -2291,6 +2303,7 @@ function menuFor(kind,id,anchor){
   if(kind==='deadline')return openPop(anchor,calHtml(o,(o.deadline||day()).slice(0,7)),{id,ym:(o.deadline||day()).slice(0,7)});
   if(kind==='objproj')return openPop(anchor,s.projects.map(q=>pi('<i class="adot" style="background:'+areaTone(q.area)+'"></i>'+(q.parent?'&nbsp;&nbsp;↳ ':'')+esc(q.name),'setProp','data-kind="obj" data-id="'+id+'" data-key="project" data-val="'+q.id+'"',o.project===q.id?'sel':'')).join(''));
   if(kind==='area')return openPop(anchor,s.areas.map(a=>pi('<i class="adot" style="background:'+areaTone(a)+'"></i>'+esc(a),'setProp','data-kind="proj" data-id="'+id+'" data-key="area" data-val="'+esc(a)+'"',p.area===a?'sel':'')).join('')+pl('Nueva área')+'<div class="pinput"><input data-pop-input="newarea" placeholder="Nombre y Enter" data-id="'+id+'"></div>');
+  if(kind==='projedit')return openPop(anchor,'<div class="pinput"><label>Nombre</label><input data-pname="'+id+'" value="'+esc(p.name)+'" spellcheck="false"></div>'+pl('Color')+'<div class="swatches">'+PALETTE_ALL.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>'+pi('Eliminar área principal','delProj','data-id="'+id+'"','danger'));
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objmore')return openPop(anchor,pi('Eliminar proyecto','delObj','data-id="'+id+'"','danger'));
@@ -2324,6 +2337,7 @@ function onClick(e){
     case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();$('.wcenter')&&($('.wcenter').scrollTop=0);break;
     case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
     case 'wProjBack':wProj='';render();break;
+    case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
     case 'pjFold':{pjClosed.has(id)?pjClosed.delete(id):pjClosed.add(id);document.querySelector('.pj-obj[data-fold="'+id+'"]')?.classList.toggle('closed',pjClosed.has(id));break;}
@@ -2392,7 +2406,7 @@ function onClick(e){
       const item=b.dataset.kind==='obj'?objective(id):project(id);closePop();if(!item)break;
       item[b.dataset.key]=b.dataset.val;if(b.dataset.kind==='proj'&&b.dataset.key==='area')openArea=b.dataset.val;save();break;
     }
-    case 'setColor':{const p=project(id);closePop();if(p){p.color=b.dataset.val;save();}break;}
+    case 'setColor':{const p=project(id);if(p){p.color=b.dataset.val;save();}closePop();break;}
     case 'resetObj':{const o=objective(id);if(!o)break;const w=o.window,sw=o.secWin;delete o.window;delete o.secWin;save();notify('Proyecto restablecido a la secuencia automática',()=>{if(w)o.window=w;if(sw)o.secWin=sw;save();});break;}
     case 'togglePrio':{const o=objective(id);if(!o)break;if(o.priority==='Alta'){o.priority='Normal';if(o.deadline===day())o.deadline='';}else{o.priority='Alta';o.deadline=day();}save();break;}
     case 'calNav':{if(!popCtx?.ym)break;let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
@@ -2559,6 +2573,8 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const ni=e.target.closest?.('input[data-notion]');
   if(ni){const p=project(ni.dataset.notion);if(p){let v=ni.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;p.notion=v;save();}return;}
+  const pn=e.target.closest?.('input[data-pname]');
+  if(pn){const p=project(pn.dataset.pname);const v=pn.value.trim();if(p&&v){p.name=v;save();}return;}
   const oi=e.target.closest?.('input[data-onotion]');
   if(oi){const o=objective(oi.dataset.onotion);if(o){let v=oi.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;o.notion=v;save();render();}return;}
   const ci=e.target.closest?.('input[data-cap]');
