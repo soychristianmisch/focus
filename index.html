@@ -1046,6 +1046,19 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bubble.tb .bhead{gap:8px 14px}
 .bubble.tb .btags{margin-left:0;overflow:hidden}
 .bubble.tb .btags .atag.pick{max-width:130px;overflow:hidden;text-overflow:ellipsis}
+
+/* v38 */
+.bhead{padding-left:37px}
+.bhead>.lines{left:12px}
+.xtask .xwhere{font-size:12px;color:var(--mute);margin-top:12px}
+.xtask .xtitle{font-size:20px;line-height:1.25;font-weight:650;letter-spacing:-.3px;margin:3px 0 0;text-align:left;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.xtask .est{font-size:12px;color:var(--mute);margin:3px 0 0;text-align:left}
+.xtask .xline{display:flex;align-items:center;gap:12px;margin-top:12px}
+.xtask .xclock{font-size:52px;line-height:1;font-weight:650;letter-spacing:-2px;font-variant-numeric:tabular-nums;margin-right:6px}
+.xtask .xclock.over{color:var(--red)}
+.fl-b.big{width:56px;height:56px;box-shadow:none}
+.fl-b.big svg{width:24px;height:24px}
+.xtask .retake{margin-top:12px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1402,8 +1415,7 @@ function bubble(o,today=false,embed=false){
       (today?'':'<button class="addrow" data-act="addTask" data-obj="'+esc(oid)+'" data-sec="'+esc(sec)+'" data-secdrop="1">＋ Nueva tarea</button>');
     return (sec&&!today?insSection(o.id,sec)+'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
-  if(today)body+='<button class="addrow" data-act="addTask" data-obj="'+esc(oid)+'" data-sec="'+esc(lastSec)+'" data-today="1">＋ Nueva tarea</button>';
-  else body+=(sections.length?insSection(o.id,''):'')+'<button class="addrow" data-act="addSection" data-id="'+o.id+'">＋ Nueva sección</button>';
+  if(!today)body+=(sections.length?insSection(o.id,''):'')+'<button class="addrow" data-act="addSection" data-id="'+o.id+'">＋ Nueva sección</button>';
   if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?'<div class="tasks" data-mode="done">'+done.map(t=>taskRow(t)).join('')+'</div>':'');
   if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
@@ -1529,7 +1541,7 @@ function viewProyectos(){
 /* ---------- Trabajo: proyectos y hoy en una sola vista ---------- */
 function dayOrder(){
   const order=[];
-  for(const t of queue(selectedDate)){const k=t.objective||'';if(!order.includes(k))order.push(k);}
+  for(const t of queue(selectedDate)){if(t.done)continue;const k=t.objective||'';if(!order.includes(k))order.push(k);}
   for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
   return order;
 }
@@ -1554,13 +1566,13 @@ function railItem(k,sel){
   const id=k===''?DAILY.id:k;
   if(k===''){
     const n=wHoy?queue(selectedDate).filter(t=>!t.objective&&!t.done).length:s.tasks.filter(t=>!t.objective&&!t.done).length;
-    return '<div class="ritem daily" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'" aria-current="'+sel+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm"><small>'+n+(wHoy?' para hoy':' pendientes')+'</small></div></div></div>';
+    return '<div class="ritem daily" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'" aria-current="'+sel+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm"><small>'+(wHoy?'Hoy: '+n+(n===1?' tarea':' tareas')+' · '+hrs(sumMin(queue(selectedDate).filter(t=>!t.objective&&!t.done),minutesLeft)):n+' pendientes')+'</small></div></div></div>';
   }
   const o=objective(k),p=project(o.project),area=p?.area||'',pr=progressOf(o);
-  const left=sumMin(s.tasks.filter(t=>t.objective===k&&!t.done),minutesLeft),td=sumMin(queue(selectedDate).filter(t=>t.objective===k&&!t.done));
+  const left=sumMin(s.tasks.filter(t=>t.objective===k&&!t.done),minutesLeft),nTd=queue(selectedDate).filter(t=>t.objective===k&&!t.done).length,td=sumMin(queue(selectedDate).filter(t=>t.objective===k&&!t.done));
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem" aria-current="'+sel+'">'+stIcon(o,'span','',true)+
     '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(wHoy&&p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(o.deadline?(()=>{const x=dlInfo(o.deadline);return '<span class="dchip'+x.cls+'">'+esc(x.txt)+'</span>';})():'')+(p&&rootProject(p)===p?'':'<small>'+esc(p?.name??'')+'</small>')+'</div>'+
-    '<div class="rb">'+pr.bar+'<small class="num">'+(wHoy?'hoy '+hrs(td):hrs(left))+'</small></div></div></div>';
+    '<div class="rb">'+pr.bar+'<small class="num">'+(wHoy?'Hoy: '+nTd+(nTd===1?' tarea':' tareas')+' · '+hrs(td):hrs(left))+'</small></div></div></div>';
 }
 function workCenter(ids){
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
@@ -1625,21 +1637,22 @@ function execPanel(){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xbubble compact" style="--pc:'+color+'"><div class="xhead"><span>'+(t?esc(p.name)+(o?' · '+esc(o.name):''):'Sin tarea en curso')+'</span><span>'+(running?'En marcha':t?.done?'Completada':'Preparada')+'</span></div>'+
-    '<div class="xbody">'+(t?'<div class="xrow"><div class="xl"><h2>'+esc(t.name)+'</h2>'+clockMarkup(t)+'<p class="est">Estimación · '+Math.round(t.minutes)+' min</p></div><div class="xr">'+
+  const main='<section class="xcard xtask" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+    (t?'<div class="xwhere">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</div><h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">Estimación · '+Math.round(t.minutes)+' min</p>'+
+      '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
-       '<button type="button" class="play-round'+(running?' is-running':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
-       '<button type="button" class="finish-link" data-act="finish" data-id="'+esc(t.id)+'" title="Completar (C)">'+ICON.check+' Completar</button>')+'</div></div>':
-      '<p class="empty" style="padding:14px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
-    (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</div></section>';
+       '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
+       '<button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar (C)">'+ICON.check+'</button>')+'</div>':
+      '<p class="empty" style="padding:6px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
+    (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</section>';
   const hh=m=>new Date(m).toLocaleTimeString('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
   let ritmo;
   if(!st.pending)ritmo='<b class="good">Todo lo previsto está hecho.</b>';
   else if(!st.isToday)ritmo='Pendiente '+dur(st.pending)+' de '+dur(st.capm)+' de capacidad.';
   else ritmo=(st.gap>=st.pending*.25?'<b class="good">Vas bien.</b>':st.gap>=0?'<b class="warnc">Justo de tiempo.</b>':'<b class="badc">No cabe todo hoy.</b>')+' Hasta las '+esc(s.dayEnd||'20:00')+' quedan '+dur(st.avail)+'; pendiente '+dur(st.pending)+(st.gap>=0?' ('+dur(st.gap)+' de margen).':' (faltan '+dur(-st.gap)+').')+(st.isToday?' Si no paras, terminarías hacia las '+hh(st.finishAt)+'.':'');
-  const freeV=st.isToday?st.gap:st.free;
-  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Pendiente</small><b class="num">'+dur(st.pending)+'</b></div><div><small>'+(freeV<0?'Falta':'Libre')+(st.isToday?' hasta las '+esc(s.dayEnd||'20:00'):'')+'</small><b class="num" style="'+(freeV<0?'color:var(--red)':'')+'">'+dur(Math.abs(freeV))+'</b></div></div>'+
-    '<div class="capbar'+(freeV<0?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
+  const freeV=st.isToday?st.avail:st.free,pendOver=st.isToday?st.pending>st.avail+.5:st.free<0;
+  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Pendiente</small><b class="num" style="'+(pendOver?'color:var(--red)':'')+'">'+dur(st.pending)+'</b></div><div><small>'+(st.isToday?'Tiempo restante hoy':(st.free<0?'Sobre capacidad':'Libre'))+'</small><b class="num">'+dur(Math.abs(freeV))+'</b></div></div>'+
+    '<div class="capbar'+(pendOver?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
     '<p class="ritmo">'+ritmo+'</p>'+
     '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span>'+(st.ratio!=null?'<span>Ritmo real<b class="num">'+Math.round(st.ratio)+' %</b><small>de lo estimado</small></span>':'')+'</div></section>';
   const objc='<section class="xcard"><h3>Avance por proyecto</h3>'+(st.objs.length?st.objs.map(g=>{
