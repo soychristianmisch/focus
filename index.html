@@ -1287,6 +1287,14 @@ button.gl.sti:hover{filter:brightness(.96)}
 .pgap button:hover:after{color:var(--ink);border-color:var(--mute)}
 .chipi.late{border:0;font-family:inherit;cursor:pointer}
 .chipi.late:hover{background:color-mix(in srgb,var(--red) 20%,var(--card))}
+
+/* v64 */
+.inbl{max-height:380px;overflow-y:auto;min-width:240px}
+.inbl .pi{display:flex;align-items:center;gap:8px}
+.inbl .ptx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inbl .psub{color:var(--faint);font-size:11px;white-space:nowrap}
+.inbl .pl{font-weight:600}
+.inbl{min-width:400px;max-width:90vw}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2271,7 +2279,7 @@ function viewInbox(){
   return '<div class="inbox"><h1>Inbox</h1><p class="muted">Captura rápido y asigna después. Enter guarda, Mayús+Enter añade una línea, o dicta con el micrófono.</p>'+
     '<div class="capture"><textarea id="capin" rows="1" placeholder="Escribe o dicta una idea…" aria-label="Nueva idea"></textarea><button class="iconbtn mic" id="mic" data-act="mic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><button class="btn solid" data-act="capture">Guardar</button></div>'+
     s.inbox.map(i=>'<div class="icard"><div class="irow"><span class="tx" contenteditable="plaintext-only" spellcheck="false" data-edit="inbox.text" data-id="'+i.id+'">'+esc(i.text)+'</span><button class="iconbtn x" data-act="delInbox" data-id="'+i.id+'" aria-label="Borrar">✕</button></div>'+
-    '<div class="iact"><button class="atag pick" style="--ac:#9a9a94" data-act="inboxArea" data-id="'+i.id+'" title="Elegir área principal y crear la tarea">Área principal'+chev+'</button><span class="isp"></span>'+
+    '<div class="iact"><button class="atag pick" style="--ac:#9a9a94" data-act="inboxArea" data-id="'+i.id+'" title="Elegir proyecto y crear la tarea">Proyecto'+chev+'</button><span class="isp"></span>'+
     '<button class="ilink" data-act="inboxSynth" data-id="'+i.id+'" title="Quita relleno y deja la idea clave">Sintetizar</button><button class="ilink" data-act="inboxSimp" data-id="'+i.id+'" title="Limpia muletillas y ordena el texto">Simplificar</button><button class="ilink" data-act="inboxSplit" data-id="'+i.id+'" title="Separa varias ideas en varias tareas">Dividir</button>'+
     (i.orig?'<button class="ilink undo" data-act="inboxUndo" data-id="'+i.id+'">Deshacer</button>':'')+'</div></div>').join('')+
     (s.inbox.length?'':'<p class="empty">La bandeja está vacía.</p>')+'</div>';
@@ -2654,17 +2662,22 @@ function onClick(e){
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
     case 'mic':toggleMic();break;
-    case 'inboxArea':openPop(b,'<div class="poplist">'+s.projects.filter(q=>!q.parent).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'inboxTo','data-id="'+id+'" data-proj="'+q.id+'"')).join('')+pi('<i class="adot" style="background:'+DAILY.color+'"></i>Día a día','inboxTo','data-id="'+id+'" data-proj="__daily"')+'</div>',{});break;
+    case 'inboxArea':{
+      const ORD=['Ministerio','Iglesia','Negocios','Personal','Familia & casa'];
+      const rank=a=>{const k=ORD.indexOf(a);return k<0?ORD.length:k;};
+      const open=s.objectives.filter(o=>o.status!=='Completado'&&o.id!=='__daily');
+      const groups=new Map();
+      open.forEach(o=>{const p=project(o.project),r=p&&p.id?rootProject(p):null,a=r?.area||'Sin área';if(!groups.has(a))groups.set(a,[]);groups.get(a).push({o,p});});
+      const keys=[...groups.keys()].sort((x,y)=>rank(x)-rank(y));
+      const mk=(o,p)=>pi('<i class="adot" style="background:'+(p?.color||'#b4b4ae')+'"></i><span class="ptx">'+esc(o.name)+'</span>'+(p?.name?'<small class="psub">'+esc(p.name)+'</small>':''),'inboxTo','data-id="'+id+'" data-obj="'+o.id+'"');
+      const html=pi('<i class="adot" style="background:'+DAILY.color+'"></i><span class="ptx">Día a día</span>','inboxTo','data-id="'+id+'" data-obj="__daily"')+
+        keys.map(a=>'<div class="pl" style="color:'+areaTone(a)+'">'+esc(a)+'</div>'+groups.get(a).sort((x,y)=>(x.p?.name||'').localeCompare(y.p?.name||'')).map(x=>mk(x.o,x.p)).join('')).join('');
+      openPop(b,'<div class="poplist inbl">'+html+'</div>',{});break;
+    }
     case 'inboxTo':{
       const idea=s.inbox.find(x=>x.id===id);closePop();if(!idea)break;
-      const pid=b.dataset.proj;let oid='',label='';
-      if(pid==='__daily'){oid='__daily';label='Día a día';}
-      else{
-        const q=project(pid);let o=s.objectives.find(x=>x.project===pid&&x.status!=='Completado')||s.objectives.find(x=>x.project===pid);
-        if(!o){o={id:uid(),project:pid,name:'Tareas',icon:'🎯',status:'Esperando',sections:[],sched:false};s.objectives.push(o);}
-        oid=o.id;label=q?.name||'';
-      }
-      s.tasks.push(mkTask(idea.text,10,oid,''));s.inbox=s.inbox.filter(x=>x.id!==id);save();notify('Tarea creada en '+label);break;
+      const oid=b.dataset.obj,o=objective(oid);
+      s.tasks.push(mkTask(idea.text,10,oid,''));s.inbox=s.inbox.filter(x=>x.id!==id);save();notify('Tarea creada en '+(o?.name||'Día a día'));break;
     }
     case 'inboxSimp':case 'inboxSynth':{
       const i=s.inbox.find(x=>x.id===id);if(!i)break;
