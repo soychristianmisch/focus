@@ -1266,6 +1266,17 @@ button.gl.sti:hover{filter:brightness(.96)}
 .chipi.mv:hover{filter:brightness(1.08)}
 .bh-r .chips2.wrapc,.bubble.tb .bh-r .chips2.wrapc{flex-wrap:wrap}
 .bubble.tb .bh-r .chipi.mv,.bubble.tb .bh-r .chipi.late{flex:none;overflow:visible}
+
+/* v62 inbox */
+.capture{align-items:flex-end}
+.capture textarea{flex:1;border:0;background:transparent;outline:none;font:inherit;font-size:15px;line-height:1.45;resize:none;min-width:0;padding:6px 0;max-height:360px;overflow-y:auto}
+.icard{border-bottom:1px solid var(--line);padding:6px 0 10px}
+.icard .irow{border-bottom:0;padding-bottom:2px}
+.iact{display:flex;align-items:center;gap:12px;padding:2px 6px;flex-wrap:wrap}
+.iact .isp{flex:1}
+.ilink{border:0;background:none;color:var(--faint);font-size:12px;cursor:pointer;padding:2px 0}
+.ilink:hover{color:var(--ink);text-decoration:underline}
+.ilink.undo{color:var(--red)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2246,9 +2257,13 @@ function viewAnalytics(){
 
 /* ---------- inbox ---------- */
 function viewInbox(){
-  return '<div class="inbox"><h1>Inbox</h1><p class="muted">Captura rápido y asigna después. Pulsa Enter para guardar, o dicta con el micrófono.</p>'+
-    '<div class="capture"><input id="capin" placeholder="Escribe o dicta una idea…" aria-label="Nueva idea"><button class="iconbtn mic" id="mic" data-act="mic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><button class="btn solid" data-act="capture">Guardar</button></div>'+
-    s.inbox.map(i=>'<div class="irow"><span class="tx" contenteditable="plaintext-only" spellcheck="false" data-edit="inbox.text" data-id="'+i.id+'">'+esc(i.text)+'</span><button class="btn line" data-act="convert" data-id="'+i.id+'">Convertir en tarea</button><button class="iconbtn x" data-act="delInbox" data-id="'+i.id+'" aria-label="Borrar">✕</button></div>').join('')+
+  const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
+  return '<div class="inbox"><h1>Inbox</h1><p class="muted">Captura rápido y asigna después. Enter guarda, Mayús+Enter añade una línea, o dicta con el micrófono.</p>'+
+    '<div class="capture"><textarea id="capin" rows="1" placeholder="Escribe o dicta una idea…" aria-label="Nueva idea"></textarea><button class="iconbtn mic" id="mic" data-act="mic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><button class="btn solid" data-act="capture">Guardar</button></div>'+
+    s.inbox.map(i=>'<div class="icard"><div class="irow"><span class="tx" contenteditable="plaintext-only" spellcheck="false" data-edit="inbox.text" data-id="'+i.id+'">'+esc(i.text)+'</span><button class="iconbtn x" data-act="delInbox" data-id="'+i.id+'" aria-label="Borrar">✕</button></div>'+
+    '<div class="iact"><button class="atag pick" style="--ac:#9a9a94" data-act="inboxArea" data-id="'+i.id+'" title="Elegir área principal y crear la tarea">Área principal'+chev+'</button><span class="isp"></span>'+
+    '<button class="ilink" data-act="inboxSynth" data-id="'+i.id+'" title="Quita relleno y deja la idea clave">Sintetizar</button><button class="ilink" data-act="inboxSimp" data-id="'+i.id+'" title="Limpia muletillas y ordena el texto">Simplificar</button><button class="ilink" data-act="inboxSplit" data-id="'+i.id+'" title="Separa varias ideas en varias tareas">Dividir</button>'+
+    (i.orig?'<button class="ilink undo" data-act="inboxUndo" data-id="'+i.id+'">Deshacer</button>':'')+'</div></div>').join('')+
     (s.inbox.length?'':'<p class="empty">La bandeja está vacía.</p>')+'</div>';
 }
 
@@ -2422,21 +2437,21 @@ const CH={l:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 function calHtml(o,ym){
   const first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
   while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===o.deadline?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
-  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+cap(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
+  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+capz(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
     '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(o.deadline?'<button class="rm" data-act="clearDeadline" data-id="'+o.id+'">Quitar fecha</button>':'<span></span>')+'</div></div>';
 }
 function calHtmlD(ym){
   const first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
   while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===selectedDate?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
-  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+cap(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
+  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+capz(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
     '<div class="cfoot"><button data-act="calToday">Ir a hoy</button><span></span></div></div>';
 }
 function calHtmlT(t,ym){
   const w=taskWhen(t),first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
   while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===w.d?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
-  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+cap(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
+  return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+capz(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
     '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(w.k!=='none'?'<button class="rm" data-act="clearTaskDate" data-id="'+t.id+'">Borrar fecha</button>':'<span></span>')+'</div></div>';
 }
@@ -2629,10 +2644,29 @@ function onClick(e){
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
     case 'mic':toggleMic();break;
-    case 'convert':openPop(b,'<div class="poplist">'+objectiveList('convertTo').replace(/data-obj=/g,'data-id="'+id+'" data-obj=')+'</div>',{});break;
-    case 'convertTo':{
+    case 'inboxArea':openPop(b,'<div class="poplist">'+s.projects.filter(q=>!q.parent).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'inboxTo','data-id="'+id+'" data-proj="'+q.id+'"')).join('')+pi('<i class="adot" style="background:'+DAILY.color+'"></i>Día a día','inboxTo','data-id="'+id+'" data-proj="__daily"')+'</div>',{});break;
+    case 'inboxTo':{
       const idea=s.inbox.find(x=>x.id===id);closePop();if(!idea)break;
-      const nt=mkTask(idea.text,10,b.dataset.obj??'','');s.tasks.push(nt);s.inbox=s.inbox.filter(x=>x.id!==id);save();notify('Tarea creada');break;
+      const pid=b.dataset.proj;let oid='',label='';
+      if(pid==='__daily'){oid='__daily';label='Día a día';}
+      else{
+        const q=project(pid);let o=s.objectives.find(x=>x.project===pid&&x.status!=='Completado')||s.objectives.find(x=>x.project===pid);
+        if(!o){o={id:uid(),project:pid,name:'Tareas',icon:'🎯',status:'Esperando',sections:[],sched:false};s.objectives.push(o);}
+        oid=o.id;label=q?.name||'';
+      }
+      s.tasks.push(mkTask(idea.text,10,oid,''));s.inbox=s.inbox.filter(x=>x.id!==id);save();notify('Tarea creada en '+label);break;
+    }
+    case 'inboxSimp':case 'inboxSynth':{
+      const i=s.inbox.find(x=>x.id===id);if(!i)break;
+      const r=act==='inboxSimp'?simplifyText(i.text):synthText(i.text);
+      if(r&&r!==i.text){i.orig??=i.text;i.text=r;save();}else notify('Ya está bastante claro.');break;
+    }
+    case 'inboxUndo':{const i=s.inbox.find(x=>x.id===id);if(i?.orig){i.text=i.orig;delete i.orig;save();}break;}
+    case 'inboxSplit':{
+      const k=s.inbox.findIndex(x=>x.id===id);if(k<0)break;
+      const parts=splitIdeas(s.inbox[k].text);
+      if(parts.length<2){notify('No veo varias ideas que separar.');break;}
+      s.inbox.splice(k,1,...parts.map(t=>({id:uid(),text:t})));save();notify(parts.length+' ideas');break;
     }
     case 'delInbox':s.inbox=s.inbox.filter(x=>x.id!==id);save();break;
     case 'settings':{
@@ -2682,6 +2716,25 @@ function addInbox(){
   const i=$('#capin');const v=i?.value.trim();if(!v)return;
   s.inbox.unshift({id:uid(),text:v});save();$('#capin')?.focus();
 }
+const FILL=/\b(bueno|pues|o sea|a ver|es que|la verdad|básicamente|básicamente|simplemente|igual|digamos|tipo|vale|oye|mira|eh+|mmm+|um+)\b[,]?\s*/gi;
+const LEAD=/^(tengo que|tendría que|tengo que acordarme de|acordarme de|recordar|recuérdame|recuerda|necesito|me gustaría|quiero|hay que|debería|habría que)\s+/i;
+const capz=t=>t.charAt(0).toUpperCase()+t.slice(1);
+function simplifyText(t){
+  let r=t.replace(/\s+/g,' ').trim().replace(FILL,'').replace(/\s+([,.;])/g,'$1').replace(/^[,.;\s]+/,'').trim();
+  return capz(r);
+}
+function synthText(t){
+  let r=simplifyText(t).replace(LEAD,'');
+  const first=r.split(/(?<=[.!?])\s+|;\s+/)[0];
+  if(first.split(' ').length>=6)r=first;
+  const w=r.split(' ');if(w.length>14){const c=r.split(',')[0];r=c.split(' ').length>=5?c:w.slice(0,14).join(' ')+'…';}
+  return capz(r.replace(/[.]$/,''));
+}
+function splitIdeas(t){
+  return t.split(/\n+|(?<=[.!?])\s+|;\s*|,?\s+(?:y luego|y después|y también|además|también tengo que|and then|also)\s+/i).map(x=>capz(x.replace(/^[,.\s]+|[.\s]+$/g,'').trim())).filter(x=>x.length>2);
+}
+function growCap(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,360)+'px';}
+document.addEventListener('input',e=>{if(e.target.id==='capin')growCap(e.target);});
 let rec=null;
 function toggleMic(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -2689,8 +2742,8 @@ function toggleMic(){
   if(rec){rec.stop();return;}
   rec=new SR();rec.lang='es-ES';rec.interimResults=true;rec.continuous=true;
   const input=$('#capin'),base=input.value?input.value+' ':'';
-  rec.onresult=ev=>{input.value=base+[...ev.results].map(r=>r[0].transcript).join(' ');};
-  rec.onend=()=>{rec=null;$('#mic')?.classList.remove('on');};
+  rec.onresult=ev=>{input.value=base+[...ev.results].map(r=>r[0].transcript).join(' ');growCap(input);};
+  rec.onend=()=>{rec=null;$('#mic')?.classList.remove('on');if($('#capin')?.value.trim())addInbox();};
   rec.onerror=()=>{notify('No se pudo usar el micrófono.');};
   rec.start();$('#mic').classList.add('on');
 }
@@ -2707,7 +2760,7 @@ document.addEventListener('keydown',e=>{
     return;
   }
   const el=e.target;
-  if(el.id==='capin'&&e.key==='Enter'){e.preventDefault();addInbox();return;}
+  if(el.id==='capin'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();addInbox();return;}
   if(el.dataset?.noteTask&&e.key==='Enter'){
     e.preventDefault();const v=el.value.trim();if(!v)return;
     s.notes.push({task:el.dataset.noteTask,at:Date.now(),text:v});el.value='';save(false);notify('Nota guardada');return;
