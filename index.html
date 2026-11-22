@@ -1146,6 +1146,20 @@ button.gl.sti:hover{filter:brightness(.96)}
 .wmode.hoy[aria-pressed=true]{background:var(--play);color:#fff}
 .work .hoyright{background:color-mix(in srgb,var(--play) 13%,var(--bg))}
 .work.hoyon .wcenter,.work.split2 .wcenter{border-right:0}
+/* v49 */
+.wmodes{gap:6px}
+.wmode,.wmode:hover{border:1px solid var(--line);background:transparent;border-radius:999px;padding:6px 10px}
+.wmode:hover{background:var(--bg3)}
+.wmode[aria-pressed=true]{background:transparent;border-color:var(--ink);color:var(--ink)}
+.wmode.hoy,.wmode.hoy:hover{background:transparent;color:var(--play);border-color:color-mix(in srgb,var(--play) 40%,var(--card))}
+.wmode.hoy:hover{background:color-mix(in srgb,var(--play) 8%,var(--card))}
+.wmode.hoy[aria-pressed=true]{background:transparent;color:var(--play);border-color:var(--play);border-width:1.5px;padding:5.5px 9.5px}
+.work .hoyright{background:color-mix(in srgb,var(--play) 6.5%,var(--bg))}
+.wmodes{gap:5px}
+.wmode{flex:0 1 auto;gap:5px;font-size:12.5px}
+.wmode,.wmode:hover{padding:6px 11px}
+.wmode.hoy[aria-pressed=true]{padding:5.5px 10.5px}
+.wmode span{overflow:visible;text-overflow:clip}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1687,8 +1701,8 @@ function viewTrabajo(){
   const SL={Activo:'Activos',Pausado:'Pausados',Esperando:'Esperando',Completado:'Completados'};
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
-  const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+label+'">'+icon+'<span>'+label+'</span></button>';
-  const top='<div class="wmodes">'+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Completados')+'</div>';
+  const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
+  const top='<div class="wmodes">'+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+top+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
     return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
