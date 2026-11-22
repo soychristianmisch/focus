@@ -1253,6 +1253,19 @@ button.gl.sti:hover{filter:brightness(.96)}
 .flcard h3{margin:0 0 8px}
 .flcard .xtitle{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:20px;-webkit-line-clamp:unset}
 .flcard .xline{margin-top:8px}
+/* v61 */
+.wc-in>.colhead{align-items:flex-end}
+.colhead>div:first-child{flex:1;min-width:0}
+.colhead .dnav{display:flex;align-items:center;gap:2px;margin-left:auto;flex:none}
+.pgap{height:22px;margin:-4px 0;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.pgap button{width:24px;height:24px;border-radius:50%;border:1.5px dashed var(--line);background:var(--bg);color:var(--faint);font-size:16px;line-height:1;cursor:pointer;opacity:0;transition:opacity .1s;padding:0}
+.pgap:hover button,.pgap button:focus-visible{opacity:1}
+.pgap button:hover{border-color:var(--mute);color:var(--ink)}
+.chipi.late{background:color-mix(in srgb,var(--red) 11%,var(--card));color:var(--red);font-weight:600}
+.chipi.mv{background:var(--red);color:#fff;border:0;font-weight:600;cursor:pointer;font-family:inherit}
+.chipi.mv:hover{filter:brightness(1.08)}
+.bh-r .chips2.wrapc,.bubble.tb .bh-r .chips2.wrapc{flex-wrap:wrap}
+.bubble.tb .bh-r .chipi.mv,.bubble.tb .bh-r .chipi.late{flex:none;overflow:visible}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1444,7 +1457,8 @@ const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set(), fresh=new Set()
 let tlScroll=null;
 
 const $=(q,r=document)=>r.querySelector(q), $$=(q,r=document)=>[...r.querySelectorAll(q)];
-const project=id=>id===DAILY.id?DAILY:s.projects.find(p=>p.id===id);
+const NOPROJ={id:'',name:'Sin área principal',area:'',color:'#b4b4ae',icon:'📁',notes:'',notesHtml:'',description:'',notion:'',parent:''};
+const project=id=>id===DAILY.id?DAILY:id===''?NOPROJ:s.projects.find(p=>p.id===id);
 const objective=id=>id===DAILY.id?DAILY:s.objectives.find(o=>o.id===id);
 const task=id=>s.tasks.find(t=>t.id===id);
 const projectOf=t=>t?.objective?project(objective(t.objective)?.project):DAILY;
@@ -1622,8 +1636,9 @@ function bubble(o,today=false,embed=false){
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:areaTone(area);
-  const todayAll=inDay,todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
-  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>';
+  const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
+  const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
+  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>'+(lateT.length?'<span class="chipi late" title="Pendiente de días anteriores">Ayer '+hrs(sumMin(lateT,minutesLeft))+'</span><button class="chipi mv" data-act="moveToday" data-id="'+esc(o.id)+'" title="Mover las tareas atrasadas a hoy">Mover a Hoy</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
@@ -1631,7 +1646,7 @@ function bubble(o,today=false,embed=false){
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
   return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
-    '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
+    '<div class="bh-r">'+prog+'<div class="chips2'+(lateT.length?' wrapc':'')+'">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
 /* ---------- proyectos por áreas ---------- */
@@ -1776,7 +1791,7 @@ function railItem(k,sel){
 function dateHead(){
   const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
   return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
-    '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>';
+    '<div class="dnav"><button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div></div>';
 }
 function workCenter(ids){
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
@@ -1786,7 +1801,8 @@ function workCenter(ids){
       (ids.length?'':'<p class="empty">Nada para hoy con este filtro. Quita el filtro de área, usa «＋ Añadir» o desactiva «Hoy» para elegir tareas.</p>')+
       '</div>';
   }
-  if(wArea!=='__daily')return '<div class="wc-in">'+dateHead()+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
+  if(wArea!=='__daily'){const gap=k=>(wStat==='Todos'&&k!=='')?'<div class="pgap"><button data-act="addObjAt" data-before="'+esc(k)+'" title="Nuevo proyecto aquí" aria-label="Nuevo proyecto aquí">＋</button></div>':'';
+  return '<div class="wc-in">'+dateHead()+(ids.length?'<div class="bubbles one">'+ids.map(k=>gap(k)+bubble(k===''?DAILY:objective(k))).join('')+gap('end')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';}
   const cur=ids.includes(wObj)?wObj:ids[0];
   return '<div class="wc-in">'+(cur===undefined?'<p class="empty">No hay proyectos con este filtro.</p>':'<div class="bubbles one">'+bubble(cur===''||cur===DAILY.id?DAILY:objective(cur))+'</div>')+'</div>';
 }
@@ -2530,6 +2546,16 @@ function onClick(e){
       const area=s.areas.includes(id)?id:s.areas[0];
       const p={id:uid(),name:'Nueva área principal',area,color:PALETTE[(s.projects.length+4)%PALETTE.length],icon:'📁',notes:'',notesHtml:'',description:'',notion:'',parent:''};
       s.projects.push(p);openArea=area;openProj=p.id;openObj='';projTab='Nota maestra';focusAfter={kind:'proj.name',id:p.id,select:true};save();break;
+    }
+    case 'addObjAt':{
+      const o={id:uid(),project:'',name:'Nuevo proyecto',icon:'🎯',status:'Esperando',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
+      s.objectives.push(o);const ref=objective(b.dataset.before);if(ref&&b.dataset.before!=='end')mv(s.objectives,o,ref,false);
+      focusAfter={kind:'obj.name',id:o.id,select:true};save();toBubble(o.id,120);break;
+    }
+    case 'moveToday':{
+      const td=day(),oid=nobj(id);
+      s.tasks.filter(t=>t.objective===oid&&!t.done&&t.days.length&&!t.days.includes(td)&&t.days.some(x=>x<td)).forEach(t=>{t.days=[...t.days.filter(x=>x>=td),td].sort();(s.order[td]??=[]);if(!s.order[td].includes(t.id))s.order[td].push(t.id);});
+      save();break;
     }
     case 'toggleObj':collapsed.has(id)?collapsed.delete(id):collapsed.add(id);render();break;
     case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);render();break;
