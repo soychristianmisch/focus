@@ -1709,10 +1709,10 @@ function bubble(o,today=false,embed=false){
   const todayMin=sumMin(inDay.filter(t=>!t.done),minutesLeft),leftMin=sumMin(openAll,minutesLeft),totalMin=sumMin(all);
   let body='';
   let propsH='';
-  if(!daily){
+  {
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
-    propsH='<span class="oprops inl">'+
-      '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
+    propsH='<span class="oprops inl">'+(daily?'':
+      '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>')+
       '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
   }
   let lastSec='',rendered=0;
@@ -1746,7 +1746,7 @@ function bubble(o,today=false,embed=false){
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
-  const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
+  const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
   return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Proyecto sin nombre')+editable('obj.desc',o.id,o.desc||'','title="'+esc(o.desc||'')+'"','odesc','Añade una descripción…')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2'+(lateT.length?' wrapc':'')+'">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
