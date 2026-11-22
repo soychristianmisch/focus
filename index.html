@@ -986,6 +986,19 @@ button.gl.sti:hover{filter:brightness(.96)}
 .btags .oprops.inl button.p:hover{background:var(--bg3);color:var(--ink)}
 .btags .atag.pick{display:inline-flex;align-items:center;gap:4px}
 .btags .atag.pick svg{width:11px;height:11px}
+
+/* v35 cabecera en una línea */
+.bhead{grid-template-columns:minmax(0,3fr) minmax(0,2fr) auto}
+.btags{flex-wrap:nowrap;gap:2px;white-space:nowrap}
+.btags .pnote,.btags .oprops.inl .p{font-size:12px;font-weight:500;color:var(--mute);background:transparent;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;line-height:1.4}
+.btags .oprops.inl{flex-wrap:nowrap;gap:2px}
+.btags .oprops.inl button.p:hover,.btags .pnote:hover{background:var(--bg3);color:var(--ink)}
+.btags .pnote.ext svg{width:14px;height:14px}
+.btags .oprops.inl .bi{width:13px;height:13px;opacity:.8;margin:0}
+.btags .oprops.inl .bi.chev{width:12px;height:12px;margin-left:0}
+.bh-r .bprog{gap:8px}
+.bh-r .chips2{gap:4px}
+.bh-r .chipi{font-size:11px;padding:2px 7px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1322,8 +1335,8 @@ function bubble(o,today=false,embed=false){
   if(!daily&&!today){
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     propsH='<span class="oprops inl">'+
-      '<button class="p" data-act="menu" data-kind="deadline" data-id="'+o.id+'">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'<b>Deadline</b>'+(o.deadline?esc(fmt({day:'numeric',month:'short'},dateAt(o.deadline))):'—')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
-      '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'<b>Tiempo total</b>'+hrs(totalMin)+'</span></span>';
+      '<button class="p" data-act="menu" data-kind="deadline" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(fmt({day:'numeric',month:'short'},dateAt(o.deadline))):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>'+
+      '<span class="p" title="Suma de las estimaciones de todas las tareas del proyecto, hechas y pendientes">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Total: '+hrs(totalMin)+'</span></span>';
   }
   if(embed)body+='<button class="viewall top" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   let lastSec='';
@@ -1356,7 +1369,7 @@ function bubble(o,today=false,embed=false){
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
-  const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal">Nota principal ›</button>':'')+propsH+'</div>';
+  const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
   return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre')+prio(o))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
@@ -1486,6 +1499,7 @@ function wList(){
   if(wHoy)return ['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];
   if(wArea==='__daily')return [''];
   const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
+  if(wArea==='Todas'&&wStat==='Todos')ids.unshift('');
   return ids;
 }
 function railItem(k,sel){
