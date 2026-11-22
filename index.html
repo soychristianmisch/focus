@@ -962,6 +962,23 @@ button.gl.sti:hover{filter:brightness(.96)}
 .lcard .lmsg{min-height:18px;font-size:12.5px;color:var(--mute)}
 @media(max-width:700px){.cloud span{display:none}}
 .lcard .btn.solid{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+
+/* v33 filtros y ventana flotante */
+.fpill.nf{background:var(--card);border-color:var(--line);color:var(--mute);gap:6px}
+.fpill.nf:hover{background:var(--bg3);border-color:var(--line)}
+.fpill.nf[aria-pressed=true]{background:var(--card);border:1.5px solid var(--ink);color:var(--ink);font-weight:650;padding:4.5px 12.5px}
+.fpill.nf svg,.hoytog svg{width:15px;height:15px;flex:none}
+.fl{height:100vh;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--card);color:var(--ink)}
+.fl-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.fl-t b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-t small{font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-time{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.4px;color:var(--ink)}
+.fl-time.over{color:var(--red)}
+.fl-b{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;border:0;cursor:pointer;color:#fff;background:var(--play)}
+.fl-b svg{width:15px;height:15px}
+.fl-b.run{background:var(--pause);color:var(--pause-ink)}
+.fl-b.ok{background:var(--bg3);color:var(--mute)}
+.fl-b.ok:hover{background:color-mix(in srgb,var(--play) 18%,var(--card));color:var(--play)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1143,7 +1160,7 @@ function save(refresh=true){
 }
 
 /* ---------- estado de interfaz ---------- */
-let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Todos';
+let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Activo';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
 const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set(), fresh=new Set();
@@ -1461,7 +1478,6 @@ function wList(){
   if(wHoy)return ['',...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k)))];
   if(wArea==='__daily')return [''];
   const ids=railGroups(s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o))).flatMap(g=>g.items.map(o=>o.id));
-  if(wArea==='Todas')ids.unshift('');
   return ids;
 }
 function railItem(k,sel){
@@ -1495,8 +1511,13 @@ function viewTrabajo(){
   const nObj=a=>a==='Todas'?s.objectives.filter(stOk).length:s.objectives.filter(o=>project(o.project)?.area===a&&stOk(o)).length;
   const nSt=st=>st==='Todos'?s.objectives.filter(o=>o.status!=='Completado').length:s.objectives.filter(o=>o.status===st).length;
   const nHoy=dayOrder().filter(k=>k).length;
-  const top='<div class="wtop"><button class="hoytog" data-act="wToggleHoy" aria-pressed="'+wHoy+'">Hoy<b class="cnt">'+nHoy+'</b></button><span class="vsep"></span>'+
-    ['Todas','__daily',...s.areas].map(a=>a==='__daily'?DAILYPILL():'<button class="fpill'+(a==='Todas'?' all':'')+'" style="--ac:'+(a==='Todas'?'var(--ink)':areaTone(a))+'" data-act="wArea" data-id="'+esc(a)+'" aria-pressed="'+(!wHoy&&wArea===a)+'">'+esc(a)+'<b class="cnt">'+nObj(a)+'</b></button>').join('')+'<span class="grow"></span><div class="stfilter" role="group" aria-label="Filtrar por estado">'+['Todos',...STATUS].map(st=>'<button class="stf s-'+slug(st)+'" data-act="wStat" data-id="'+st+'" aria-pressed="'+(wStat===st)+'">'+(st==='Todos'?'':STI_DOT(st))+st+'<b class="cnt">'+nSt(st)+'</b></button>').join('')+'</div></div>';
+  const nHoyT=queue(selectedDate).filter(t=>!t.done).length,nDaily=s.tasks.filter(t=>!t.objective&&!t.done).length;
+  const SL={Activo:'Activos',Pausado:'Pausados',Esperando:'Esperando',Completado:'Completados'};
+  const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
+  const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
+  const top='<div class="wtop"><button class="hoytog" data-act="wToggleHoy" aria-pressed="'+wHoy+'">'+glyph('calendar')+'Hoy<b class="cnt">'+nHoyT+'</b></button><span class="vsep"></span>'+
+    pill('wFilter','__daily',!wHoy&&wArea==='__daily',glyph('sun'),'Día a día',nDaily)+
+    ['Activo','Pausado','Esperando','Completado'].map(st=>pill('wFilter',st,!wHoy&&wArea==='Todas'&&wStat===st,svgI(STI[st]),SL[st],s.objectives.filter(o=>o.status===st).length)).join('')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
     return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
@@ -2147,6 +2168,7 @@ function onClick(e){
     case 'wToggleHoy':wHoy=true;wProj='';render();break;
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
+    case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();break;
     case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();if(wHoy)document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
     case 'wProjBack':wProj='';render();break;
     case 'projNote':{const p=project(id);if(!p)break;view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
@@ -2636,11 +2658,11 @@ async function openFloat(){
   if(floating&&!floating.closed){floating.focus();return;}
   if(!window.documentPictureInPicture){notify('Abre Focus en Chrome para usar la ventana flotante.');return;}
   try{
-    floating=await window.documentPictureInPicture.requestWindow({width:340,height:300});
+    floating=await window.documentPictureInPicture.requestWindow({width:400,height:76});
     floating.document.title='Focus · Ejecución';
     floating.document.documentElement.dataset.theme=document.documentElement.dataset.theme;
     const st=floating.document.createElement('style');
-    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:14px}.exec h2{font-size:17px}.clock{font-size:46px;margin-top:6px}.timer-controls{margin:10px 0 0}.play-round{width:76px;height:76px}.play-round svg{width:32px;height:32px}';
+    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden}';
     floating.document.head.append(st);
     floating.document.addEventListener('click',onClick);
     floating.addEventListener('pagehide',()=>floating=null,{once:true});
@@ -2650,7 +2672,9 @@ async function openFloat(){
 function updateFloat(){
   if(!floating||floating.closed)return;
   const t=current(),running=!!t&&s.running?.id===t.id;
-  floating.document.body.innerHTML=t?'<div class="exec"><div class="where">'+esc(projectOf(t).name)+'</div><h2>'+esc(t.name)+'</h2>'+clockMarkup(t)+timerControls(t,running)+'</div>':'<p class="empty" style="text-align:center">Añade una tarea al día en Enfoque.</p>';
+  const r=t?timerReading(t):null;
+  floating.document.body.innerHTML=t?'<div class="fl"><div class="fl-t" title="'+esc(t.name)+'"><b>'+esc(t.name)+'</b><small>'+esc(projectOf(t).name)+'</small></div><span class="fl-time'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>'+
+    (t.done?'':'<button type="button" class="fl-b'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div>':'<div class="fl"><div class="fl-t"><small>Sin tarea en curso</small></div></div>';
 }
 
 /* ---------- reloj ---------- */
