@@ -1277,6 +1277,16 @@ button.gl.sti:hover{filter:brightness(.96)}
 .ilink{border:0;background:none;color:var(--faint);font-size:12px;cursor:pointer;padding:2px 0}
 .ilink:hover{color:var(--ink);text-decoration:underline}
 .ilink.undo{color:var(--red)}
+
+/* v63 */
+.pgap{height:0;margin:-20px 0;display:block;position:relative;z-index:2}
+.pgap button{position:absolute;left:0;right:0;top:-10px;width:100%;height:20px;border:0;border-radius:0;background:none;font-size:0;cursor:pointer;padding:0;opacity:0;transition:opacity .1s}
+.pgap button:before{content:"";position:absolute;left:14px;right:14px;top:9.5px;height:1px;background:var(--line2,#d8d8d2)}
+.pgap button:after{content:"+";position:absolute;left:50%;top:5px;width:11px;height:11px;margin-left:-5.5px;border-radius:50%;background:var(--bg);border:1px solid var(--line2,#d8d8d2);color:var(--mute);font:500 9px/9px Inter,sans-serif;text-align:center}
+.pgap:hover button,.pgap button:focus-visible{opacity:1}
+.pgap button:hover:after{color:var(--ink);border-color:var(--mute)}
+.chipi.late{border:0;font-family:inherit;cursor:pointer}
+.chipi.late:hover{background:color-mix(in srgb,var(--red) 20%,var(--card))}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1649,7 +1659,7 @@ function bubble(o,today=false,embed=false){
   const area=proj?.area||'',ac=daily?DAILY_TONE:areaTone(area);
   const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
-  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>'+(lateT.length?'<span class="chipi late" title="Pendiente de días anteriores">Ayer '+hrs(sumMin(lateT,minutesLeft))+'</span><button class="chipi mv" data-act="moveToday" data-id="'+esc(o.id)+'" title="Mover las tareas atrasadas a hoy">Mover a Hoy</button>':'');
+  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer '+hrs(sumMin(lateT,minutesLeft))+'</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
