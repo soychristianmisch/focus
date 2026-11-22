@@ -1366,6 +1366,13 @@ button.gl.sti:hover{filter:brightness(.96)}
 .pj-right .pj-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pj-cols .pj-sec:first-child h2{margin-top:0}
 @media(max-width:1100px){.pj-cols{grid-template-columns:1fr}}
+
+/* v75 primer proyecto */
+.firstobj{display:flex;align-items:center;gap:16px;width:100%;padding:22px 26px;border:0;border-radius:18px;background:var(--ink);color:#fff;cursor:pointer;text-align:left;font-family:inherit;box-shadow:0 6px 22px rgba(0,0,0,.14);transition:transform .12s,box-shadow .12s}
+.firstobj:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,.2)}
+.firstobj .fo-plus{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:22px;line-height:1;flex:none}
+.firstobj b{display:block;font-size:17px;font-weight:650;letter-spacing:-.2px}
+.firstobj small{display:block;font-size:12.5px;color:rgba(255,255,255,.7);margin-top:2px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1839,8 +1846,8 @@ function projPage(p){
    (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir ↗</a>':'')+'</div></div>'+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
-   '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj'+(pjClosed.has(o.id)?' closed':'')+'" data-fold="'+o.id+'"><button class="foldbtn" data-act="pjFold" data-id="'+o.id+'" aria-label="Plegar o desplegar proyecto" title="Plegar o desplegar">'+ICON.caret+'</button>'+bubble(o)+'</div>').join('')||'<p class="empty">Esta área principal aún no tiene proyectos.</p>')+
-   '<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Proyecto</button></section>'+
+   '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj'+(pjClosed.has(o.id)?' closed':'')+'" data-fold="'+o.id+'"><button class="foldbtn" data-act="pjFold" data-id="'+o.id+'" aria-label="Plegar o desplegar proyecto" title="Plegar o desplegar">'+ICON.caret+'</button>'+bubble(o)+'</div>').join('')||'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer proyecto</b><small>en '+esc(p.name)+'</small></span></button>')+
+   (myObjs.length?'<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Proyecto</button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
    '<section id="pj-res" class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Proyectos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
