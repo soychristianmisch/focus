@@ -1295,6 +1295,15 @@ button.gl.sti:hover{filter:brightness(.96)}
 .inbl .psub{color:var(--faint);font-size:11px;white-space:nowrap}
 .inbl .pl{font-weight:600}
 .inbl{min-width:400px;max-width:90vw}
+/* v65 */
+.bubbles.one:has(.pgap){gap:10px}
+.bubbles.one:has(.pgap) .pgap{margin:-10px 0}
+.pgap button:before{background:#c4c4bd}
+.pgap button:after{border-color:#c4c4bd}
+.pgap button:before{background:#aeaea6;height:1.5px;top:9px}
+.bubbles.one:has(.pgap) .pgap button{top:-5px}
+.pgap button:after{top:4px}
+.inbl{min-width:320px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2669,9 +2678,9 @@ function onClick(e){
       const groups=new Map();
       open.forEach(o=>{const p=project(o.project),r=p&&p.id?rootProject(p):null,a=r?.area||'Sin área';if(!groups.has(a))groups.set(a,[]);groups.get(a).push({o,p});});
       const keys=[...groups.keys()].sort((x,y)=>rank(x)-rank(y));
-      const mk=(o,p)=>pi('<i class="adot" style="background:'+(p?.color||'#b4b4ae')+'"></i><span class="ptx">'+esc(o.name)+'</span>'+(p?.name?'<small class="psub">'+esc(p.name)+'</small>':''),'inboxTo','data-id="'+id+'" data-obj="'+o.id+'"');
+      const mk=(o,p)=>pi('<i class="adot" style="background:'+(p?.color||'#b4b4ae')+'"></i><span class="ptx">'+esc(o.name)+'</span>','inboxTo','data-id="'+id+'" data-obj="'+o.id+'"');
       const html=pi('<i class="adot" style="background:'+DAILY.color+'"></i><span class="ptx">Día a día</span>','inboxTo','data-id="'+id+'" data-obj="__daily"')+
-        keys.map(a=>'<div class="pl" style="color:'+areaTone(a)+'">'+esc(a)+'</div>'+groups.get(a).sort((x,y)=>(x.p?.name||'').localeCompare(y.p?.name||'')).map(x=>mk(x.o,x.p)).join('')).join('');
+        keys.map(a=>groups.get(a).sort((x,y)=>(x.p?.name||'').localeCompare(y.p?.name||'')).map(x=>mk(x.o,x.p)).join('')).join('');
       openPop(b,'<div class="poplist inbl">'+html+'</div>',{});break;
     }
     case 'inboxTo':{
