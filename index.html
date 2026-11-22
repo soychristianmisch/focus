@@ -1322,6 +1322,15 @@ button.gl.sti:hover{filter:brightness(.96)}
 .flcard .fl-b.ok{background:rgba(255,255,255,.2);color:#fff}
 .flcard .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
 .flcard .timer-done{color:#fff}
+
+/* v69 descripción de proyecto */
+.bh-title .ttl{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:0 1 auto;gap:1px}
+.bh-title .ttl .oname{display:block;-webkit-line-clamp:unset;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none;padding-top:0;padding-bottom:0;line-height:1.3;min-width:40px}
+.bh-title .ttl .oname:focus{display:block;overflow:hidden;text-overflow:clip}
+.ttl .odesc{display:none;font-size:12.5px;line-height:1.35;color:var(--mute);font-weight:450;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;min-width:140px;outline:none;cursor:text}
+.ttl:has(.odesc:not(:empty)) .odesc,.ttl:focus-within .odesc{display:block}
+.ttl .odesc:focus{text-overflow:clip;color:var(--ink)}
+.ttl .odesc:empty:before{content:attr(data-ph);color:var(--faint)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1701,7 +1710,7 @@ function bubble(o,today=false,embed=false){
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
+  return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Proyecto sin nombre')+editable('obj.desc',o.id,o.desc||'','title="'+esc(o.desc||'')+'"','odesc','Añade una descripción…')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2'+(lateT.length?' wrapc':'')+'">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -1873,7 +1882,7 @@ function viewTrabajo(){
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
   const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
-  const top='<div class="wmodes">'+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.')+'</div>';
+  const top='<div class="wmodes">'+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+top+ids.map(k=>railItem(k,false)).join('')+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
@@ -2416,6 +2425,7 @@ function commitEdit(el,info){
         else{if(o.secWin?.[old]){o.secWin[v]=o.secWin[old];delete o.secWin[old];}o.sections=o.sections.map(x=>x===old?v:x);s.tasks.forEach(t=>{if(t.objective===nobj(id)&&t.section===old)t.section=v;});}
       }
       break;}
+    case 'obj.desc':{const o=objective(id);if(o){const d=v.replace(/\s+/g,' ').trim();if(d)o.desc=d;else delete o.desc;}break;}
     case 'obj.name':{const o=objective(id);if(!v)bad=true;else if(o)o.name=v;break;}
     case 'obj.hours':{const o=objective(id),n=parseFloat(v.replace(',','.'));if(!Number.isFinite(n)||n<0||n>168)bad=true;else if(o)o.hours=n;break;}
     case 'obj.phase':{const o=objective(id);if(o)o.phase=v;break;}
