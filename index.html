@@ -1331,6 +1331,12 @@ button.gl.sti:hover{filter:brightness(.96)}
 .ttl:has(.odesc:not(:empty)) .odesc,.ttl:focus-within .odesc{display:block}
 .ttl .odesc:focus{text-overflow:clip;color:var(--ink)}
 .ttl .odesc:empty:before{content:attr(data-ph);color:var(--faint)}
+
+/* v71 colores de pestañas */
+.wmodes .wmode:not(.hoy):not(.comp)[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.wmodes .wmode.comp,.wmodes .wmode.comp:hover{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--card));background:transparent}
+.wmodes .wmode.comp:hover{background:color-mix(in srgb,var(--accent) 8%,var(--card))}
+.wmodes .wmode.comp[aria-pressed=true],.wmodes .wmode.comp[aria-pressed=true]:hover{background:color-mix(in srgb,var(--accent) 88%,#000);color:#fff;border-color:color-mix(in srgb,var(--accent) 88%,#000)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1515,7 +1521,7 @@ function save(refresh=true){
 }
 
 /* ---------- estado de interfaz ---------- */
-let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Activo';
+let wHoy=false,wArea='Todas',wObj='',wProj='',wStat='Todos';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
@@ -1883,7 +1889,7 @@ function viewTrabajo(){
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
   const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
-  const top='<div class="wmodes">'+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.')+'</div>';
+  const top='<div class="wmodes">'+mode('Todos',!wHoy&&wStat!=='Completado',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Completado',!wHoy&&wStat==='Completado',svgI(STI.Completado),'Compl.','comp')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+top+ids.map(k=>railItem(k,false)).join('')+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
