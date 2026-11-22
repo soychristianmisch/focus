@@ -1089,6 +1089,38 @@ button.gl.sti:hover{filter:brightness(.96)}
 .notion-in.sm:focus{color:var(--ink);background:var(--card)}
 .onotion .nopen{font-size:11px;color:var(--mute);text-decoration:none;white-space:nowrap}
 .onotion .nopen:hover{color:var(--ink)}
+/* v46 */
+.hoyright{background:transparent}
+.work.split2 .wmain{grid-template-columns:290px minmax(0,1.05fr) minmax(0,.95fr)}
+.work.split2 .wcenter{border-right:1px solid var(--line)}
+.work.split2 .wc-in{max-width:none;padding-bottom:75vh}
+.work .wcenter .bubble{scroll-margin-top:18px}
+.work .hoyright.solo{padding-top:18px}
+/* v46 split compact */
+.work.split2 .bubble .bhead{grid-template-columns:minmax(0,3fr) minmax(0,1fr) auto}
+.work.split2 .bubble .btags{flex-wrap:nowrap}
+.work.split2 .bubble .bh-r .bprog .prog{width:auto;flex:1}
+.work.split2 .bubble .bh-r .chips2{flex-wrap:wrap;gap:4px}
+.work.split2 .bubble .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.work.split2 .bubble .bhead{gap:8px 14px}
+.work.split2 .bubble .btags{margin-left:0;overflow:hidden}
+.work.split2 .bubble .btags .atag.pick{max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.work.split2 .bubble .bhead{grid-template-columns:minmax(0,65fr) minmax(0,35fr) auto}
+.work.split2 .bubble .bh-r .chips2{flex-wrap:nowrap;gap:4px}
+.work.split2 .bubble .bh-r .chipi{font-size:11px;padding:2px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.work.split2 .bubble .bh-r .chipi{font-size:10.5px;padding:1px 6px}
+.work.split2 .bubble .bh-r .chipi{font-size:10px;padding:1px 5px}
+.work.split2 .bubble .bh-r .chips2{gap:3px}
+.work.split2 .bubble .bh-r .chipi{overflow:visible;text-overflow:clip;flex:none}
+.work.split2 .bubble .bh-r .chips2{justify-content:flex-start}
+.work.split2 .bubble .btags{overflow:visible;padding-left:0}
+.work.split2 .bubble .btags .atag.pick{flex:none}
+.work.split2 .bubble .btags{gap:0}
+.work.split2 .bubble .btags .pnote,.work.split2 .bubble .btags .oprops.inl .p{font-size:11.5px;padding:2px 5px;gap:4px}
+.work.split2 .bubble .btags .atag.pick{margin-right:2px}
+.bhead>.onotion{grid-column:1/-1;margin:2px 0 0 0}
+.work.split2 .bubble .bhead{gap:8px 24px}
+.work.split2 .bubble .bh-r .chips2{margin-top:2px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1462,8 +1494,8 @@ function bubble(o,today=false,embed=false){
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
   const nline=(daily||today)?'':'<div class="onotion"><span class="nlogo sm">N</span><input class="notion-in sm" data-onotion="'+o.id+'" value="'+esc(o.notion||'')+'" placeholder="Enlace de Notion de este proyecto" spellcheck="false">'+(o.notion?'<a class="nopen" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(!daily&&o.notion?'<a class="nbox" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion" aria-label="Abrir en Notion">N</a>':'')+'</div>'+tags+nline+'</div>'+
-    '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
+  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(!daily&&o.notion?'<a class="nbox" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion" aria-label="Abrir en Notion">N</a>':'')+'</div>'+tags+'</div>'+
+    '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+nline+'</div><div class="bbody">'+body+'</div></section>';
 }
 
 /* ---------- proyectos por áreas ---------- */
@@ -1616,6 +1648,7 @@ function workCenter(ids){
       (ids.length?'':'<p class="empty">Nada para hoy con este filtro. Quita el filtro de área, usa «＋ Añadir» o desactiva «Hoy» para elegir tareas.</p>')+
       '<button class="addrow" style="padding-left:10px" data-act="addTask" data-obj="" data-sec="" data-today="1">＋ Nueva tarea suelta para hoy</button></div>';
   }
+  if(wStat!=='Completado'&&wArea!=='__daily')return '<div class="wc-in">'+(ids.length?'<div class="bubbles one">'+ids.map(k=>bubble(k===''?DAILY:objective(k))).join('')+'</div>':'<p class="empty">No hay proyectos con este filtro.</p>')+'</div>';
   const cur=ids.includes(wObj)?wObj:ids[0];
   return '<div class="wc-in">'+(cur===undefined?'<p class="empty">No hay proyectos con este filtro.</p>':'<div class="bubbles one">'+bubble(cur===''||cur===DAILY.id?DAILY:objective(cur))+'</div>')+'</div>';
 }
@@ -1638,7 +1671,8 @@ function viewTrabajo(){
   const rail='<aside class="wrail" data-scroll>'+(()=>{let last=null;const gm=new Map();for(const g of railGroups(ids.filter(k=>k).map(objective)))g.items.forEach(o=>gm.set(o.id,g));
     return ids.map(k=>{let h='';if(!wHoy){const g=k===''?null:gm.get(k),key=k===''?'__d':(g?.proj?.id||'');if(key!==last){h='<div class="rhead" style="--ac:'+(k===''?DAILY_TONE:areaTone(g?.proj?.area))+'"><i></i>'+esc(k===''?'Día a día':(g?.proj?.name||'Sin área'))+'</div>';last=key;}}return h+railItem(k,k===curSel);}).join('');})()+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
-  return '<div class="work'+(wHoy?' hoyon':'')+'">'+top+'<div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+(wHoy?execPanel():'')+'</div></div>';
+  const split=!wHoy&&wStat!=='Completado'&&!wProj;
+  return '<div class="work'+(wHoy?' hoyon':'')+(split?' split2':'')+'">'+top+'<div class="wmain">'+rail+'<section class="wcenter" data-scroll>'+workCenter(ids)+'</section>'+(wHoy?execPanel():split?execPanel(true):'')+'</div></div>';
 }
 
 /* ---------- Hoy ---------- */
@@ -1661,7 +1695,7 @@ function dayStats(d){
   for(const t of todo){const k=t.objective||'';let g=objs.find(x=>x.k===k);if(!g){g={k,total:0,done:0,min:0,doneMin:0};objs.push(g);}g.total++;g.min+=t.minutes;if(t.done){g.done++;g.doneMin+=t.minutes;}}
   return {todo,used,capm,pending,free:capm-used-pending,avail,isToday,finishAt:now+pending*60000,gap:avail-pending,ratio:est>0?real/est*100:null,objs,end};
 }
-function execPanel(){
+function execPanel(onlyStats=false){
   const t=current(),p=projectOf(t),o=objective(t?.objective),running=!!t&&s.running?.id===t.id,d=selectedDate;
   const st=dayStats(d),color=t?p.color:PALETTE[0];
   const byProj=new Map();
@@ -1693,6 +1727,7 @@ function execPanel(){
   }).join(''):'<p class="empty" style="padding:6px 0">Aún no hay tareas para este día.</p>')+'</section>';
   const extra=(byProj.size||paused.length)?'<section class="xcard">'+(byProj.size?'<h3>Tiempo trabajado por área principal</h3>'+[...byProj].sort((a,b)=>b[1]-a[1]).map(([pr,m])=>'<div class="brk" style="--pc:'+pr.color+';--w:'+Math.max(4,m/maxP*100)+'%"><span class="nm">'+esc(pr.name)+'</span><span class="num muted">'+dur(m)+'</span></div>').join(''):'')+
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
+  if(onlyStats)return '<div class="hoyright solo" data-scroll>'+stats+'</div>';
   return '<div class="hoyright" data-scroll>'+main+stats+objc+extra+'</div>';
 }
 function planCol(){
@@ -2286,8 +2321,8 @@ function onClick(e){
     case 'wToggleHoy':wHoy=true;wProj='';render();break;
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
-    case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();break;
-    case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();if(wHoy)document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
+    case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();$('.wcenter')&&($('.wcenter').scrollTop=0);break;
+    case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
     case 'wProjBack':wProj='';render();break;
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
