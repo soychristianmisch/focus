@@ -1734,7 +1734,7 @@ function viewProyectos(){
 function dayOrder(){
   const order=[];
   for(const t of queue(selectedDate)){if(t.done)continue;const k=t.objective||'';if(!order.includes(k))order.push(k);}
-  for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
+  for(const k0 of hoyOpen){const k=k0===DAILY.id?'':k0;if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   const ix=k=>k===''?-1:s.objectives.findIndex(o=>o.id===k);
   return order.sort((x,y)=>ix(x)-ix(y));
 }
@@ -1863,7 +1863,7 @@ function execPanel(onlyStats=false){
 function planCol(){
   const list=queue(selectedDate),order=[];
   for(const t of list){const k=t.objective||'';if(!order.includes(k))order.push(k);}
-  for(const k of hoyOpen)if(!order.includes(k)&&objective(k))order.push(k);
+  for(const k0 of hoyOpen){const k=k0===DAILY.id?'':k0;if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   const open=list.filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
   return '<div class="hoyleft" data-scroll><div class="colhead"><div><h2>Proyectos del día</h2><span class="sub">'+esc(dl)+' · '+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
     '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>'+
