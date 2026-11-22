@@ -1079,6 +1079,16 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bubble.tb .btags{gap:0}
 .bubble.tb .btags .pnote,.bubble.tb .btags .oprops.inl .p{font-size:11.5px;padding:2px 5px;gap:4px}
 .bubble.tb .btags .atag.pick{margin-right:2px}
+/* v42 */
+.bh-title .oname{flex:0 1 auto}
+.nbox{flex:none;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--ink);display:grid;place-items:center;font-weight:800;font-size:11px;color:var(--ink);text-decoration:none;margin-left:6px;line-height:1}
+.nbox:hover{background:var(--ink);color:var(--card)}
+.onotion{display:flex;align-items:center;gap:6px;margin:6px 0 0 49px;min-width:0}
+.nlogo.sm{width:18px;height:18px;border-radius:5px;font-size:10px;border-width:1.3px}
+.notion-in.sm{flex:1;min-width:0;max-width:340px;padding:2px 8px;font-size:11px;border-radius:7px;color:var(--mute);text-overflow:ellipsis;background:transparent}
+.notion-in.sm:focus{color:var(--ink);background:var(--card)}
+.onotion .nopen{font-size:11px;color:var(--mute);text-decoration:none;white-space:nowrap}
+.onotion .nopen:hover{color:var(--ink)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1236,7 +1246,7 @@ function migrate(d){
     p.notes??='';p.description??='';p.notion??='';p.parent??='';if(p.notesHtml==null)p.notesHtml=p.notes?p.notes.split(/\n+/).map(l=>'<p>'+esc(l)+'</p>').join(''):'';
     if(!d.areas.includes(p.area))d.areas.push(p.area);
   });
-  d.objectives.forEach(o=>{
+  d.objectives.forEach(o=>{o.notion??='';
     delete o.image;delete o.cover;o.icon||=OBJ_ICON[o.id]||'🎯';if(o.status==='En cola')o.status='Esperando';o.sections??=[];o.glyph||=GLYPH_BY_ID[o.id]||'target';
     delete o.window;delete o.secWin;o.priority||='Normal';if(!STATUS.includes(o.status))o.status='Activo';o.hours=Number.isFinite(o.hours)?o.hours:2;o.phase??='';o.deadline??='';
     if(typeof o.sched!=='boolean')o.sched=!(o.status==='Esperando'||o.status==='Completado');
@@ -1450,7 +1460,8 @@ function bubble(o,today=false,embed=false){
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'span');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags=daily?'':'<div class="btags">'+(proj?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+'</div>'+tags+'</div>'+
+  const nline=(daily||today)?'':'<div class="onotion"><span class="nlogo sm">N</span><input class="notion-in sm" data-onotion="'+o.id+'" value="'+esc(o.notion||'')+'" placeholder="Enlace de Notion de este proyecto" spellcheck="false">'+(o.notion?'<a class="nopen" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>';
+  return '<section class="bubble'+(today?' tb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':editable('obj.name',o.id,o.name,'','oname','Proyecto sin nombre'))+(!daily&&o.notion?'<a class="nbox" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion" aria-label="Abrir en Notion">N</a>':'')+'</div>'+tags+nline+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -1497,7 +1508,7 @@ function areaPane(){
   const detail=cur?'<div class="detail">'+bubble(cur)+'</div>':(pj?'<div class="detail">'+projectPage(pj)+'</div>':'<div class="detail"><p class="empty">Elige un proyecto de la izquierda para verlo completo.</p></div>');
   return title+'<div class="split">'+rail+detail+'</div>';
 }
-const pjClosed=new Set();let pjPreview=false;
+const pjClosed=new Set();
 const kidsOf=id=>s.projects.filter(p=>p.parent===id&&p.id!==id);
 const descIds=(id,seen=new Set())=>{if(seen.has(id))return [];seen.add(id);const out=[id];for(const k of kidsOf(id))out.push(...descIds(k.id,seen));return out;};
 function projStats(p){
@@ -1541,8 +1552,8 @@ function projPage(p){
    '<button class="p" data-act="menu" data-kind="color" data-id="'+p.id+'"><span class="swatch" style="--pc:'+p.color+'"></span>Color</button>'+
    '<button class="iconbtn" data-act="menu" data-kind="projmore" data-id="'+p.id+'" aria-label="Más opciones">'+ICON.more+'</button></div>'+
    '<div class="pj-notion"><span class="nlogo">N</span><input class="notion-in" data-notion="'+p.id+'" value="'+esc(p.notion)+'" placeholder="Enlace de la nota de Notion de esta área principal" spellcheck="false">'+
-   (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a><button class="btn line" data-act="pjPreview" aria-pressed="'+pjPreview+'">'+(pjPreview?'Ocultar vista previa':'Vista previa')+'</button>':'')+'</div>'+
-   (hasN&&pjPreview?'<div class="pj-prev"><iframe src="'+esc(p.notion)+'" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups"></iframe><p>Si ves una pantalla de acceso o un error, es normal: Notion solo deja incrustar páginas publicadas en la web. Usa «Abrir en Notion».</p></div>':'')+'</header>'+
+   (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir en Notion ↗</a>':'')+'</div>'+
+   '</header>'+
    '<nav class="pj-nav">'+[['pj-res','Resumen'],['pj-obj','Proyectos'],['pj-tl','Línea de tiempo'],['pj-note','Nota maestra'],['pj-act','Actividad']].map(([i,t])=>'<button data-act="pjGo" data-id="'+i+'">'+t+'</button>').join('')+'</nav>'+
    '<section id="pj-res" class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Proyectos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
    '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div>'+
@@ -2279,7 +2290,6 @@ function onClick(e){
     case 'wSelect':{wObj=(id===DAILY.id)?'':id;wProj='';render();if(wHoy)document.querySelector('.bubble[data-obj="'+id+'"]')?.scrollIntoView({block:'start',behavior:'smooth'});break;}
     case 'wProjBack':wProj='';render();break;
     case 'projNote':{const p=project(id);if(!p)break;view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
-    case 'pjPreview':pjPreview=!pjPreview;render();break;
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
     case 'pjFold':{pjClosed.has(id)?pjClosed.delete(id):pjClosed.add(id);document.querySelector('.pj-obj[data-fold="'+id+'"]')?.classList.toggle('closed',pjClosed.has(id));break;}
     case 'addSubProject':{const par=project(id);if(!par)break;const p={id:uid(),name:'Nueva subárea',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};s.projects.push(p);openProj=p.id;focusAfter={kind:'proj.name',id:p.id,select:true};save();break;}
@@ -2514,6 +2524,8 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',e=>{
   const ni=e.target.closest?.('input[data-notion]');
   if(ni){const p=project(ni.dataset.notion);if(p){let v=ni.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;p.notion=v;save();}return;}
+  const oi=e.target.closest?.('input[data-onotion]');
+  if(oi){const o=objective(oi.dataset.onotion);if(o){let v=oi.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;o.notion=v;save();render();}return;}
   const ci=e.target.closest?.('input[data-cap]');
   if(ci){const d=ci.dataset.cap,v=capParse(ci.value);s.hoursOn??={};
     if(!Number.isFinite(v)||v<0)delete s.hoursOn[d];else if(v===s.hours[dow(d)])delete s.hoursOn[d];else s.hoursOn[d]=Math.min(24,v);save();return;}
