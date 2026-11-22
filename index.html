@@ -1304,6 +1304,13 @@ button.gl.sti:hover{filter:brightness(.96)}
 .bubbles.one:has(.pgap) .pgap button{top:-5px}
 .pgap button:after{top:4px}
 .inbl{min-width:320px}
+/* v66 cruces centradas */
+.ins i:after,.endz .ez:after,.insm .ez:after,.pgap button:after{content:"" !important;font-size:0 !important;color:transparent !important;
+ background-image:linear-gradient(#fff,#fff),linear-gradient(#fff,#fff) !important;background-repeat:no-repeat !important;background-position:center !important;background-size:8px 1.8px,1.8px 8px !important}
+.pgap button:after{top:2px;left:50%;width:16px;height:16px;margin-left:-8px;border:0;border-radius:50%;background-color:#c9c9c2}
+.pgap button:before{background:#e6e6e1;height:1.5px;top:9.25px}
+.pgap button:hover:after{background-color:#aeaea6;border:0}
+.bubbles.one:has(.pgap) .pgap button{top:0}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1673,7 +1680,7 @@ function bubble(o,today=false,embed=false){
   if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
-  const area=proj?.area||'',ac=daily?DAILY_TONE:areaTone(area);
+  const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
   const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
   const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer '+hrs(sumMin(lateT,minutesLeft))+'</button>':'');
