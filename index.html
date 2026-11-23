@@ -3817,11 +3817,31 @@ async function sb(path,opt={}){
   const r=await fetch(SB_URL+path,{method:opt.method||'GET',headers:h,body:opt.body?JSON.stringify(opt.body):undefined,keepalive:!!opt.keepalive});
   return r;
 }
-async function ensureToken(){
-  const ses=cloud.session;if(!ses||ses.exp>Date.now()/1000+60)return;
-  const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:ses.refresh_token})});
-  if(!r.ok){cloud.session=null;lsSet(SES_KEY,null);throw new Error('sesión caducada');}
-  cloud.session=sessionFrom(await r.json());lsSet(SES_KEY,JSON.stringify(cloud.session));
+let refreshing=null;
+const lsSes=()=>{try{return JSON.parse(lsGet(SES_KEY)||'null');}catch{return null;}};
+const tokFresh=x=>x&&x.exp>Date.now()/1000+60;
+function ensureToken(){
+  if(!cloud.session||tokFresh(cloud.session))return;
+  if(refreshing)return refreshing;
+  refreshing=(async()=>{
+    try{
+      /* otra pestaña pudo renovarla ya */
+      const st=lsSes();
+      if(tokFresh(st)&&st.user_id===cloud.session.user_id){cloud.session=st;return;}
+      const cur=cloud.session;
+      let r;
+      try{r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:cur.refresh_token})});}
+      catch{throw new Error('sin conexión');}
+      if(r.status===400||r.status===401||r.status===403){
+        const st2=lsSes();
+        if(st2&&st2.refresh_token!==cur.refresh_token){cloud.session=st2;return;}
+        cloud.session=null;lsSet(SES_KEY,null);throw new Error('sesión caducada');
+      }
+      if(!r.ok)throw new Error('no se pudo renovar ('+r.status+')');
+      cloud.session=sessionFrom(await r.json());lsSet(SES_KEY,JSON.stringify(cloud.session));
+    }finally{refreshing=null;}
+  })();
+  return refreshing;
 }
 const hasData=d=>d&&(d.projects?.length||d.tasks?.length||d.objectives?.length);
 async function pull(force=false){
