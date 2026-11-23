@@ -1581,6 +1581,12 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .tag.s-este-mes{background:var(--tag-blue);color:var(--tag-blue-ink)}
 .tag.s-mas-adelante{background:var(--bg3);color:var(--faint)}
 .sdot.s-hoy{background:var(--play)}.sdot.s-esta-semana{background:var(--pause)}.sdot.s-este-mes{background:#4a7fd4}.sdot.s-mas-adelante{background:color-mix(in srgb,var(--faint) 55%,var(--card))}
+/* v104 */
+:root{--violet:#7c5cd6}:root[data-theme=dark]{--violet:#a98bf0}
+.wmodes .wmode.foc,.wmodes .wmode.foc:hover{color:var(--violet);border-color:color-mix(in srgb,var(--violet) 40%,var(--card))}
+.wmodes .wmode.foc:hover{background:color-mix(in srgb,var(--violet) 8%,var(--card))}
+.wmodes .wmode.foc[aria-pressed=true],.wmodes .wmode.foc[aria-pressed=true]:hover{background:color-mix(in srgb,var(--violet) 88%,#000);color:#fff;border-color:color-mix(in srgb,var(--violet) 88%,#000)}
+:root[data-theme=dark] .wmodes .wmode.foc[aria-pressed=true],:root[data-theme=dark] .wmodes .wmode.foc[aria-pressed=true]:hover{background:var(--violet);color:#1b1233;border-color:var(--violet)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2171,7 +2177,7 @@ function viewTrabajo(){
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
   const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
-  const top='<div class="wmodes">'+mode('Hoy',wHoy,glyph('calendar'),'Hoy','hoy')+mode('Focus',!wHoy&&wStat==='Focus',svgI('<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2"/>'),'Focus','comp')+mode('Todos',!wHoy&&wStat!=='Focus',svgI('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/>'),'Todos')+'</div>';
+  const top='<div class="wmodes">'+mode('Hoy',wHoy,glyph('checkbox'),'Hoy','hoy')+mode('Focus',!wHoy&&wStat==='Focus',svgI('<circle cx="12" cy="12" r="7.5"/>'),'Focus','comp foc')+mode('Todos',!wHoy&&wStat!=='Focus',svgI('<path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.8" cy="7" r="1" fill="currentColor"/><circle cx="4.8" cy="12" r="1" fill="currentColor"/><circle cx="4.8" cy="17" r="1" fill="currentColor"/>'),'Todos')+'</div>';
   const proj0=s.projects.find(p=>wArea==='Todas'||p.area===wArea);
   const rail='<aside class="wrail" data-scroll>'+top+(wHoy?hoySecs(ids,k=>railItem(k,false),'rail'):secOn()?withSecs(ids,k=>railItem(k,false),'rail'):ids.map(k=>railItem(k,false)).join(''))+(ids.length?'':'<p class="empty" style="padding:8px">Nada que mostrar.</p>')+
     (!wHoy&&proj0?'<button class="addrow" style="padding-left:8px" data-act="addObj" data-id="'+(objective(curSel)?.project&&(wArea==='Todas'||project(objective(curSel).project)?.area===wArea)?objective(curSel).project:proj0.id)+'">＋ Proyecto</button>':'')+'</aside>';
