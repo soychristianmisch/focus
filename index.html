@@ -82,13 +82,13 @@ main{min-height:calc(100dvh - 48px)}
 
 /* tareas */
 .tasks{display:block}
-.task{display:grid;grid-template-columns:16px 22px minmax(0,1fr) 62px 50px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
+.task{display:grid;grid-template-columns:24px 16px minmax(0,1fr) 62px 50px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
 .task:hover{background:var(--hover)}
 .task.picked{background:var(--accent-soft)}
 .task:focus{outline:none}
 .grip{width:16px;height:22px;display:grid;place-items:center;color:var(--faint);opacity:0;cursor:grab;font-size:12px;user-select:none}
 .task:hover .grip,.task.picked .grip{opacity:1}
-.check{width:16px;height:16px;border:1.5px solid var(--line2);border-radius:4px;margin-left:3px;display:grid;place-items:center;background:transparent}
+.check{width:16px;height:16px;border:1.5px solid var(--line2);border-radius:4px;margin-left:0;display:grid;place-items:center;background:transparent}
 .check:hover{border-color:var(--mute)}
 .check.on{background:var(--accent);border-color:var(--accent)}
 .check.on:after{content:"";width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
@@ -1553,6 +1553,27 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .ritem.solo:not(.daily) .atag{background:color-mix(in srgb,var(--ac) 18%,var(--card));color:color-mix(in srgb,var(--ac) 75%,var(--ink))}
 .ritem:not(.daily) .gl,.ritem.solo:not(.daily) .gl{background:var(--rico);color:var(--mute)}
 .ritem.solo:not(.daily) svg{color:var(--mute)}
+/* v101: misma geometría colapsado/expandido, panel central más ancho */
+.work.hoyon .wmain,.work.split2 .wmain{grid-template-columns:290px minmax(0,1.86fr) minmax(0,1fr)}
+.work .bubble .bhead{grid-template-columns:minmax(0,65fr) minmax(0,35fr) 26px !important;gap:8px 24px !important}
+.work .bubble .bh-r .chips2{margin:2px 0 0 !important}
+.bubble .sec.ro{padding-left:24px}
+.task .grip{justify-self:start}
+.task .check{justify-self:start}
+/* cuerpo del proyecto: color de fondo de la app */
+.bubble .bbody{background:var(--bg)}
+/* panel derecho más estrecho */
+.work .hoyright{padding:16px 16px 50px;gap:14px}
+.work .hoyright .xcard{padding:18px 20px}
+.work .hoyright .bigstats{gap:8px}
+.work .hoyright .bigstats small{font-size:11.5px;line-height:1.25}
+.work .hoyright .bigstats b{font-size:18px;white-space:nowrap}
+.hoyright .xtask.flcard{padding:22px 22px}
+.hoyright .xtask .xclock{font-size:40px;letter-spacing:-1.5px;margin-right:2px}
+.hoyright .xtask .xline{gap:10px}
+.hoyright .xtask .xtitle{font-size:18px}
+.cd-row{gap:8px;padding:7px 0}
+.cd-t{font-size:12.5px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1907,7 +1928,7 @@ function bubble(o,today=false,embed=false){
   const pr=progressOf(o);
   const all=s.tasks.filter(t=>t.objective===oid);
   const inDay=queue(selectedDate).filter(t=>t.objective===oid);
-  const mine=today?inDay:all;
+  const dayIds=new Set(inDay.map(t=>t.id)),mine=today?all.filter(t=>dayIds.has(t.id)):all;
   const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
   const sections=o.sections,key=(today?'t':'f')+o.id;
   const openAll=all.filter(t=>!t.done);
@@ -3329,7 +3350,8 @@ document.addEventListener('drop',e=>{
     if(i.el.closest('[data-mode]')?.dataset.mode==='today'){
       const ids=queue(selectedDate).map(x=>x.id).filter(x=>x!==t.id);
       if(!onDay(t,selectedDate))t.days.push(selectedDate);
-      let j=ids.indexOf(tt.id);if(j<0)j=ids.length;ids.splice(i.after?j+1:j,0,t.id);s.order[selectedDate]=ids;save();
+      let j=ids.indexOf(tt.id);if(j<0)j=ids.length;ids.splice(i.after?j+1:j,0,t.id);s.order[selectedDate]=ids;
+      if(t!==tt){t.objective=tt.objective;t.section=tt.section;mv(s.tasks,t,tt,i.after);}save();
     }else{t.objective=tt.objective;t.section=tt.section;mv(s.tasks,t,tt,i.after);save();}
     return;
   }
