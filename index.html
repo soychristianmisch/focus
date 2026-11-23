@@ -82,7 +82,7 @@ main{min-height:calc(100dvh - 48px)}
 
 /* tareas */
 .tasks{display:block}
-.task{display:grid;grid-template-columns:24px 16px minmax(0,1fr) 64px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
+.task{display:grid;grid-template-columns:24px 16px minmax(0,1fr) 64px 50px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
 .task:hover{background:var(--hover)}
 .task.picked{background:var(--accent-soft)}
 .task:focus{outline:none}
@@ -1781,6 +1781,13 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .nform input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13px;background:var(--card);color:var(--ink)}
 .nform input:focus{outline:none;border-color:var(--ink)}
 .nform .crow{padding:0;margin-top:0;justify-content:flex-end}
+
+/* v134 estimación de vuelta */
+.task.running .tmin,.task.running .tmin:after{color:#fff}
+.task.running .tmin:hover,.task.running .tmin:focus{background:rgba(255,255,255,.2);color:#fff}
+.task.isimp:not(.running) .tmin,.task.isimp:not(.running) .tmin:after{color:#fff}
+.task.isimp:not(.running) .tmin:hover,.task.isimp:not(.running) .tmin:focus{background:rgba(255,255,255,.2);color:#fff}
+.task.done .tmin{opacity:.6}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2010,7 +2017,12 @@ const dayMs=(e,d,now=Date.now())=>{
   if(!bounds.has(d)){if(bounds.size>200)bounds.clear();bounds.set(d,[dateAt(d,'00:00'),dateAt(shift(d,1),'00:00')]);}
   const [a,b]=bounds.get(d);return Math.max(0,Math.min(e.end??now,b)-Math.max(e.start,a));
 };
-function minutesLeft(){return 0;}
+function minutesLeft(t){
+  if(t.done)return 0;
+  const w=isRecur(t)?workedMin({...t}):elapsed(t.id)/60000;
+  if(Number.isFinite(t.remaining)&&Number.isFinite(t.remainingAt))return Math.max(0,t.remaining-Math.max(0,w-t.remainingAt));
+  return Math.max(0,t.minutes-w);
+}
 const capacityOn=d=>((s.hoursOn?.[d]??s.hours[dow(d)])??0)*60;
 const usedOn=d=>s.entries.reduce((a,e)=>a+dayMs(e,d)/60000,0);
 const current=()=>task(s.running?.id)??task(selected)??queue(selectedDate).find(t=>!t.done);
@@ -2069,8 +2081,8 @@ function finish(id){
   save();notify('Tarea completada');
 }
 function timerReading(t,now=Date.now()){
-  const sec=Math.floor((isRecur(t)?workedMin(t)*60000:elapsed(t.id,now))/1000);
-  return {over:false,text:clock(sec*1000),label:'Tiempo trabajado'};
+  const sec=Math.floor((isRecur(t)?workedMin(t)*60000:elapsed(t.id,now))/1000),over=sec>t.minutes*60;
+  return {over,text:clock(sec*1000),label:over?'Fuera de tiempo':'Tiempo trabajado'};
 }
 
 /* ---------- iconos SVG ---------- */
@@ -2125,6 +2137,7 @@ function taskRow(t){
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
       '<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button></div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
+    editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Estimación (minutos)"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
   '</div>';
@@ -2503,8 +2516,8 @@ function execPanel(onlyStats=false){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xcard xtask'+(t&&running?' flcard':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</p>'+
+  const main='<section class="xcard xtask'+(t&&running?' flcard':'')+(t&&running&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+dur(t.minutes)+'</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
@@ -2523,7 +2536,7 @@ function execPanel(onlyStats=false){
     (doneL.length?'<div class="cd-sum">Tiempo <b>'+dur(dReal)+'</b></div>'+doneL.map(x=>{
       const pr=projectOf(x),ob=objective(x.objective),real=workedMin(x);
       return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
-        '<div class="cd-time"><b>'+editable('task.worked',x.id,dur(Math.floor(real+1e-6)),'inputmode="numeric" data-raw="'+Math.floor(real+1e-6)+'" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b></div>'+
+        '<div class="cd-time'+(real>x.minutes+.5?' over':'')+'"><b>'+editable('task.worked',x.id,dur(Math.floor(real+1e-6)),'inputmode="numeric" data-raw="'+Math.floor(real+1e-6)+'" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b><small title="Estimación">est. '+dur(x.minutes)+'</small></div>'+
         '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
   const objc='<section class="xcard"><h3>Avance por objetivo</h3>'+(st.objs.length?st.objs.map(g=>{
@@ -3451,12 +3464,12 @@ document.addEventListener('click',onClick);
 
 /* ---------- campos editables, teclado ---------- */
 function selectAll(el){const r=document.createRange();r.selectNodeContents(el);const g=getSelection();g.removeAllRanges();g.addRange(r);}
-document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;if(el.dataset.raw!=null)el.textContent=el.dataset.raw;el._orig=el.textContent;if(el.dataset.edit==='task.min'||el.dataset.edit==='task.worked')placeEnd(el);});
+document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;if(el.dataset.raw!=null)el.textContent=el.dataset.raw;el._orig=el.textContent;if(el.dataset.edit==='task.min')selectAll(el);else if(el.dataset.edit==='task.worked')placeEnd(el);});
 function placeEnd(el){const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const g=getSelection();g.removeAllRanges();g.addRange(r);}
 document.addEventListener('mousedown',e=>{
-  const el=e.target.closest?.('.tworked[data-edit]');
+  const el=e.target.closest?.('.tworked[data-edit],.tmin[data-edit]');
   if(!el||document.activeElement===el)return;
-  e.preventDefault();el.focus();placeEnd(el);
+  e.preventDefault();el.focus();el.classList.contains('tmin')?selectAll(el):placeEnd(el);
 });
 document.addEventListener('focusout',e=>{
   const el=e.target.closest?.('[data-edit]');if(!el)return;
@@ -3873,7 +3886,7 @@ function updateFloat(){
   const r=t?timerReading(t):null;
   const p=t?projectOf(t):null,o=t?objective(t.objective):null;
   const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.remove('paused');
-  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>'+
+  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>'+
     (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
 }
 
