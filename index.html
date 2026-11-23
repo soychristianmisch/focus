@@ -1508,6 +1508,11 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .tmain.rec{display:flex;align-items:center;gap:7px;min-width:0}
 .tmain.rec .tname{flex:0 1 auto;min-width:0}
 .rcic.tr{width:12px;height:12px;flex:none;color:var(--faint);stroke-width:2.2}
+/* v87 */
+.secall{margin-left:auto;border:1px solid var(--line);background:none;color:var(--faint);font:inherit;font-size:11px;padding:2px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.secall:hover{color:var(--ink);border-color:var(--mute)}
+.secall.on{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.sec .smeta{margin-left:8px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1886,6 +1891,7 @@ function bubble(o,today=false,embed=false){
     else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+hrs(sumMin(list))+'</span>'+
+      '<button class="secall'+(list.length&&list.every(t=>t.days.includes(day()))?' on':'')+'" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Poner todas las tareas de esta sección en hoy; con otro clic, elegir fecha">Hoy todas</button>'+
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
     const tm=today||embed;
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
@@ -2767,6 +2773,8 @@ function calHtmlT(t,ym){
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
     '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(w.k!=='none'?'<button class="rm" data-act="clearTaskDate" data-id="'+t.id+'">Borrar fecha</button>':'<span></span>')+'</div></div>';
 }
+const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t.done);
+function setSecDay(L,date){for(const t of L){t.days=[date];(s.order[date]??=[]);if(!s.order[date].includes(t.id))s.order[date].push(t.id);}save();}
 function openTaskCal(t,anchor){const w=taskWhen(t),ym=(w.d||day()).slice(0,7);openPop(anchor,calHtmlT(t,ym),{id:t.id,ym,task:true});}
 function menuFor(kind,id,anchor){
   const o=objective(id),p=project(id);
@@ -2909,9 +2917,9 @@ function onClick(e){
     case 'setColor':{const p=project(id);if(p){p.color=b.dataset.val;save();}closePop();break;}
     case 'resetObj':{const o=objective(id);if(!o)break;const w=o.window,sw=o.secWin;delete o.window;delete o.secWin;save();notify('Proyecto restablecido a la secuencia automática',()=>{if(w)o.window=w;if(sw)o.secWin=sw;save();});break;}
     case 'togglePrio':{const o=objective(id);if(!o)break;if(o.priority==='Alta'){o.priority='Normal';if(o.deadline===day())o.deadline='';}else{o.priority='Alta';o.deadline=day();}save();break;}
-    case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
-    case 'calPick':{if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
-    case 'calToday':{if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
+    case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.sec){pop.innerHTML=calHtmlT({id:'',days:[]},popCtx.ym);break;}if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
+    case 'calPick':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,b.dataset.val);break;}if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
+    case 'calToday':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,day());break;}if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
     case 'clearTaskDate':{const tt=task(id);closePop();if(tt){tt.days=[];save();}break;}
     case 'clearDeadline':{const o=objective(id);closePop();if(o){o.deadline='';save();}break;}
     case 'splitSection':{leaveHoy(id);
@@ -2930,6 +2938,10 @@ function onClick(e){
     case 'notionEdit':menuFor('objnotion',id,b);break;
     case 'saveONotion':{const o=objective(id);let v=b.dataset.clear?'':($('#onin')?.value||'').trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;closePop();if(o){o.notion=v;save();render();}break;}
     case 'delArea':{closePop();if(s.projects.some(p=>p.area===id)){notify('Primero mueve o elimina las áreas principales de «'+id+'».');break;}s.areas=s.areas.filter(x=>x!==id);if(openArea===id)openArea='';save();break;}
+    case 'secAll':{const sc={obj:nobj(b.dataset.obj),sec:b.dataset.sec},L=secList(sc);if(!L.length)break;const td=day();
+      if(!L.every(x=>x.days.includes(td))){setSecDay(L,td);notify('Sección en hoy: '+L.length+(L.length===1?' tarea':' tareas'));}
+      else{const ym=td.slice(0,7);openPop(b,calHtmlT({id:'',days:[]},ym),{sec:sc,ym,task:true});}
+      break;}
     case 'addArea':{let n='Nueva área global',i=2;while(s.areas.includes(n))n='Nueva área global '+i++;s.areas.push(n);freshArea=n;closePop();save();render();setTimeout(()=>{[...document.querySelectorAll('[data-kind=areaedit]')].find(x=>x.dataset.id===n)?.click();freshArea='';},60);break;}
     case 'delObj':b.dataset.act='delObjOk';b.textContent='¿Seguro? Se borrarán sus tareas y registros';break;
     case 'delObjOk':{
