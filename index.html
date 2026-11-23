@@ -2166,7 +2166,7 @@ function railGroups(list){
 function wList(){
   if(wHoy){return [...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k))),''];}
   if(wArea==='__daily')return [''];
-  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o));return ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id));}
+  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o));return [''].concat(ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id)));}
   const ids=s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o)).map(o=>o.id);
   if(wArea==='Todas'&&wStat==='Todos'){const gs=railGroups(ids.map(objective).filter(Boolean));return gs.flatMap(g=>g.items.map(o=>o.id));}
   return ids;
@@ -2176,7 +2176,7 @@ const SECN={daily:'Día a día'};
 function withSecs(ids,fn,kind){
   const cls=kind==='rail'?'rsec':'csec',hd=t=>'<div class="'+cls+'">'+esc(t)+'</div>';
   if(wStat==='Focus'){
-    return ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
+    return (ids.includes('')?hd('Día a día')+fn(''):'')+ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
       return '<div class="'+cls+'" data-st="'+st+'">'+ST_PL[st]+(L.length?'<i class="stn">'+L.length+'</i>':'')+'</div>'+(L.length?L.map(fn).join(''):'<div class="'+cls+'h" data-st="'+st+'">Arrastra aquí los proyectos '+({'Hoy':'de hoy','Esta semana':'de esta semana','Este mes':'de este mes','Más adelante':'para más adelante','Completado':'terminados'})[st]+'</div>');}).join('');
   }
   let out='',last=null;
@@ -2186,7 +2186,7 @@ function withSecs(ids,fn,kind){
 }
 function hoySecs(ids,fn,kind){
   const cls=kind==='rail'?'rsec':'csec',hd=t=>'<div class="'+cls+'">'+t+'</div>',pj=ids.filter(k=>k!==''),dd=ids.includes('');
-  return (pj.length?hd('Focus hoy')+pj.map(fn).join(''):'')+(dd?hd('Día a día')+fn(''):'');
+  return (dd?hd('Día a día')+fn(''):'')+(pj.length?hd('Focus hoy')+pj.map(fn).join(''):'');
 }
 const EXPBTN_OLD=id=>'<button class="rexp" data-act="wExpand" data-id="'+id+'" title="Abrir el proyecto expandido (clic otra vez para salir)" aria-label="Abrir expandido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></button>';
 const EXPBTN=()=>'';
