@@ -1824,7 +1824,7 @@ let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Todos';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
-const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set(), fresh=new Set();
+const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set((()=>{try{return JSON.parse(localStorage.getItem('focus.doneOpen')||'[]')}catch{return[]}})()), fresh=new Set();
 let tlScroll=null;
 
 const $=(q,r=document)=>r.querySelector(q), $$=(q,r=document)=>[...r.querySelectorAll(q)];
@@ -1985,7 +1985,7 @@ function bubble(o,today=false,embed=false){
   const inDay=queue(selectedDate).filter(t=>t.objective===oid);
   const dayIds=new Set(inDay.map(t=>t.id)),mine=today?all.filter(t=>dayIds.has(t.id)):all;
   const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
-  const sections=o.sections,key=(today?'t':'f')+o.id;
+  const sections=o.sections,key=o.id;
   const openAll=all.filter(t=>!t.done);
   const todayMin=sumMin(inDay.filter(t=>!t.done),minutesLeft),leftMin=sumMin(openAll,minutesLeft),totalMin=sumMin(all);
   let body='';
@@ -3033,7 +3033,7 @@ function onClick(e){
     }
     case 'toggleObj':collapsed.has(id)?collapsed.delete(id):collapsed.add(id);render();break;
     case 'secContinue':{const k=b.dataset.obj,sc=b.dataset.sec;leaveHoy(k===DAILY.id?'':k);s.reopen??={};const r=(s.reopen[k]??=[]);if(!r.includes(sc))r.push(sc);save();break;}
-    case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);render();break;
+    case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);try{localStorage.setItem('focus.doneOpen',JSON.stringify([...doneOpen]))}catch{}render();break;
     case 'pickIcon':openPop(b,'<div class="emojis">'+EMOJIS.map(x=>'<button data-act="setIcon" data-val="'+x+'">'+x+'</button>').join('')+'</div>',{kind:b.dataset.kind,id});break;
     case 'setIcon':{const c=popCtx;closePop();if(!c)break;const item=c.kind==='obj'?objective(c.id):project(c.id);if(item){item.icon=b.dataset.val;save();}break;}
     case 'menu':menuFor(b.dataset.kind,id,b);break;
