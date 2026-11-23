@@ -1689,6 +1689,37 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .task.isimp:not(.running) .tplay:not(.on):hover{background:#fff;color:var(--red)}
 .task.isimp:not(.running) .tworked:hover,.task.isimp:not(.running) .tworked:focus{background:rgba(255,255,255,.2);color:#fff}
 .task.running .impb.on{color:#fff}
+
+/* v124 Focus apilado + modo Hoy compacto */
+.focusc .csec{font-size:11.5px;font-weight:650;letter-spacing:.6px;text-transform:uppercase;color:var(--mute);margin:26px 2px 10px;display:flex;align-items:center;gap:8px}
+.focusc .csec .stn{font-style:normal;font-weight:500;opacity:.7;margin:0}
+.focusc .colhead+.csec{margin-top:14px}
+.colhead.fh{gap:14px}
+.colhead.fh>div:first-child{flex:none}
+.colhead.fh .fhoy{flex:none;align-self:flex-start;margin-top:-1px;padding:6px 14px}
+.colhead.fh .dnav{margin-left:auto}
+.bubble.bcp .bhead{display:flex;align-items:center;gap:14px;padding:14px 18px 14px 28px;border-bottom:0;grid-template-columns:none}
+.bubble.bcp .bhead>.lines{top:50%;transform:translateY(-50%)}
+.bubble.bcp .bh-l{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-width:0;align-self:center}
+.bubble.bcp .bh-title{align-items:center;gap:9px;flex:0 1 auto;min-width:0}
+.bubble.bcp .bh-title .ttl{min-width:0}
+.bubble.bcp .bh-title .oname{display:block;-webkit-line-clamp:unset;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;line-height:24px}
+.bubble.bcp .btags{margin:0;flex:0 1 auto;min-width:0;overflow:hidden}
+.bubble.bcp .bh-r{flex-direction:row;align-items:center;gap:12px;align-self:center;flex:none}
+.bubble.bcp .bh-r .bprog{width:170px;margin:0;height:auto}
+.bubble.bcp .bh-r .bprog .prog{flex:1;width:auto}
+.bubble.bcp .bh-r .chips2{margin:0;min-height:0;flex-wrap:nowrap}
+.bubble.bcp .bhead>.iconbtn{align-self:center}
+.bubble.bcp .bbody{padding-top:0}
+.bubble.bcp .bhead{padding-right:16px;gap:12px}
+.bubble.bcp .bh-l{gap:10px}
+.bubble.bcp .bh-title{flex:1 1 auto}
+.bubble.bcp .btags{flex:none;overflow:visible;gap:2px}
+.bubble.bcp .btags .atag.pick{max-width:118px;overflow:hidden;text-overflow:ellipsis}
+.bubble.bcp .bh-r{gap:10px}
+.bubble.bcp .bh-r .bprog{width:96px;gap:7px}
+.bubble.bcp .bh-r .bprog .prog{min-width:0}
+.bubble.bcp .bh-r .chipi{white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1889,7 +1920,7 @@ function save(refresh=true){
 }
 
 /* ---------- estado de interfaz ---------- */
-let wSolo=null,wLast=null;
+let wSolo=null,wLast=null,fHoy=false;
 let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Todos';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
@@ -2039,7 +2070,7 @@ const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
 const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
-function bubble(o,today=false,embed=false){
+function bubble(o,today=false,embed=false,cp=false){
   const daily=o.id===DAILY.id,oid=daily?'':o.id,proj=daily?null:project(o.project);
   const color=daily?DAILY.color:(proj?.color??PALETTE[0]);
   const pr=progressOf(o);
@@ -2080,14 +2111,14 @@ function bubble(o,today=false,embed=false){
     if(sec===RECUR&&daily)return '<div class="recurcard">'+inner+'</div>';
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
-  if(today&&!rendered)body+=endZ(oid,'','',o.id,true,true);
-  if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
+  if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
+  if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
     const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
-  if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
+  if(today&&!cp)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
@@ -2096,11 +2127,11 @@ function bubble(o,today=false,embed=false){
   const chips='<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
-  const menu=((!today&&!daily)||embed)?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
+  const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
-  const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Proyecto sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
+  const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+(cp?'':propsH)+'</div>';
+  return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead">'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Proyecto sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2'+(lateT.length?' wrapc':'')+'">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -2266,8 +2297,9 @@ function railItem(k,sel){
     '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>'+L.length+' tarea'+(L.length>1?'s':'')+'</small>':'')+'</div></div>'+EXPBTN(k)+'</div>';
 }
 function dateHead(){
+  const fo=focusOn();
   const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
-  return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas</span></div>'+
+  return '<div class="colhead'+(fo?' fh':'')+'"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas</span></div>'+(fo?'<button class="wmode hoy fhoy" data-act="fHoyToggle" aria-pressed="'+fHoy+'" title="'+(fHoy?'Volver a la vista completa':'Solo lo de hoy, en una línea por proyecto')+'">'+glyph('checkbox')+'<span>Hoy</span></button>':'')+
     '<div class="dnav"><button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div></div>';
 }
 /* ---------- feed de Hoy: lista plana combinada, solo recolocación ---------- */
@@ -2315,7 +2347,20 @@ function feedHtml(){
   ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;if(key!==prev){prev=key;h+=feedHead(ids,ix);}h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"')+insFeed(t,id,'');});
   return h+'<div class="fend"></div></div>';
 }
+function focusStack(){
+  const cp=fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
+  const card=k=>bubble(k===''?DAILY:objective(k),cp,false,cp);
+  let h='';
+  if(!cp||has(''))h+='<div class="csec">Día a día</div><div class="bubbles">'+card('')+'</div>';
+  for(const st of ST_ORDER){
+    const L=s.objectives.filter(o=>(o.status||'Más adelante')===st&&(!cp||has(o.id)));
+    if(L.length)h+='<div class="csec" data-st="'+st+'">'+ST_PL[st]+'<i class="stn">'+L.length+'</i></div><div class="bubbles">'+L.map(o=>card(o.id)).join('')+'</div>';
+  }
+  if(cp&&!h)h='<p class="empty pick">Nada planificado para este día.</p>';
+  return h;
+}
 function workCenter(ids){
+  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+focusStack()+'</div>';
   if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);return '<div class="wc-in solo">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
   if(wHoy)return '<div class="wc-in feedc">'+dateHead()+feedHtml()+'</div>';
@@ -2385,11 +2430,11 @@ function execPanel(onlyStats=false){
   const lastAct=x=>Math.max(x.done||0,...s.entries.filter(e=>e.task===x.id).map(e=>e.end??Date.now()));
   const doneL=s.tasks.filter(x=>x.done&&day(x.done)===d).sort((x,y)=>lastAct(y)-lastAct(x));
   const dReal=doneL.reduce((q,x)=>q+workedMin(x),0);
-  const compl='<section class="xcard cdone"><h3>Completadas'+(doneL.length?' · '+doneL.length:'')+'</h3>'+
+  const compl='<section class="xcard cdone"><h3>Tareas completadas'+(doneL.length?' · '+doneL.length:'')+'</h3>'+
     (doneL.length?'<div class="cd-sum">Tiempo <b>'+dur(dReal)+'</b></div>'+doneL.map(x=>{
       const pr=projectOf(x),ob=objective(x.objective),real=workedMin(x);
       return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
-        '<div class="cd-time"><b>'+editable('task.worked',x.id,String(Math.floor(real+1e-6)),'inputmode="numeric" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b></div>'+
+        '<div class="cd-time"><b>'+editable('task.worked',x.id,dur(Math.floor(real+1e-6)),'inputmode="numeric" data-raw="'+Math.floor(real+1e-6)+'" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b></div>'+
         '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
   const objc='<section class="xcard"><h3>Avance por proyecto</h3>'+(st.objs.length?st.objs.map(g=>{
@@ -3093,9 +3138,12 @@ function onClick(e){
     case 'entAdd':{const m=Math.round(+($('#entadd')?.value)||0);if(m>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-m*60000,end:now});save();}showTimePop(id);break;}
     case 'wSelect':case 'wExpand':{
       const k=id===DAILY.id?'':id;hoyOpen.clear();
+      if(focusOn()&&wSolo===null){const c=$('.wcenter'),el=c&&c.querySelector('.bubble[data-obj="'+(k===''?DAILY.id:k)+'"]');
+        if(el)c.scrollTo({top:c.scrollTop+el.getBoundingClientRect().top-c.getBoundingClientRect().top-14,behavior:'smooth'});break;}
       if(wSolo===k){wSolo=null;wLast=null;render();break;}
       wSolo=k;wLast=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;
     }
+    case 'fHoyToggle':fHoy=!fHoy;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
@@ -3309,7 +3357,7 @@ document.addEventListener('click',onClick);
 
 /* ---------- campos editables, teclado ---------- */
 function selectAll(el){const r=document.createRange();r.selectNodeContents(el);const g=getSelection();g.removeAllRanges();g.addRange(r);}
-document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;el._orig=el.textContent;if(el.dataset.edit==='task.min'||el.dataset.edit==='task.worked')placeEnd(el);});
+document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;if(el.dataset.raw!=null)el.textContent=el.dataset.raw;el._orig=el.textContent;if(el.dataset.edit==='task.min'||el.dataset.edit==='task.worked')placeEnd(el);});
 function placeEnd(el){const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const g=getSelection();g.removeAllRanges();g.addRange(r);}
 document.addEventListener('mousedown',e=>{
   const el=e.target.closest?.('.tworked[data-edit]');
