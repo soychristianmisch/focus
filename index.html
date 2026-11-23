@@ -1669,6 +1669,26 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .bhead>.iconbtn.objmore,.iconbtn.objmore{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:transparent;display:grid;place-items:center;color:var(--mute);padding:0}
 .iconbtn.objmore:hover{background:var(--hover);color:var(--ink)}
 .bhead>.iconbtn.objmore svg{width:16px;height:16px}
+
+/* v122 tarea importante */
+.tmain.fx{display:flex;align-items:center;gap:6px;min-width:0}
+.tmain.fx .tname{flex:0 1 auto;min-width:0}
+.impb{flex:none;width:20px;height:20px;padding:0;border:0;background:none;border-radius:50%;color:var(--faint);opacity:.35;cursor:pointer;display:grid;place-items:center;transition:opacity .1s,color .1s}
+.impb svg{width:17px;height:17px}
+.task:hover .impb,.task.picked .impb{opacity:.8}
+.impb:hover{opacity:1;color:var(--red)}
+.impb.on{opacity:1;color:var(--red)}
+.task.isimp:not(.running){background:var(--red);color:#fff}
+.task.isimp:not(.running):hover{filter:brightness(1.07)}
+.task.isimp:not(.running) .tname,.task.isimp:not(.running) .tworked,.task.isimp:not(.running) .tworked:before,.task.isimp:not(.running) .tworked:after,.task.isimp:not(.running) .grip,.task.isimp:not(.running) .rcic{color:#fff}
+.task.isimp:not(.running) .tworked.zero{opacity:1}
+.task.isimp:not(.running) .check{border-color:#fff;background:transparent}
+.task.isimp:not(.running) .today,.task.isimp:not(.running) .today.on{background:rgba(255,255,255,.22)!important;color:#fff!important;opacity:1}
+.task.isimp:not(.running) .impb.on{color:#fff}
+.task.isimp:not(.running) .tplay:not(.on){background:rgba(255,255,255,.22);color:#fff}
+.task.isimp:not(.running) .tplay:not(.on):hover{background:#fff;color:var(--red)}
+.task.isimp:not(.running) .tworked:hover,.task.isimp:not(.running) .tworked:focus{background:rgba(255,255,255,.2);color:#fff}
+.task.running .impb.on{color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1993,12 +2013,14 @@ function whenChip(t){
   }
   return '<button class="today '+cls+'" data-act="today" data-id="'+esc(t.id)+'" title="'+(w.k==='today'?'Planificada para hoy':long)+' · clic para cambiar la fecha">'+txt+'</button>';
 }
+const IMP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.4v5.6M12 16.5v.1"/></svg>';
 function taskRow(t){
   const running=s.running?.id===t.id;
-  return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
+  return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
-    '<div class="tmain'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+'</div>'+
+    '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
+      '<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button></div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
     (t.done?'<span></span>':whenChip(t))+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
@@ -3103,6 +3125,7 @@ function onClick(e){
     case 'prev':case 'next':selectedDate=shift(selectedDate,(act==='prev'?-1:1)*(calWeek?7:1));render();break;
     case 'dateToday':selectedDate=day();render();break;
     case 'calMode':calWeek=id==='1';render();break;
+    case 'toggleImp':if(t){t.imp=!t.imp;save();}break;
     case 'toggleDone':if(t){if(t.done){t.done=0;save();}else finish(id);}break;
     case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
     case 'play':start(id);break;
