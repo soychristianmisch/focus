@@ -1720,6 +1720,12 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .bubble.bcp .bh-r .bprog{width:96px;gap:7px}
 .bubble.bcp .bh-r .bprog .prog{min-width:0}
 .bubble.bcp .bh-r .chipi{white-space:nowrap}
+
+/* v125 proyecto sin tareas abiertas: espacio para rehacer */
+.emptyadd{display:flex;gap:10px;justify-content:center;padding:26px 16px 30px;min-height:84px;align-items:center}
+.emptyadd button{border:1.5px dashed var(--line);background:transparent;color:var(--mute);font:600 12.5px Inter,sans-serif;padding:9px 16px;border-radius:12px;cursor:pointer}
+.emptyadd button:hover{background:var(--bg3);color:var(--ink);border-color:var(--faint)}
+.cd-time .tworked:after{content:none!important}.cd-time .cdw{white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1986,11 +1992,22 @@ function pause(){
   if(!s.running)return;
   selected=s.running.id;s.pauseId=selected;s.paused=[selected,...s.paused.filter(x=>x!==selected)];closeTimer();save();
 }
+/* si no queda ninguna tarea abierta, el proyecto pasa a Completado y sube al principio de esa lista */
+function autoCompleteObj(oid){
+  const o=oid&&objective(oid);if(!o||o.status==='Completado')return;
+  const L=s.tasks.filter(x=>x.objective===oid);
+  if(!L.length||L.some(x=>!x.done))return;
+  o.status='Completado';
+  const i=s.objectives.indexOf(o);s.objectives.splice(i,1);
+  const j=s.objectives.findIndex(x=>x.status==='Completado');
+  if(j<0)s.objectives.splice(i,0,o);else s.objectives.splice(j,0,o);
+}
 function finish(id){
   const t=task(id);if(!t||t.done)return;
   if(s.running?.id===id)closeTimer();
   {const rp=s.reopen?.[t.objective||DAILY.id];if(rp&&!s.tasks.some(x=>x!==t&&!x.done&&x.objective===t.objective&&x.section===t.section))s.reopen[t.objective||DAILY.id]=rp.filter(x=>x!==t.section);}
   t.done=Date.now();s.pauseId='';s.paused=s.paused.filter(x=>x!==id);
+  autoCompleteObj(t.objective);
   {const td=day();if(!t.days.includes(td)){t.days=[...t.days,td].sort();(s.order[td]??=[]);if(!s.order[td].includes(t.id))s.order[td].push(t.id);}}
   {const qd=queue(day()),ix=qd.findIndex(x=>x.id===id),nx=qd.slice(ix+1).find(x=>!x.done)??qd.find(x=>!x.done);
   selected=nx?.id??'';suggestion='';}
@@ -2112,6 +2129,7 @@ function bubble(o,today=false,embed=false,cp=false){
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
+  if(!today&&!embed&&!cp&&!open.length)body+='<div class="emptyadd"><button type="button" data-act="addTask" data-obj="'+esc(oid)+'" data-sec="">＋ Nueva tarea</button>'+(daily?'':'<button type="button" data-act="insSection" data-id="'+esc(o.id)+'" data-before="">＋ Nueva sección</button>')+'</div>';
   if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
@@ -3174,7 +3192,7 @@ function onClick(e){
     case 'dateToday':selectedDate=day();render();break;
     case 'calMode':calWeek=id==='1';render();break;
     case 'toggleImp':if(t){t.imp=!t.imp;save();}break;
-    case 'toggleDone':if(t){if(t.done){t.done=0;save();}else finish(id);}break;
+    case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
     case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
