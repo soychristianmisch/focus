@@ -1762,6 +1762,15 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .feed .fgrp .fhead{margin:0 0 2px}
 .feed .fgrp .fhead:first-child{margin-top:0}
 .feed .fgrp>.insm:last-child{display:none}
+
+/* v128 proyecto vacío: zona mínima con las líneas azul y verde al pasar el cursor */
+.emptyz{padding:6px 0 4px}
+.emptyz .endz{height:36px;margin:0}
+.emptyz .endz .ez{height:18px}
+.emptyz .endz .ez.t{top:0}.emptyz .endz .ez.s{top:18px}
+.emptyz .endz .ez:only-child{height:36px}
+.emptyz .endz .ez.t:before{top:auto;bottom:0}
+.emptyz .endz .ez.s:before{top:0}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2166,7 +2175,7 @@ function bubble(o,today=false,embed=false,cp=false){
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
-  if(!today&&!embed&&!cp&&!open.length)body+='<div class="emptyadd"><button type="button" data-act="addTask" data-obj="'+esc(oid)+'" data-sec="">＋ Nueva tarea</button>'+(daily?'':'<button type="button" data-act="insSection" data-id="'+esc(o.id)+'" data-before="">＋ Nueva sección</button>')+'</div>';
+  if(!today&&!embed&&!cp&&!open.length)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
   if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
