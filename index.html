@@ -2841,8 +2841,8 @@ function onClick(e){
     case 'wSelect':{
       const k=id===DAILY.id?'':id;
       if(wSolo!==null){const same=wSolo===k;wSolo=null;wLast=k;hoyOpen.clear();flipRender(()=>render());if(!same)toBubble(id,80);else toBubble(id,80);break;}
-      if(wLast===k){wSolo=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
       if(wHoy){wSolo=k;wLast=k;hoyOpen.clear();hoyOpen.add(id);render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
+      if(wLast===k){wSolo=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
       wLast=k;render();toBubble(id);break;
     }
     case 'wProjBack':wProj='';render();break;
