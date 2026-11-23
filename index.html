@@ -1802,7 +1802,6 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .fgarr button:hover{background:var(--bg3);color:var(--ink)}
 
 /* v137 */
-.fsolo .viewall{display:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2220,7 +2219,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
     const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
-  if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el objetivo')+' <span>⌄</span></button>';
+  if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="'+(today?'hoyOpen':'fViewAll')+'" data-id="'+o.id+'">Ver todas las tareas <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
@@ -3283,6 +3282,7 @@ function onClick(e){
     case 'fgMove':{const w=b.closest('.fgwrap');if(!w)break;const sib=+b.dataset.dir>0?w.nextElementSibling:w.previousElementSibling;if(sib?.dataset.fgk)moveFg(id,sib.dataset.fgk,+b.dataset.dir>0);break;}
     case 'fByToggle':fBy=fBy==='mom'?'area':'mom';render();break;
     case 'cpOpen':{if(e.target.closest('[data-edit],a,button,.lines,input'))break;const k=id===DAILY.id?'':id;wSolo=k;wLast=k;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;}
+    case 'fViewAll':fHoy=false;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'fHoyToggle':{fHoy=!fHoy;}render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
