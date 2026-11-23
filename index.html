@@ -1602,6 +1602,16 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .pjpage .bh-r .chips2{flex-wrap:wrap}
 .pjpage .bh-r .chipi{overflow:visible;text-overflow:clip;flex:none}
 .bubble .odesc{display:none!important}
+
+/* v108 reloj grande y tres botones */
+.xtask .xline{gap:10px}
+.xtask .xclock{font-size:50px;letter-spacing:-2px;margin-right:auto}
+.hoyright .xtask .xclock{font-size:50px;letter-spacing:-2px;margin-right:auto}
+.hoyright .xtask .xline{gap:8px}
+.xtask .fl-b.big{width:46px;height:46px}
+.xtask .fl-b.big svg{width:20px;height:20px}
+.fl-b.stp:disabled{opacity:.35;cursor:default;pointer-events:none}
+.fl-b.ok:hover,.flcard .fl-b.ok:hover{transform:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1870,6 +1880,11 @@ function pause(){
   if(!s.running)return;
   selected=s.running.id;s.pauseId=selected;s.paused=[selected,...s.paused.filter(x=>x!==selected)];closeTimer();save();
 }
+function stopTimer(){
+  const id=s.running?.id??s.pauseId??selected;if(!id)return;
+  if(s.running)closeTimer();
+  selected=id;s.pauseId='';s.paused=s.paused.filter(x=>x!==id);suggestion='';save();
+}
 function finish(id){
   const t=task(id);if(!t||t.done)return;
   if(s.running?.id===id)closeTimer();
@@ -1889,6 +1904,7 @@ function timerReading(t,now=Date.now()){
 const ICON={
   play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a1 1 0 0 0 1.52.85l11-6.8a1 1 0 0 0 0-1.7l-11-6.8A1 1 0 0 0 8 5.2z" fill="currentColor"/></svg>',
   pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.2" fill="currentColor"/></svg>',
+  stop:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.4" fill="currentColor"/></svg>',
   check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   caret:'<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4 2l4.5 4L4 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   moon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
@@ -2233,6 +2249,7 @@ function execPanel(onlyStats=false){
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
+       '<button type="button" class="fl-b big ok stp" data-act="stop" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar (S)"'+(running||s.pauseId===t.id?'':' disabled')+'>'+ICON.stop+'</button>'+
        '<button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar (C)">'+ICON.check+'</button>')+'</div>':
       '<p class="empty" style="padding:6px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
     (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</section>';
@@ -2959,6 +2976,7 @@ function onClick(e){
     case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
+    case 'stop':stopTimer();break;
     case 'finish':finish(id);break;
     case 'dismiss':suggestion='';render();break;
     case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1');break;
@@ -3229,6 +3247,7 @@ document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),cur=t??current();
   if((k==='p'||k===' ')&&(cur||s.running)){e.preventDefault();if(s.running&&(!t||s.running.id===t.id))pause();else if(cur)start(cur.id);}
   if(k==='c'&&cur)finish(cur.id);
+  if(k==='s'&&(s.running||s.pauseId))stopTimer();
 });
 document.addEventListener('input',e=>{
   const ta=e.target.closest?.('textarea[data-note]');
@@ -3521,7 +3540,7 @@ function updateFloat(){
   const p=t?projectOf(t):null,o=t?objective(t.objective):null;
   const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.toggle('paused',pzd);
   floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':pzd?' paused':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>'+
-    (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
+    (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok stp" data-act="stop" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar"'+(running||pzd?'':' disabled')+'>'+ICON.stop+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
 }
 
 /* ---------- reloj ---------- */
