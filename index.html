@@ -2142,13 +2142,13 @@ const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
 const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
-function bubble(o,today=false,embed=false,cp=false){
+function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   const daily=o.id===DAILY.id,oid=daily?'':o.id,proj=daily?null:project(o.project);
   const color=daily?DAILY.color:(proj?.color??PALETTE[0]);
   const pr=progressOf(o);
   const all=s.tasks.filter(t=>t.objective===oid);
   const inDay=queue(selectedDate).filter(t=>t.objective===oid);
-  const dayIds=new Set(inDay.map(t=>t.id)),mine=today?all.filter(t=>dayIds.has(t.id)):all;
+  const dayIds=new Set(inDay.map(t=>t.id)),mine=(today||dayOnly)?all.filter(t=>dayIds.has(t.id)):all;
   const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
   const sections=o.sections,key=o.id;
   const openAll=all.filter(t=>!t.done);
@@ -2166,7 +2166,7 @@ function bubble(o,today=false,embed=false,cp=false){
   let lastSec='',rendered=0;
   body+=(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec);
-    if(today&&!list.length&&!(sec===RECUR&&daily))return '';
+    if((today||dayOnly)&&!list.length&&!(sec===RECUR&&daily))return '';
     if(sec&&sec!==RECUR&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
     if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
@@ -2177,10 +2177,10 @@ function bubble(o,today=false,embed=false,cp=false){
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span>'+
       '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Hoy</button>'+
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
-    const tm=today||embed;
+    const tm=today||embed||dayOnly;
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
-      endZ(oid,sec,daily?(sec===RECUR?'':sec===''?(sections.filter(x=>x!==RECUR)[0]||''):(sections.filter(x=>x!==RECUR)[sections.filter(x=>x!==RECUR).indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today);
+      endZ(oid,sec,daily?(sec===RECUR?'':sec===''?(sections.filter(x=>x!==RECUR)[0]||''):(sections.filter(x=>x!==RECUR)[sections.filter(x=>x!==RECUR).indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
     if(sec===RECUR&&daily)return '<div class="recurcard">'+inner+'</div>';
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
@@ -2331,11 +2331,12 @@ function railGroups(list){
   const rank=x=>[areas.indexOf(x.proj?.area),s.projects.indexOf(x.proj)];
   return [...g.values()].sort((a,b)=>{const A=rank(a),B=rank(b);return A[0]-B[0]||A[1]-B[1];});
 }
+const fOk=k=>!fHoy||queue(selectedDate).some(t=>!t.done&&(t.objective||'')===k);
 function wList(){
   if(wHoy){return [...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k))),''];}
   if(wArea==='__daily')return [''];
-  if(wStat==='Focus'&&fBy==='area'){const gs=railGroups(s.objectives.filter(o=>stOk(o)));return [''].concat(gs.flatMap(g=>g.items.map(o=>o.id)));}
-  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o));return [''].concat(ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id)));}
+  if(wStat==='Focus'&&fBy==='area'){const gs=railGroups(s.objectives.filter(o=>stOk(o)&&fOk(o.id)));return (fOk('')?['']:[]).concat(gs.flatMap(g=>g.items.map(o=>o.id)));}
+  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o)&&fOk(o.id));return (fOk('')?['']:[]).concat(ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id)));}
   const ids=s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o)).map(o=>o.id);
   if(wArea==='Todas'&&wStat==='Todos'){const gs=railGroups(ids.map(objective).filter(Boolean));return gs.flatMap(g=>g.items.map(o=>o.id));}
   return ids;
@@ -2352,6 +2353,7 @@ function withSecs(ids,fn,kind){
   }
   if(wStat==='Focus'){
     return (ids.includes('')?hd('Día a día')+fn(''):'')+ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
+      if(fHoy&&!L.length)return '';
       return '<div class="'+cls+'" data-st="'+st+'">'+ST_PL[st]+(L.length?'<i class="stn">'+L.length+'</i>':'')+'</div>'+(L.length?L.map(fn).join(''):'<div class="'+cls+'h" data-st="'+st+'">Arrastra aquí los objetivos '+({'Hoy':'de hoy','Esta semana':'de esta semana','Este mes':'de este mes','Más adelante':'para más adelante','Completado':'terminados'})[st]+'</div>');}).join('');
   }
   let out='',last=null;
@@ -2433,7 +2435,7 @@ function feedHtml(){
 }
 function focusStack(){
   const cp=fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
-  const card=k=>bubble(k===''?DAILY:objective(k),cp,false,cp);
+  const card=k=>bubble(k===''?DAILY:objective(k),false,false,false,cp);
   let h='';
   if(!cp||has(''))h+='<div class="csec">Día a día</div><div class="bubbles">'+card('')+'</div>';
   const L0=s.objectives.filter(o=>!cp||has(o.id));
