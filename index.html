@@ -82,7 +82,7 @@ main{min-height:calc(100dvh - 48px)}
 
 /* tareas */
 .tasks{display:block}
-.task{display:grid;grid-template-columns:16px 22px minmax(0,1fr) 62px 84px 26px;align-items:center;column-gap:4px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
+.task{display:grid;grid-template-columns:16px 22px minmax(0,1fr) 78px 62px 84px 26px;align-items:center;column-gap:4px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
 .task:hover{background:var(--hover)}
 .task.picked{background:var(--accent-soft)}
 .task:focus{outline:none}
@@ -1458,6 +1458,23 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .cd-time b{display:block;font-size:13.5px;font-variant-numeric:tabular-nums}
 .cd-time small{display:block;font-size:11px;color:var(--faint)}
 .cd-time.over b{color:var(--red)}
+
+/* v83 tiempo trabajado editable en línea */
+.tworked{display:block;text-align:right;color:var(--mute);font-size:12.5px;font-variant-numeric:tabular-nums;padding:1px 3px;white-space:nowrap;border-radius:4px;cursor:text;border:0;background:none;text-decoration:none;min-width:14px}
+.tworked:before{content:"⏱ ";font-size:10.5px;color:var(--faint)}
+.tworked:after{content:" min";color:var(--faint)}
+.tworked:hover{background:var(--hover);color:var(--ink);text-decoration:none}
+.tworked:focus{background:var(--accent-soft);outline:none;color:var(--ink)}
+.tworked.inl,.tworked.cdw{display:inline-block;min-width:12px}
+.tworked.inl:before,.tworked.cdw:before{content:""}
+.flcard .tworked,.flcard .tworked:hover{color:inherit;text-decoration:underline;opacity:.95}
+.flcard .tworked:focus{color:var(--ink)}
+.cd-time{text-align:right;padding:2px 4px}
+.cd-time b{display:block}
+.cd-time.over b .tworked{color:var(--red)}
+.cd-time .tworked:after{color:var(--faint)}
+.btags{flex-wrap:wrap;min-width:0}.btags .oprops.inl{flex-wrap:nowrap}
+.btags .oprops.inl{flex-wrap:wrap;max-width:100%;min-width:0}.btags .oprops.inl .p{white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1772,7 +1789,8 @@ function taskRow(t){
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
-    '<div class="tmain">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+(s.entries.some(e=>e.task===t.id)?'<button class="tworked" data-act="timeEdit" data-id="'+esc(t.id)+'" title="Tiempo trabajado: ajustar">'+dur(elapsed(t.id)/60000)+'</button>':'')+'</div>'+
+    '<div class="tmain">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+'</div>'+
+    (s.entries.some(e=>e.task===t.id)?editable('task.worked',t.id,String(Math.round(elapsed(t.id)/60000)),'inputmode="numeric" title="Tiempo trabajado (min): haz clic y escribe el real"','tworked'):'<span></span>')+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Minutos"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
@@ -2060,7 +2078,7 @@ function execPanel(onlyStats=false){
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
   const main='<section class="xcard xtask'+(t&&running?' flcard':t&&!t.done&&s.pauseId===t.id?' flcard paused':'')+(t&&running&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min'+(s.entries.some(e=>e.task===t.id)?' · <button class="tworked on" data-act="timeEdit" data-id="'+esc(t.id)+'" title="Ajustar el tiempo trabajado">Trabajado '+dur(elapsed(t.id)/60000)+' · Ajustar</button>':'')+'</p>'+
+    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min'+(s.entries.some(e=>e.task===t.id)?' · Trabajado '+editable('task.worked',t.id,String(Math.round(elapsed(t.id)/60000)),'inputmode="numeric" title="Haz clic y escribe el tiempo real"','tworked inl'):'')+'</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
@@ -2084,7 +2102,7 @@ function execPanel(onlyStats=false){
     (doneL.length?'<div class="cd-sum">Real <b>'+dur(dReal)+'</b> · Estimado <b>'+dur(dEst)+'</b></div>'+doneL.map(x=>{
       const pr=projectOf(x),ob=objective(x.objective),real=elapsed(x.id)/60000;
       return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
-        '<button class="cd-time'+(real>x.minutes+.5?' over':'')+'" data-act="timeEdit" data-id="'+esc(x.id)+'" title="Real / estimado: ajustar el tiempo"><b>'+dur(real)+'</b><small>est. '+dur(x.minutes)+'</small></button>'+
+        '<div class="cd-time'+(real>x.minutes+.5?' over':'')+'"><b>'+editable('task.worked',x.id,String(Math.round(real)),'inputmode="numeric" title="Haz clic y escribe el tiempo real"','tworked cdw')+'</b><small>est. '+dur(x.minutes)+'</small></div>'+
         '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
   const objc='<section class="xcard"><h3>Avance por proyecto</h3>'+(st.objs.length?st.objs.map(g=>{
@@ -2548,6 +2566,15 @@ const pl=t=>'<div class="pl">'+t+'</div>';
 const pinput=(label,key,type,value)=>'<div class="pinput"><label>'+label+'</label><input type="'+type+'" data-pop-input="'+key+'" value="'+esc(value)+'"></div>';
 
 
+
+function setWorked(id,m){
+  const cur=elapsed(id),diff=m*60000-cur;
+  if(Math.round(cur/60000)===m)return;
+  if(diff>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-diff,end:now,adj:true});}
+  else{let rem=-diff;
+    for(const e of s.entries.filter(x=>x.task===id&&x.end!=null).sort((x,y)=>y.start-x.start)){if(rem<=0)break;const d=e.end-e.start;if(d<=rem){s.entries=s.entries.filter(x=>x!==e);rem-=d;}else{e.end-=rem;rem=0;}}}
+  (s.adjLog??=[]).push({task:id,at:Date.now(),from:Math.round(cur/60000),to:m});
+}
 /* ---------- ajustar tiempo trabajado ---------- */
 let timeRect=null;
 const CLKI='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/></svg>';
@@ -2589,6 +2616,7 @@ function commitEdit(el,info){
   let bad=false;
   switch(kind){
     case 'task.name':{const t=task(id);if(!t)return;if(!v)bad=true;else t.name=v;break;}
+    case 'task.worked':{const t=task(id);if(!t)return;const m=/^\d+$/.test(v.trim())?+v.trim():parseMin(v);if(m==null||m<0||m>10080){notify('Escribe los minutos reales, por ejemplo 18.');bad=true;}else setWorked(id,Math.round(m));break;}
     case 'task.min':{const t=task(id),m=parseMin(v);if(!t)return;if(m==null||m<1||m>10080){notify('Escribe una duración válida, por ejemplo 45, 1h30 o 90m.');bad=true;}else t.minutes=m;break;}
     case 'sec.name':{
       const o=objective(id),old=el.dataset.sec;if(!o)return;
