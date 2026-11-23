@@ -1392,6 +1392,15 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .hoyright .xtask.flcard{height:auto;display:block;border-radius:24px;padding:28px 32px;border:0}
 .hoyright .xtask.flcard .xtitle{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;overflow:hidden}
 .hoyright .xtask.flcard .xline{margin-top:14px}
+
+/* v78 tarjeta roja al pasar el tiempo */
+.flcard.over:not(.paused){background:#d4382f}
+.flcard.over:not(.paused) h3,.flcard.over:not(.paused) .est,.flcard.over:not(.paused) .xwhere{color:rgba(255,255,255,.82)}
+.flcard.over:not(.paused) .xtitle,.flcard.over:not(.paused) .xclock,.flcard.over:not(.paused) .xclock.over{color:#fff;background:none;padding:0;margin-left:0}
+.flcard.over:not(.paused) .fl-b,.flcard.over:not(.paused) .fl-b.run{background:#fff;color:#d4382f}
+.flcard.over:not(.paused) .fl-b:hover{background:rgba(255,255,255,.88);color:#d4382f}
+.flcard.over:not(.paused) .fl-b.ok{background:rgba(255,255,255,.22);color:#fff}
+.flcard.over:not(.paused) .fl-b.ok:hover{background:rgba(255,255,255,.34);color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1992,7 +2001,7 @@ function execPanel(onlyStats=false){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xcard xtask'+(t?' flcard':'')+(t&&!running&&!t.done?' paused':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+  const main='<section class="xcard xtask'+(t?' flcard':'')+(t&&!running&&!t.done?' paused':'')+(t&&!t.done&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
     (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
@@ -3236,7 +3245,7 @@ setInterval(()=>{
     doc?.querySelectorAll('[data-clock]').forEach(el=>{
       const t=task(el.dataset.clock);if(!t)return;
       const r=timerReading(t,now),lb=doc.querySelector('[data-clabel="'+el.dataset.clock+'"]');
-      el.textContent=r.text;el.classList.toggle('over',r.over);
+      el.textContent=r.text;el.classList.toggle('over',r.over);el.closest('.flcard')?.classList.toggle('over',r.over);
       if(lb){lb.textContent=r.label;lb.classList.toggle('over',r.over);}
     });
   }
