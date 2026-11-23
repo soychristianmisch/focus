@@ -1574,6 +1574,13 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .hoyright .xtask .xtitle{font-size:18px}
 .cd-row{gap:8px;padding:7px 0}
 .cd-t{font-size:12.5px}
+
+/* v102 estados por momento */
+.tag.s-hoy{background:var(--tag-green);color:var(--tag-green-ink)}
+.tag.s-esta-semana{background:var(--tag-yellow);color:var(--tag-yellow-ink)}
+.tag.s-este-mes{background:var(--tag-blue);color:var(--tag-blue-ink)}
+.tag.s-mas-adelante{background:var(--bg3);color:var(--faint)}
+.sdot.s-hoy{background:var(--play)}.sdot.s-esta-semana{background:var(--pause)}.sdot.s-este-mes{background:#4a7fd4}.sdot.s-mas-adelante{background:color-mix(in srgb,var(--faint) 55%,var(--card))}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1583,7 +1590,7 @@ const PALETTE_ALL=['#787774','#9f6b53','#d9730d','#cb912f','#448361','#337ea9','
 const PALETTE=['#787774','#9f6b53','#d9730d','#cb912f','#448361','#337ea9','#9065b0','#c14c8a','#d44c47'];
 const MAIN_AREAS=['Ministerio','Negocios','Familia & casa','Personal','Iglesia'];
 const EMOJIS=['🔥','🚀','🎯','📖','✨','🧭','🏠','🧺','🧾','🤝','🗺️','🎬','🎙️','✉️','💻','📣','📈','🧠','🛠️','🌱','💡','📅','🎨','🏃','💬','🔒','🌍','📦','🎓','🙏','❤️','⭐','🧩','📝','📚','💰','🛒','📷','🎵','⚙️'];
-const STATUS=['Esperando','Activo','Pausado','Completado'], PRIORITY=['Alta','Normal','Baja'];
+const STATUS=['Hoy','Esta semana','Este mes','Más adelante','Completado'], PRIORITY=['Alta','Normal','Baja'];
 /* ---------- iconos de proyecto (no emojis) ---------- */
 const GLYPHS={
   mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
@@ -1712,7 +1719,7 @@ function seed(){
   for(const [pid,pname,area,goals] of SEED){
     d.projects.push({id:pid,name:pname,area,color:PROJ_COLOR[pid],icon:PROJ_ICON[pid],notes:'',description:''});
     for(const [oid,oname,hours,sections,deadline=''] of goals){
-      const o={id:oid,project:pid,name:oname,icon:OBJ_ICON[oid]||'🎯',status:'Activo',priority:'Normal',hours,phase:'',deadline,sections:[],sched:true};
+      const o={id:oid,project:pid,name:oname,icon:OBJ_ICON[oid]||'🎯',status:'Hoy',priority:'Normal',hours,phase:'',deadline,sections:[],sched:true};
       d.objectives.push(o);
       for(const [sec,...tasks] of sections){
         o.sections.push(sec);
@@ -1748,9 +1755,9 @@ function migrate(d){
     if(!d.areas.includes(p.area))d.areas.push(p.area);
   });
   d.objectives.forEach(o=>{o.notion??='';
-    delete o.image;delete o.cover;o.icon||=OBJ_ICON[o.id]||'🎯';if(o.status==='En cola')o.status='Esperando';o.sections??=[];o.glyph||=GLYPH_BY_ID[o.id]||'target';
-    delete o.window;delete o.secWin;o.priority||='Normal';if(!STATUS.includes(o.status))o.status='Activo';o.hours=Number.isFinite(o.hours)?o.hours:2;o.phase??='';o.deadline??='';
-    if(typeof o.sched!=='boolean')o.sched=!(o.status==='Esperando'||o.status==='Completado');
+    delete o.image;delete o.cover;o.icon||=OBJ_ICON[o.id]||'🎯';o.status=({'Activo':'Hoy','Pausado':'Esta semana','Esperando':'Más adelante','En cola':'Más adelante'})[o.status]||o.status;o.sections??=[];o.glyph||=GLYPH_BY_ID[o.id]||'target';
+    delete o.window;delete o.secWin;o.priority||='Normal';if(!STATUS.includes(o.status))o.status='Más adelante';o.hours=Number.isFinite(o.hours)?o.hours:2;o.phase??='';o.deadline??='';
+    if(typeof o.sched!=='boolean')o.sched=!(o.status==='Más adelante'||o.status==='Completado');
   });
   d.tasks.forEach(t=>{t.days??=[];t.done=t.done||0;t.section??='';t.objective??='';t.minutes=t.minutes>0?t.minutes:25;});
   normalizeSections(d);if(!d.stSeed){syncStatus(d);d.stSeed=1;}
@@ -1917,9 +1924,10 @@ const insMid=(obj,sec,after,next,today,oid)=>'<div class="insm"><button class="e
 const insLead=(obj,sec,first,today,top,oid)=>'<div class="insm lead"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="" data-before="'+esc(first)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea arriba"><i></i></button>'+(top?(sec===''?'<button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="" data-from="'+esc(first)+'" aria-label="Nueva sección arriba"><i></i></button>':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(sec)+'" aria-label="Nueva sección arriba"><i></i></button>'):'')+'</div>';
 const endZ=(obj,sec,nextSec,oid,onlyTask,today)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>';
 const hrs=m=>dur(m);
-const STI={Esperando:'<circle cx="12" cy="12" r="7.5"/><path d="M12 8v4.2l2.8 1.6"/>',Activo:'<path d="M9.5 7.2v9.6l7.6-4.8z" fill="currentColor"/>',Pausado:'<path d="M9.5 7.5v9M14.5 7.5v9" stroke-width="2.6"/>',Completado:'<path d="M7.5 12.4l3 3 6-6.4" stroke-width="2.4"/>'};
+const CAL='<rect x="4" y="5.5" width="16" height="14" rx="3"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/>';
+const STI={'Hoy':CAL+'<circle cx="12" cy="14.7" r="1.9" fill="currentColor" stroke="none"/>','Esta semana':CAL+'<path d="M8 14.6h8" stroke-width="2.6"/>','Este mes':CAL+'<g fill="currentColor" stroke="none"><circle cx="8.2" cy="13.6" r="1.05"/><circle cx="12" cy="13.6" r="1.05"/><circle cx="15.8" cy="13.6" r="1.05"/><circle cx="8.2" cy="16.9" r="1.05"/><circle cx="12" cy="16.9" r="1.05"/><circle cx="15.8" cy="16.9" r="1.05"/></g>','Más adelante':'<path d="M6.5 7l5 5-5 5M12.5 7l5 5-5 5" stroke-width="2.1"/>','Completado':'<path d="M7.5 12.4l3 3 6-6.4" stroke-width="2.4"/>'};
 const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
-const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Esperando';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
+const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
 function bubble(o,today=false,embed=false){
@@ -2093,7 +2101,7 @@ function dayOrder(){
 }
 const dlInfo=d=>{const t=day();return d===t?{txt:'Hoy',cls:' dl-hoy'}:d===shift(t,1)?{txt:'Mañana',cls:' dl-man'}:{txt:fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),cls:''};};
 const stOk=o=>wStat==='Focus'?true:wStat==='Todos'?(wHoy||o.status!=='Completado'):o.status===wStat;
-const ST_ORDER=['Activo','Pausado','Esperando','Completado'],ST_PL={Activo:'Activos',Pausado:'Pausados',Esperando:'Esperando',Completado:'Completados'};
+const ST_ORDER=['Hoy','Esta semana','Este mes','Más adelante','Completado'],ST_PL={'Hoy':'Hoy','Esta semana':'Esta semana','Este mes':'Este mes','Más adelante':'Más adelante','Completado':'Completado'};
 const focusOn=()=>!wHoy&&wArea==='Todas'&&wStat==='Focus'&&!wProj;
 const rootProject=p=>{let x=p,n=0;while(x&&x.parent&&n++<10){const q=project(x.parent);if(!q)break;x=q;}return x;};
 function railGroups(list){
@@ -2106,7 +2114,7 @@ function railGroups(list){
 function wList(){
   if(wHoy){return [...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k))),''];}
   if(wArea==='__daily')return [''];
-  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o));return ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Esperando')===st).map(o=>o.id));}
+  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o));return ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id));}
   const ids=s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o)).map(o=>o.id);
   if(wArea==='Todas'&&wStat==='Todos'){const gs=railGroups(ids.map(objective).filter(Boolean));return gs.flatMap(g=>g.items.map(o=>o.id));}
   return ids;
@@ -2116,8 +2124,8 @@ const SECN={daily:'Día a día'};
 function withSecs(ids,fn,kind){
   const cls=kind==='rail'?'rsec':'csec',hd=t=>'<div class="'+cls+'">'+esc(t)+'</div>';
   if(wStat==='Focus'){
-    return ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Esperando')===st);
-      return '<div class="'+cls+'" data-st="'+st+'">'+ST_PL[st]+(L.length?'<i class="stn">'+L.length+'</i>':'')+'</div>'+(L.length?L.map(fn).join(''):'<div class="'+cls+'h" data-st="'+st+'">Arrastra aquí los proyectos '+(st==='Completado'?'terminados':st==='Activo'?'en los que te centras':st==='Pausado'?'pausados':'que esperan')+'</div>');}).join('');
+    return ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
+      return '<div class="'+cls+'" data-st="'+st+'">'+ST_PL[st]+(L.length?'<i class="stn">'+L.length+'</i>':'')+'</div>'+(L.length?L.map(fn).join(''):'<div class="'+cls+'h" data-st="'+st+'">Arrastra aquí los proyectos '+({'Hoy':'de hoy','Esta semana':'de esta semana','Este mes':'de este mes','Más adelante':'para más adelante','Completado':'terminados'})[st]+'</div>');}).join('');
   }
   let out='',last=null;
   for(const k of ids){if(k==='')continue;const o=objective(k),p=o&&project(o.project),r=p?rootProject(p):null,nm=r?r.name:'Sin área principal';
@@ -2159,7 +2167,7 @@ function viewTrabajo(){
   const nSt=st=>st==='Todos'?s.objectives.filter(o=>o.status!=='Completado').length:s.objectives.filter(o=>o.status===st).length;
   const nHoy=dayOrder().filter(k=>k).length;
   const nHoyT=queue(selectedDate).filter(t=>!t.done).length,nDaily=s.tasks.filter(t=>!t.objective&&!t.done).length;
-  const SL={Activo:'Activos',Pausado:'Pausados',Esperando:'Esperando',Completado:'Completados'};
+  const SL={};
   const svgI=b=>'<svg class="gi fi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+b+'</svg>';
   const pill=(act,id,on,icon,label,n)=>'<button class="fpill nf" data-act="'+act+'" data-id="'+id+'" aria-pressed="'+on+'">'+icon+label+'<b class="cnt">'+n+'</b></button>';
   const mode=(id,on,icon,label,cls)=>'<button class="wmode'+(cls?' '+cls:'')+'" data-act="wMode" data-id="'+id+'" aria-pressed="'+on+'" title="'+(id==='Completado'?'Completados':label)+'">'+icon+'<span>'+label+'</span></button>';
@@ -2624,9 +2632,9 @@ function syncStatus(d=s){
   const today=day();
   for(const o of d.objectives){
     const ts=d.tasks.filter(t=>t.objective===o.id);
-    if(!ts.length){o.status='Esperando';continue;}
+    if(!ts.length){o.status='Más adelante';continue;}
     const open=ts.filter(t=>!t.done);
-    o.status=!open.length?'Completado':open.some(t=>t.days.includes(today)||t.days.some(x=>x<today))?'Activo':open.some(t=>t.days.length)?'Pausado':'Esperando';
+    o.status=!open.length?'Completado':open.some(t=>t.days.includes(today)||t.days.some(x=>x<today))?'Hoy':open.some(t=>t.days.length)?'Esta semana':'Más adelante';
   }
 }
 function render(){
@@ -2840,8 +2848,8 @@ const secPseudo=L=>({id:'__sec',days:[secCommon(L)||'0001-01-01']});
 function openTaskCal(t,anchor){const w=taskWhen(t),ym=(w.d||day()).slice(0,7);openPop(anchor,calHtmlT(t,ym),{id:t.id,ym,task:true});}
 function menuFor(kind,id,anchor){
   const o=objective(id),p=project(id);
-  if(kind==='status'){const D={Activo:'En marcha: me centro en él ahora',Pausado:'Empezado, parado por ahora',Esperando:'Aún sin empezar',Completado:'Terminado'};
-    return openPop(anchor,'<div class="stpick">'+pl('Estado del proyecto')+ST_ORDER.map(v=>pi(stIcon({status:v},'span','',false)+'<span class="stx"><b>'+v+'</b><small>'+D[v]+'</small></span>'+(o.status===v?'<span class="stck">✓</span>':''),'setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"','stopt'+(o.status===v?' sel':''))).join('')+'</div>');}
+  if(kind==='status'){const D={'Hoy':'Me ocupo de él hoy','Esta semana':'Lo trabajo en los próximos días','Este mes':'Toca este mes','Más adelante':'Aún no es el momento','Completado':'Terminado'};
+    return openPop(anchor,'<div class="stpick">'+pl('¿Cuándo me ocupo de él?')+ST_ORDER.map(v=>pi(stIcon({status:v},'span','',false)+'<span class="stx"><b>'+v+'</b><small>'+D[v]+'</small></span>'+(o.status===v?'<span class="stck">✓</span>':''),'setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"','stopt'+(o.status===v?' sel':''))).join('')+'</div>');}
   if(kind==='statusOLD')return openPop(anchor,STATUS.map(v=>pi('<span class="tag '+tagClass(v)+'">'+v+'</span>','setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"',o.status===v?'sel':'')).join(''));
   if(kind==='priority')return openPop(anchor,PRIORITY.map(v=>pi(v,'setProp','data-kind="obj" data-id="'+id+'" data-key="priority" data-val="'+v+'"',o.priority===v?'sel':'')).join(''));
   if(kind==='deadline')return openPop(anchor,calHtml(o,(o.deadline||day()).slice(0,7)),{id,ym:(o.deadline||day()).slice(0,7)});
@@ -2949,7 +2957,7 @@ function onClick(e){
       });break;
     }
     case 'addObj':{
-      const o={id:uid(),project:id,name:'Nuevo proyecto',icon:'🎯',status:'Esperando',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
+      const o={id:uid(),project:id,name:'Nuevo proyecto',icon:'🎯',status:'Más adelante',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
       s.objectives.push(o);wObj=o.id;wProj='';openObj=o.id;openProj=id;if(view==='Trabajo'&&!wHoy){wSolo=o.id;wLast=o.id;}focusAfter={kind:'obj.name',id:o.id,select:true};save();break;
     }
     case 'addProject':{
@@ -2958,7 +2966,7 @@ function onClick(e){
       s.projects.push(p);openArea=area;openProj=p.id;openObj='';projTab='Nota maestra';focusAfter={kind:'proj.name',id:p.id,select:true};save();break;
     }
     case 'addObjAt':{
-      const o={id:uid(),project:'',name:'Nuevo proyecto',icon:'🎯',status:'Esperando',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
+      const o={id:uid(),project:'',name:'Nuevo proyecto',icon:'🎯',status:'Más adelante',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
       s.objectives.push(o);const ref=objective(b.dataset.before);if(ref&&b.dataset.before!=='end')mv(s.objectives,o,ref,false);
       focusAfter={kind:'obj.name',id:o.id,select:true};save();toBubble(o.id,120);break;
     }
