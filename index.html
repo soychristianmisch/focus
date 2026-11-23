@@ -3647,6 +3647,7 @@ document.addEventListener('paste',e=>{
 
 function leaveHoy(oid){
   if(!wHoy||view!=='Trabajo')return;
+  {const k=oid===''||oid==null?DAILY.id:oid;if(hoyOpen.has(k)||(wSolo!==null&&(wSolo===''?DAILY.id:wSolo)===k))return;}
   wHoy=false;wStat='Todos';wArea='Todas';wProj='';hoyOpen.clear();
   toBubble(oid===''||oid==null?DAILY.id:oid,150);
 }
