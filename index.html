@@ -1501,6 +1501,13 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .firstobj small{color:var(--bg);opacity:.7}
 .prail .agroup .rhead:first-child{margin-top:16px}
 .prail .agroup:first-child .rhead:first-child{margin-top:4px}
+/* v86 */
+.recsep{display:none}
+.recurcard{background:color-mix(in srgb,var(--ink) 4.5%,var(--card));border:1px solid var(--line);border-radius:16px;padding:10px 12px 8px;margin:6px 0 16px}
+.recurcard .sec{margin-top:2px}
+.tmain.rec{display:flex;align-items:center;gap:7px;min-width:0}
+.tmain.rec .tname{flex:0 1 auto;min-width:0}
+.rcic.tr{width:12px;height:12px;flex:none;color:var(--faint);stroke-width:2.2}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1592,7 +1599,7 @@ const slug=v=>String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
 /* ---------- datos ---------- */
 const DDS='Día a día';
-const mkTask=(name,minutes,objective='',section='')=>({id:uid(),name,minutes,objective,section:(!objective&&!section)?DDS:section,deadline:'',pin:false,days:[],done:0});
+const mkTask=(name,minutes,objective='',section='')=>({id:uid(),name,minutes,objective,section,deadline:'',pin:false,days:[],done:0});
 const RECUR='Tareas Diarias';
 const isRecur=t=>!t.objective&&t.section===RECUR;
 const REPEAT_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
@@ -1661,10 +1668,9 @@ function migrate(d){
   d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];
   for(const k of ['projects','objectives','tasks','entries','plans','notes','inbox','paused'])d[k]??=[];
   d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
-  d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(!t.section)t.section=DDS;}});
+  d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(t.section===DDS)t.section='';}});
   d.dailySections??=[];d.dailySections=d.dailySections.map(x=>x==='Tareas diarias'?RECUR:x);d.dailySections=[RECUR,...d.dailySections.filter(x=>x!==RECUR)];
-  if(!d.ddSeed){d.ddSeed=1;if(!d.dailySections.includes(DDS))d.dailySections.splice(1,0,DDS);}
-  if(d.tasks.some(t=>!t.objective&&t.section===DDS)&&!d.dailySections.includes(DDS))d.dailySections.splice(1,0,DDS);
+  d.dailySections=d.dailySections.filter(x=>x!==DDS);
   d.hoursOn??={};d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
   if(!d.recurSeed){d.recurSeed=1;if(!d.tasks.some(t=>isRecur(t)&&t.name==='Hacer las cuentas diarias en Sheets'))d.tasks.push(mkTask('Hacer las cuentas diarias en Sheets',10,'',RECUR));}
   rollRecurring(d);
@@ -1832,7 +1838,7 @@ function taskRow(t){
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
-    '<div class="tmain">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+'</div>'+
+    '<div class="tmain'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+'</div>'+
     editable('task.worked',t.id,String(Math.round(workedMin(t))),'inputmode="numeric" title="Tiempo trabajado (min): haz clic y escribe el real"','tworked'+(workedMin(t)<.5?' zero':''))+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Minutos"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
@@ -1870,10 +1876,10 @@ function bubble(o,today=false,embed=false){
       '<span class="p" title="Tiempo que falta / tiempo total estimado del proyecto">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+(daily?'Restante: '+hrs(leftMin):'Restante: '+hrs(leftMin)+' / '+hrs(totalMin))+'</span></span>';
   }
   let lastSec='',rendered=0;
-  body+=['',...sections].map(sec=>{
+  body+=(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec);
     if(today&&!list.length)return '';
-    if(!sec&&!list.length&&sections.length)return '';
+    if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
     if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
@@ -1884,8 +1890,9 @@ function bubble(o,today=false,embed=false){
     const tm=today||embed;
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
-      endZ(oid,sec,sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today);
-    return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner)+(sec===RECUR&&daily?'<div class="recsep"></div>':'');
+      endZ(oid,sec,daily?(sec===RECUR?'':sec===''?(sections.filter(x=>x!==RECUR)[0]||''):(sections.filter(x=>x!==RECUR)[sections.filter(x=>x!==RECUR).indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today);
+    if(sec===RECUR&&daily)return '<div class="recurcard">'+inner+'</div>';
+    return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(today&&!rendered)body+=endZ(oid,'','',o.id,true,true);
   if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?'<div class="tasks" data-mode="done">'+done.map(t=>taskRow(t)).join('')+'</div>':'');
