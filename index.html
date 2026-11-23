@@ -2205,7 +2205,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
     const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
-  if(today&&!cp)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el objetivo')+' <span>⌄</span></button>';
+  if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el objetivo')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
