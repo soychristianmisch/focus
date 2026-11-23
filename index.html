@@ -82,7 +82,7 @@ main{min-height:calc(100dvh - 48px)}
 
 /* tareas */
 .tasks{display:block}
-.task{display:grid;grid-template-columns:24px 16px minmax(0,1fr) 62px 50px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
+.task{display:grid;grid-template-columns:24px 16px minmax(0,1fr) 64px 68px 26px;align-items:center;column-gap:2px;min-height:34px;padding:2px 6px 2px 0;border-radius:6px;position:relative}
 .task:hover{background:var(--hover)}
 .task.picked{background:var(--accent-soft)}
 .task:focus{outline:none}
@@ -1621,6 +1621,12 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .bubble .task .tmain{margin-left:4px}
 /* v109b (continuar) en el lugar del tiempo, pegado al nombre */
 .sec.ro.cdn .secgo{margin-left:8px;padding:0;font-size:12px;line-height:inherit}
+
+/* v113 sin estimaciones: reloj en cuenta ascendente, dos botones junto al reloj */
+.xtask .xline{justify-content:flex-start;gap:14px}
+.xtask .xclock,.hoyright .xtask .xclock{margin-right:0}
+.bigstats.two{grid-template-columns:1fr 1fr}
+.tworked{text-align:right}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1707,7 +1713,9 @@ const parseMin=v=>{
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>globalThis.crypto?.randomUUID?.()??Date.now().toString(36)+Math.random().toString(36).slice(2);
-const sumMin=(list,fn=t=>t.minutes)=>list.reduce((a,t)=>a+fn(t),0);
+const sumMin=(list,fn=t=>workedMin(t))=>list.reduce((a,t)=>a+fn(t),0);
+const shownMin=t=>Math.floor(workedMin(t)+1e-6);
+const secTime=l=>{const m=sumMin(l);return m>=1?hrs(m):'';};
 const slug=v=>String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
 /* ---------- datos ---------- */
@@ -1848,12 +1856,7 @@ const dayMs=(e,d,now=Date.now())=>{
   if(!bounds.has(d)){if(bounds.size>200)bounds.clear();bounds.set(d,[dateAt(d,'00:00'),dateAt(shift(d,1),'00:00')]);}
   const [a,b]=bounds.get(d);return Math.max(0,Math.min(e.end??now,b)-Math.max(e.start,a));
 };
-function minutesLeft(t){
-  if(t.done)return 0;
-  const w=isRecur(t)?workedMin({...t}):elapsed(t.id)/60000;
-  if(Number.isFinite(t.remaining)&&Number.isFinite(t.remainingAt))return Math.max(0,t.remaining-Math.max(0,w-t.remainingAt));
-  return Math.max(0,t.minutes-w);
-}
+function minutesLeft(){return 0;}
 const capacityOn=d=>((s.hoursOn?.[d]??s.hours[dow(d)])??0)*60;
 const usedOn=d=>s.entries.reduce((a,e)=>a+dayMs(e,d)/60000,0);
 const current=()=>task(s.running?.id)??task(selected)??queue(selectedDate).find(t=>!t.done);
@@ -1890,25 +1893,19 @@ function pause(){
   if(!s.running)return;
   selected=s.running.id;s.pauseId=selected;s.paused=[selected,...s.paused.filter(x=>x!==selected)];closeTimer();save();
 }
-function stopTimer(){
-  const id=s.running?.id??s.pauseId??selected;if(!id)return;
-  if(s.running)closeTimer();
-  selected=id;s.pauseId='';s.paused=s.paused.filter(x=>x!==id);suggestion='';save();
-}
 function finish(id){
   const t=task(id);if(!t||t.done)return;
   if(s.running?.id===id)closeTimer();
   {const rp=s.reopen?.[t.objective||DAILY.id];if(rp&&!s.tasks.some(x=>x!==t&&!x.done&&x.objective===t.objective&&x.section===t.section))s.reopen[t.objective||DAILY.id]=rp.filter(x=>x!==t.section);}
   t.done=Date.now();s.pauseId='';s.paused=s.paused.filter(x=>x!==id);
   {const td=day();if(!t.days.includes(td)){t.days=[...t.days,td].sort();(s.order[td]??=[]);if(!s.order[td].includes(t.id))s.order[td].push(t.id);}}
-  const pending=queue(day()).filter(x=>!x.done);
-  selected=(pending.find(x=>!s.paused.includes(x.id))??pending[0])?.id??'';
-  suggestion=s.running?'':(s.paused.find(x=>task(x)&&!task(x).done)??'');
+  {const qd=queue(day()),ix=qd.findIndex(x=>x.id===id),nx=qd.slice(ix+1).find(x=>!x.done)??qd.find(x=>!x.done);
+  selected=nx?.id??'';suggestion='';}
   save();notify('Tarea completada');
 }
 function timerReading(t,now=Date.now()){
-  const sec=Math.floor(elapsed(t.id,now)/1000),budget=t.minutes*60,over=sec>budget;
-  return {over,text:clock((over?sec:budget-sec)*1000),label:over?'Fuera de tiempo · total trabajado':'Tiempo restante'};
+  const sec=Math.floor((isRecur(t)?workedMin(t)*60000:elapsed(t.id,now))/1000);
+  return {over:false,text:clock(sec*1000),label:'Tiempo trabajado'};
 }
 
 /* ---------- iconos SVG ---------- */
@@ -1960,8 +1957,7 @@ function taskRow(t){
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+'</div>'+
-    editable('task.worked',t.id,String(Math.round(workedMin(t))),'inputmode="numeric" title="Tiempo trabajado (min): haz clic y escribe el real"','tworked'+(workedMin(t)<.5?' zero':''))+
-    editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Minutos"','tmin')+
+    editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
     (t.done?'<span></span>':whenChip(t))+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
   '</div>';
@@ -1989,14 +1985,14 @@ function bubble(o,today=false,embed=false){
   const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
   const sections=o.sections,key=o.id;
   const openAll=all.filter(t=>!t.done);
-  const todayMin=sumMin(inDay.filter(t=>!t.done),minutesLeft),leftMin=sumMin(openAll,minutesLeft),totalMin=sumMin(all);
+  const totalMin=sumMin(all);
   let body='';
   let propsH='';
   {
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     propsH='<span class="oprops inl">'+(daily?'':
       '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>')+
-      '<span class="p" title="Tiempo que falta / tiempo total estimado del proyecto">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+(daily?'Restante: '+hrs(leftMin):'Restante: '+hrs(leftMin)+' / '+hrs(totalMin))+'</span></span>';
+      '<span class="p" title="Tiempo cronometrado en este proyecto">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Trabajado: '+hrs(totalMin)+'</span></span>';
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
@@ -2007,10 +2003,10 @@ function bubble(o,today=false,embed=false){
     if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
-    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num" title="Tiempo total diario">'+hrs(sumMin(all.filter(x=>x.section===RECUR)))+'</span></div>';
-    else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
+    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num" title="Tiempo total diario">'+secTime(all.filter(x=>x.section===RECUR))+'</span></div>';
+    else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
-      editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+hrs(sumMin(list))+'</span>'+
+      editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span>'+
       '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Hoy</button>'+
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
     const tm=today||embed;
@@ -2032,8 +2028,8 @@ function bubble(o,today=false,embed=false){
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
   const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
-  const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=sumMin(todayAll),todayLeft=sumMin(todayAll.filter(t=>!t.done),minutesLeft);
-  const chips='<span class="chipi now">Hoy '+hrs(todayTot)+'</span><span class="chipi" title="Pendiente hoy">Pend. '+hrs(todayLeft)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer '+hrs(sumMin(lateT,minutesLeft))+'</button>':'');
+  const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
+  const chips='<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
   const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
@@ -2055,7 +2051,7 @@ function areaBar(){
 function objCard(o,sel){
   const p=project(o.project),pr=progressOf(o),all=s.tasks.filter(t=>t.objective===o.id),left=sumMin(all.filter(t=>!t.done),minutesLeft);
   return '<button class="ocard" style="--pc:'+(p?.color??PALETTE[0])+'" data-act="selectObj" data-id="'+o.id+'" aria-current="'+sel+'"><div class="oc-top"><b>'+esc(o.name)+'</b><span class="tag '+tagClass(o.status)+'">'+esc(o.status)+'</span></div>'+
-    '<div class="oc-bot">'+pr.bar+'<div class="oc-meta num"><span>'+pr.pct+' %</span><span>'+hrs(left)+' pendientes</span><span>'+all.filter(t=>t.done).length+'/'+all.length+' tareas</span></div></div></button>';
+    '<div class="oc-bot">'+pr.bar+'<div class="oc-meta num"><span>'+pr.pct+' %</span><span>'+all.filter(t=>!t.done).length+' abiertas</span><span>'+all.filter(t=>t.done).length+'/'+all.length+' tareas</span></div></div></button>';
 }
 function railGroup(p,showArea,curObj){
   const os=s.objectives.filter(o=>o.project===p.id);
@@ -2070,7 +2066,7 @@ function projectPage(p){
   return '<div class="ppage" style="--pc:'+p.color+'"><div class="phead"><div class="ptxt">'+editable('proj.name',p.id,p.name,'','ptitle','Área principal sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div></div>'+
     '<div class="pprops"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'">'+esc(p.area)+'</button>'+
     '<button class="p" data-act="menu" data-kind="color" data-id="'+p.id+'"><span class="swatch"></span>Color</button>'+
-    '<span class="faint num">'+objs.length+' proyectos · '+hrs(sumMin(s.tasks.filter(t=>objective(t.objective)?.project===p.id&&!t.done),minutesLeft))+' pendientes</span>'+
+    '<span class="faint num">'+objs.length+' proyectos</span>'+
     '<button class="iconbtn" data-act="menu" data-kind="projmore" data-id="'+p.id+'" aria-label="Más opciones">'+ICON.more+'</button></div>'+
     '<div class="subtabs">'+['Nota maestra','Cronología'].map(t=>'<button data-act="projTab" data-id="'+t+'" aria-current="'+(projTab===t)+'">'+t+'</button>').join('')+'</div>'+content+'</div>';
 }
@@ -2198,16 +2194,16 @@ function railItem(k,sel){
   const id=k===''?DAILY.id:k,q=queue(selectedDate);
   if(k===''){
     const L=q.filter(t=>!t.objective&&!t.done),n=L.length;
-    return '<div class="ritem daily'+(wSolo===''?' solo':'')+'" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm">'+(n?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div>'+EXPBTN(id)+'</div>';
+    return '<div class="ritem daily'+(wSolo===''?' solo':'')+'" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm">'+(n?'<small>'+n+' tarea'+(n>1?'s':'')+'</small>':'')+'</div></div>'+EXPBTN(id)+'</div>';
   }
   const o=objective(k),p=project(o.project),area=p?.area||'';
   const L=q.filter(t=>t.objective===k&&!t.done);
   return '<div class="ritem'+(wSolo===k?' solo':'')+'" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem">'+stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"',true)+
-    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div>'+EXPBTN(k)+'</div>';
+    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>'+L.length+' tarea'+(L.length>1?'s':'')+'</small>':'')+'</div></div>'+EXPBTN(k)+'</div>';
 }
 function dateHead(){
   const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
-  return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
+  return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas</span></div>'+
     '<div class="dnav"><button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div></div>';
 }
 function workCenter(ids){
@@ -2252,7 +2248,7 @@ function dayStats(d){
   const avail=isToday?Math.max(0,(end-now)/60000):capm;
   const doneT=todo.filter(t=>t.done&&elapsed(t.id)>0),est=sumMin(doneT),real=sumMin(doneT,t=>elapsed(t.id)/60000);
   const objs=[];
-  for(const t of todo){const k=t.objective||'';let g=objs.find(x=>x.k===k);if(!g){g={k,total:0,done:0,min:0,doneMin:0};objs.push(g);}g.total++;g.min+=t.minutes;if(t.done){g.done++;g.doneMin+=t.minutes;}}
+  for(const t of todo){const k=t.objective||'';let g=objs.find(x=>x.k===k);if(!g){g={k,total:0,done:0,min:0,doneMin:0};objs.push(g);}g.total++;g.min+=workedMin(t);if(t.done){g.done++;g.doneMin+=workedMin(t);}}
   return {todo,used,capm,pending,free:capm-used-pending,avail,isToday,finishAt:now+pending*60000,gap:avail-pending,ratio:est>0?real/est*100:null,objs,end};
 }
 function execPanel(onlyStats=false){
@@ -2263,38 +2259,32 @@ function execPanel(onlyStats=false){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xcard xtask'+(t&&running?' flcard':t&&!t.done&&s.pauseId===t.id?' flcard paused':'')+(t&&running&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min'+' · Trabajado '+editable('task.worked',t.id,String(Math.round(workedMin(t))),'inputmode="numeric" title="Haz clic y escribe el tiempo real"','tworked inl')+'</p>'+
-      '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
+  const main='<section class="xcard xtask'+(t&&running?' flcard':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</p>'+
+      '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
-       '<button type="button" class="fl-b big ok stp" data-act="stop" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar (S)"'+(running||s.pauseId===t.id?'':' disabled')+'>'+ICON.stop+'</button>'+
        '<button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar (C)">'+ICON.check+'</button>')+'</div>':
       '<p class="empty" style="padding:6px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
     (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</section>';
   const hh=m=>new Date(m).toLocaleTimeString('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
-  let ritmo;
-  if(!st.pending)ritmo='<b class="good">Todo lo previsto está hecho.</b>';
-  else if(!st.isToday)ritmo='Pendiente '+dur(st.pending)+' de '+dur(st.capm)+' de capacidad.';
-  else ritmo=(st.gap>=st.pending*.25?'<b class="good">Vas bien.</b>':st.gap>=0?'<b class="warnc">Justo de tiempo.</b>':'<b class="badc">No cabe todo hoy.</b>')+' Hasta las '+esc(s.dayEnd||'20:00')+' quedan '+dur(st.avail)+'; pendiente '+dur(st.pending)+(st.gap>=0?' ('+dur(st.gap)+' de margen).':' (faltan '+dur(-st.gap)+').')+(st.isToday?' Si no paras, terminarías hacia las '+hh(st.finishAt)+'.':'');
-  const freeV=st.isToday?st.avail:st.free,pendOver=st.isToday?st.pending>st.avail+.5:st.free<0;
-  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Pendiente</small><b class="num" style="'+(pendOver?'color:var(--red)':'')+'">'+dur(st.pending)+'</b></div><div><small>'+(st.isToday?'Tiempo restante hoy':(st.free<0?'Sobre capacidad':'Libre'))+'</small><b class="num">'+dur(Math.abs(freeV))+'</b></div></div>'+
-    '<div class="capbar'+(pendOver?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
-    '<p class="ritmo">'+ritmo+'</p>'+
-    '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span>'+(st.ratio!=null?'<span>Ritmo real<b class="num">'+Math.round(st.ratio)+' %</b><small>de lo estimado</small></span>':'')+'</div></section>';
+  const freeV=st.isToday?st.avail:Math.max(0,st.capm-st.used);
+  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats two"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>'+(st.isToday?'Tiempo restante hoy':'Libre')+'</small><b class="num">'+dur(freeV)+'</b></div></div>'+
+    '<div class="capbar"><i style="width:'+usedPct+'%"></i></div>'+
+    '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span></div></section>';
   const lastAct=x=>Math.max(x.done||0,...s.entries.filter(e=>e.task===x.id).map(e=>e.end??Date.now()));
   const doneL=s.tasks.filter(x=>x.done&&day(x.done)===d).sort((x,y)=>lastAct(y)-lastAct(x));
-  const dReal=doneL.reduce((q,x)=>q+workedMin(x),0),dEst=doneL.reduce((q,x)=>q+x.minutes,0);
+  const dReal=doneL.reduce((q,x)=>q+workedMin(x),0);
   const compl='<section class="xcard cdone"><h3>Completadas'+(doneL.length?' · '+doneL.length:'')+'</h3>'+
-    (doneL.length?'<div class="cd-sum">Real <b>'+dur(dReal)+'</b> · Estimado <b>'+dur(dEst)+'</b></div>'+doneL.map(x=>{
+    (doneL.length?'<div class="cd-sum">Tiempo <b>'+dur(dReal)+'</b></div>'+doneL.map(x=>{
       const pr=projectOf(x),ob=objective(x.objective),real=workedMin(x);
       return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
-        '<div class="cd-time'+(real>x.minutes+.5?' over':'')+'"><b>'+editable('task.worked',x.id,String(Math.round(real)),'inputmode="numeric" title="Haz clic y escribe el tiempo real"','tworked cdw')+'</b><small>est. '+dur(x.minutes)+'</small></div>'+
+        '<div class="cd-time"><b>'+editable('task.worked',x.id,String(Math.floor(real+1e-6)),'inputmode="numeric" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b></div>'+
         '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
   const objc='<section class="xcard"><h3>Avance por proyecto</h3>'+(st.objs.length?st.objs.map(g=>{
     const ob=objective(g.k),pr=ob?project(ob.project):DAILY,pct=g.total?Math.round(g.done/g.total*100):0;
-    return '<div class="oprog'+(pct===100?' full':'')+'" style="--pc:'+pr.color+'"><div class="op1"><span class="nm">'+esc(ob?ob.name:'Día a día')+'</span><b class="num">'+(pct===100?'✓ ':'')+pct+' %</b></div><div class="optrack"><i style="width:'+pct+'%"></i></div><div class="op2 num">'+g.done+'/'+g.total+' tareas · '+Math.round(g.doneMin)+' de '+Math.round(g.min)+' min</div></div>';
+    return '<div class="oprog'+(pct===100?' full':'')+'" style="--pc:'+pr.color+'"><div class="op1"><span class="nm">'+esc(ob?ob.name:'Día a día')+'</span><b class="num">'+(pct===100?'✓ ':'')+pct+' %</b></div><div class="optrack"><i style="width:'+pct+'%"></i></div><div class="op2 num">'+g.done+'/'+g.total+' tareas'+(g.min>=1?' · '+dur(g.min):'')+'</div></div>';
   }).join(''):'<p class="empty" style="padding:6px 0">Aún no hay tareas para este día.</p>')+'</section>';
   const extra=(byProj.size||paused.length)?'<section class="xcard">'+(byProj.size?'<h3>Tiempo trabajado por área principal</h3>'+[...byProj].sort((a,b)=>b[1]-a[1]).map(([pr,m])=>'<div class="brk" style="--pc:'+pr.color+';--w:'+Math.max(4,m/maxP*100)+'%"><span class="nm">'+esc(pr.name)+'</span><span class="num muted">'+dur(m)+'</span></div>').join(''):'')+
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
@@ -2306,7 +2296,7 @@ function planCol(){
   for(const t of list){const k=t.objective||'';if(!order.includes(k))order.push(k);}
   for(const k0 of hoyOpen){const k=k0===DAILY.id?'':k0;if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   const open=list.filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
-  return '<div class="hoyleft" data-scroll><div class="colhead"><div><h2>Proyectos del día</h2><span class="sub">'+esc(dl)+' · '+open.length+' tareas · '+hrs(sumMin(open,minutesLeft))+'</span></div>'+
+  return '<div class="hoyleft" data-scroll><div class="colhead"><div><h2>Proyectos del día</h2><span class="sub">'+esc(dl)+' · '+open.length+' tareas</span></div>'+
     '<button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div>'+
     '<div class="bubbles one">'+order.map(k=>k?(objective(k)?bubble(objective(k),!hoyOpen.has(k),hoyOpen.has(k)):''):bubble(DAILY,!hoyOpen.has(DAILY.id),hoyOpen.has(DAILY.id))).join('')+'</div>'+
     (order.length?'':'<p class="empty">Nada planificado para este día. Usa «Añadir» para traer tareas de tus proyectos, o crea una tarea nueva.</p>')+
@@ -2566,7 +2556,7 @@ function planItem(o,plan){
   const when=o.sched?(b?(b.start===b.end?f(b.start):f(b.start)+' – '+f(b.end)):'sin horas'):'';
   return '<div class="ritem" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" draggable="true" data-drag="pitem" data-id="'+o.id+'">'+stIcon(o,'span','',true)+
     '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm"><span class="atag sm">'+esc(area)+'</span><small>'+esc(p?.name??'')+'</small></div>'+
-    '<div class="rb">'+(when?'<small class="num pwhen">'+when+'</small>':'')+'<small class="num">'+hrs(left)+'</small></div></div></div>';
+    '<div class="rb">'+(when?'<small class="num pwhen">'+when+'</small>':'')+'</div></div></div>';
 }
 function viewPlan(){
   const plan=computePlan(),on=s.objectives.filter(o=>o.sched),off=s.objectives.filter(o=>!o.sched);
@@ -2594,13 +2584,12 @@ function viewAnalytics(){
   const wk=Array.from({length:7},(_,i)=>shift(monday(today),i)),weekTotal=wk.reduce((a,d)=>a+usedOn(d),0);
   const doneIn=s.tasks.filter(t=>t.done&&days.includes(day(t.done)));
   const doneEst=sumMin(doneIn),doneReal=doneIn.reduce((a,t)=>a+elapsed(t.id)/60000,0);
-  const pendingAll=sumMin(s.tasks.filter(t=>!t.done),minutesLeft);
+  
   const capWeek=wk.reduce((a,d)=>a+capacityOn(d),0);
   const kpis='<div class="kpis"><div class="card kpi"><small>Trabajado hoy</small><b>'+dur(usedOn(today))+'</b><span>de '+dur(capacityOn(today))+' de capacidad</span></div>'+
     '<div class="card kpi"><small>Esta semana</small><b>'+dur(weekTotal)+'</b><span>'+(capWeek?Math.round(weekTotal/capWeek*100):0)+' % de la capacidad semanal</span></div>'+
-    '<div class="card kpi"><small>Completadas · '+N+' días</small><b>'+doneIn.length+'</b><span>'+dur(doneEst)+' estimadas</span></div>'+
-    '<div class="card kpi"><small>Real frente a estimado</small><b>'+(doneEst&&doneReal?Math.round(doneReal/doneEst*100)+' %':'—')+'</b><span>en tareas completadas del periodo</span></div>'+
-    '<div class="card kpi"><small>Pendiente total</small><b>'+dur(pendingAll)+'</b><span>'+s.tasks.filter(t=>!t.done).length+' tareas abiertas</span></div></div>';
+    '<div class="card kpi"><small>Completadas · '+N+' días</small><b>'+doneIn.length+'</b><span>'+dur(doneReal)+' trabajadas</span></div>'+
+    '<div class="card kpi"><small>Tareas abiertas</small><b>'+s.tasks.filter(t=>!t.done).length+'</b><span>en todos los proyectos</span></div></div></div>';
   /* barras apiladas por día */
   const CW=720,CH=250,ML=38,MB=26,MT=10,MR=6,pw=CW-ML-MR,ph=CH-MT-MB;
   const maxY=Math.max(60,...days.map(dayTotal),...days.map(capacityOn)),top=Math.ceil(maxY/60)*60;
@@ -2628,7 +2617,7 @@ function viewAnalytics(){
     return {o,worked,left,tot,pct:pr.pct,p:project(o.project)};
   }).sort((a,b)=>b.worked+b.left-(a.worked+a.left));
   const maxT=Math.max(1,...objRows.map(r=>r.tot));
-  const objChart=objRows.map(r=>'<div class="hb" style="--pc:'+r.p.color+'"><span class="nm" title="'+esc(r.o.name)+'">'+esc(r.o.name)+'</span><div class="trk" style="width:'+Math.max(8,r.tot/maxT*100)+'%;flex:none;max-width:56%"><i style="width:'+r.worked/r.tot*100+'%"></i><i style="width:'+r.left/r.tot*100+'%"></i></div><span class="v">'+r.pct+' % · '+mm(r.worked)+' / '+mm(r.worked+r.left)+'</span></div>').join('');
+  const objChart=objRows.map(r=>'<div class="hb" style="--pc:'+r.p.color+'"><span class="nm" title="'+esc(r.o.name)+'">'+esc(r.o.name)+'</span><div class="trk" style="width:'+Math.max(8,r.tot/maxT*100)+'%;flex:none;max-width:56%"><i style="width:'+r.worked/r.tot*100+'%"></i><i style="width:'+r.left/r.tot*100+'%"></i></div><span class="v">'+r.pct+' % · '+mm(r.worked)+'</span></div>').join('');
   /* mapa de calor 12 semanas */
   const W12=12,hmStart=shift(monday(today),-(W12-1)*7),cell=17,gap=3;
   const heat=[];let mx=1;
@@ -2658,8 +2647,8 @@ function viewAnalytics(){
   return '<div class="an"><div class="anhead"><h1>Analítica</h1><div class="seg">'+[7,14,30].map(n=>'<button data-act="anRange" data-id="'+n+'" aria-pressed="'+(n===anRange)+'">'+n+' días</button>').join('')+'</div></div>'+kpis+
     '<div class="angrid"><div class="card c8"><h3 class="t">Tiempo trabajado por día</h3><p class="d">Horas registradas, repartidas por área principal, frente a tu capacidad diaria.</p>'+svg+legend+'</div>'+
     '<div class="card c4"><h3 class="t">Reparto por área principal</h3><p class="d">Dónde ha ido el tiempo en el periodo.</p>'+(parts.length?'<div class="donutwrap">'+donut+donutList+'</div>':'<p class="empty">Aún no hay tiempo registrado. Pulsa play en una tarea.</p>')+'</div>'+
-    '<div class="card c12"><h3 class="t">Avance por proyecto</h3><p class="d">Tiempo trabajado y pendiente de cada proyecto. A la derecha, el porcentaje de tareas completadas.</p>'+objChart+'</div>'+
-    '<div class="card c8"><h3 class="t">Carga prevista, próximos 14 días</h3><p class="d">Minutos pendientes de las tareas asignadas a cada día. Rojo cuando superan la capacidad.</p>'+fc+'</div>'+
+    '<div class="card c12"><h3 class="t">Avance por proyecto</h3><p class="d">Tiempo trabajado en cada proyecto. A la derecha, el porcentaje de tareas completadas.</p>'+objChart+'</div>'+
+    
     '<div class="card c4"><h3 class="t">Constancia</h3><p class="d">Tiempo trabajado cada día durante 12 semanas.</p>'+hm+'</div>'+
     '<div class="card c6"><h3 class="t">Tareas completadas por día</h3><p class="d">Cuántas tareas has cerrado en el periodo.</p>'+cs+'</div>'+
     '<div class="card c6"><h3 class="t">Últimos registros y notas</h3><p class="d">Sesiones recientes y notas rápidas.</p>'+(log||'<p class="empty">Sin registros.</p>')+(notes?'<div style="height:10px"></div>'+notes:'')+'</div></div></div>';
@@ -2755,9 +2744,17 @@ const pinput=(label,key,type,value)=>'<div class="pinput"><label>'+label+'</labe
 
 
 
+function evalMin(v,base){
+  const x=v.trim().toLowerCase().replace(/,/g,'.').replace(/\s+/g,'').replace(/(min|m)$/,'');
+  if(/^[+\-]?\d+(\.\d+)?([+\-]\d+(\.\d+)?)*$/.test(x)){
+    const sum=x.match(/[+\-]?\d+(\.\d+)?/g).reduce((q,n)=>q+ +n,0);
+    return /^[+\-]/.test(x)?base+sum:sum;
+  }
+  return parseMin(v);
+}
 function setWorked(id,m){
   const tk=task(id),cur=tk?workedMin(tk)*60000:elapsed(id),diff=m*60000-cur;
-  if(Math.round(cur/60000)===m)return;
+  if(Math.abs(diff)<1000)return;
   if(diff>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-diff,end:now,adj:true});}
   else{let rem=-diff;
     for(const e of s.entries.filter(x=>x.task===id&&x.end!=null).sort((x,y)=>y.start-x.start)){if(rem<=0)break;const d=e.end-e.start;if(d<=rem){s.entries=s.entries.filter(x=>x!==e);rem-=d;}else{e.end-=rem;rem=0;}}}
@@ -2804,7 +2801,7 @@ function commitEdit(el,info){
   let bad=false;
   switch(kind){
     case 'task.name':{const t=task(id);if(!t)return;if(!v)bad=true;else t.name=v;break;}
-    case 'task.worked':{const t=task(id);if(!t)return;const m=/^\d+$/.test(v.trim())?+v.trim():parseMin(v);if(m==null||m<0||m>10080){notify('Escribe los minutos reales, por ejemplo 18.');bad=true;}else setWorked(id,Math.round(m));break;}
+    case 'task.worked':{const t=task(id);if(!t)return;const cur=workedMin(t),base=Math.floor(cur+1e-6),m=evalMin(v,base);if(m==null||m<0||m>10080){notify('Escribe el tiempo en minutos. Puedes sumar o restar: 50-15 o +15.');bad=true;}else setWorked(id,m+(cur-base));break;}
     case 'task.min':{const t=task(id),m=parseMin(v);if(!t)return;if(m==null||m<1||m>10080){notify('Escribe una duración válida, por ejemplo 45, 1h30 o 90m.');bad=true;}else t.minutes=m;break;}
     case 'sec.name':{
       const o=objective(id),old=el.dataset.sec;if(!o||old===RECUR||v===RECUR){if(v===RECUR&&old!==RECUR)notify('Ese nombre está reservado para las tareas recurrentes.');bad=true;break;}
@@ -2874,7 +2871,7 @@ function addDayHtml(q=''){
   const groups=new Map();
   for(const t of list){const k=t.objective||'';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(t);}
   let h='';
-  for(const [k,ts] of groups){const o=objective(k);h+=pl(o?esc(o.name):'Día a día')+ts.slice(0,40).map(t=>pi(esc(t.name)+' <span class="muted num" style="margin-left:auto">'+Math.round(t.minutes)+' min</span>','addDayTask','data-id="'+esc(t.id)+'"')).join('');}
+  for(const [k,ts] of groups){const o=objective(k);h+=pl(o?esc(o.name):'Día a día')+ts.slice(0,40).map(t=>pi(esc(t.name)+'','addDayTask','data-id="'+esc(t.id)+'"')).join('');}
   return h||'<div class="empty" style="padding:12px">No hay tareas pendientes que coincidan.</div>';
 }
 const CH={l:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg>',r:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>'};
@@ -2925,7 +2922,7 @@ function menuFor(kind,id,anchor){
 }
 function placePlan(date,clientY,cal,t,existing){
   const r=cal.getBoundingClientRect();
-  const dm=existing?Math.round((existing.end-existing.start)/60000):Math.max(15,Math.round(minutesLeft(t)||t.minutes));
+  const dm=existing?Math.round((existing.end-existing.start)/60000):30;
   let min=Math.round((clientY-r.top)/r.height*1440/5)*5;min=Math.max(0,Math.min(1440-dm,min));
   const hh=String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'),st=dateAt(date,hh);
   if(existing){existing.start=st;existing.end=st+dm*60000;}
@@ -2996,7 +2993,6 @@ function onClick(e){
     case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
-    case 'stop':stopTimer();break;
     case 'finish':finish(id);break;
     case 'dismiss':suggestion='';render();break;
     case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1');break;
@@ -3173,11 +3169,12 @@ document.addEventListener('click',onClick);
 
 /* ---------- campos editables, teclado ---------- */
 function selectAll(el){const r=document.createRange();r.selectNodeContents(el);const g=getSelection();g.removeAllRanges();g.addRange(r);}
-document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;el._orig=el.textContent;if(el.dataset.edit==='task.min'||el.dataset.edit==='task.worked')selectAll(el);});
+document.addEventListener('focusin',e=>{const el=e.target.closest?.('[data-edit]');if(!el)return;el._orig=el.textContent;if(el.dataset.edit==='task.min'||el.dataset.edit==='task.worked')placeEnd(el);});
+function placeEnd(el){const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const g=getSelection();g.removeAllRanges();g.addRange(r);}
 document.addEventListener('mousedown',e=>{
-  const el=e.target.closest?.('.tmin[data-edit]');
+  const el=e.target.closest?.('.tworked[data-edit]');
   if(!el||document.activeElement===el)return;
-  e.preventDefault();el.focus();selectAll(el);
+  e.preventDefault();el.focus();placeEnd(el);
 });
 document.addEventListener('focusout',e=>{
   const el=e.target.closest?.('[data-edit]');if(!el)return;
@@ -3268,7 +3265,6 @@ document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase(),cur=t??current();
   if((k==='p'||k===' ')&&(cur||s.running)){e.preventDefault();if(s.running&&(!t||s.running.id===t.id))pause();else if(cur)start(cur.id);}
   if(k==='c'&&cur)finish(cur.id);
-  if(k==='s'&&(s.running||s.pauseId))stopTimer();
 });
 document.addEventListener('input',e=>{
   const ta=e.target.closest?.('textarea[data-note]');
@@ -3559,9 +3555,9 @@ function updateFloat(){
   const t=current(),running=!!t&&s.running?.id===t.id;
   const r=t?timerReading(t):null;
   const p=t?projectOf(t):null,o=t?objective(t.objective):null;
-  const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.toggle('paused',pzd);
-  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':pzd?' paused':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>'+
-    (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok stp" data-act="stop" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar"'+(running||pzd?'':' disabled')+'>'+ICON.stop+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
+  const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.remove('paused');
+  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+'</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>'+
+    (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
 }
 
 /* ---------- reloj ---------- */
