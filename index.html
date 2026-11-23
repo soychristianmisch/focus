@@ -2185,7 +2185,7 @@ function bubble(o,today=false,embed=false,cp=false){
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
-  if(!today&&!embed&&!cp&&!open.length)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
+  if(!today&&!embed&&!cp&&!open.length&&!rendered)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
   if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
