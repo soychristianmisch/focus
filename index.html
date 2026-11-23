@@ -1401,6 +1401,30 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .flcard.over:not(.paused) .fl-b:hover{background:rgba(255,255,255,.88);color:#d4382f}
 .flcard.over:not(.paused) .fl-b.ok{background:rgba(255,255,255,.22);color:#fff}
 .flcard.over:not(.paused) .fl-b.ok:hover{background:rgba(255,255,255,.34);color:#fff}
+
+/* v79 ajustar tiempo trabajado */
+.tworked{border:0;background:none;color:var(--faint);font:inherit;font-size:11.5px;padding:0 0 0 8px;cursor:pointer;vertical-align:baseline;white-space:nowrap}
+.tworked:hover{color:var(--ink);text-decoration:underline}
+.tworked:before{content:"⏱ ";font-size:10.5px}
+.flcard .tworked,.flcard .tworked:hover{color:inherit;opacity:.9;padding-left:0;text-decoration:underline}
+.flcard .tworked:before{content:""}
+.timepop{width:340px;padding:6px}
+.tp-h{display:flex;justify-content:space-between;align-items:baseline;padding:6px 8px 0}
+.tp-h b{font-size:14px}.tp-h span{font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.tp-n{font-size:12px;color:var(--faint);padding:0 8px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-rows{max-height:220px;overflow:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px 0}
+.trow{display:grid;grid-template-columns:62px 1fr auto 26px;align-items:center;gap:8px;padding:4px 8px;font-size:12.5px}
+.trow .td{color:var(--mute);text-transform:capitalize}.trow .th{color:var(--faint);font-variant-numeric:tabular-nums}
+.trow .tm{display:flex;align-items:center;gap:4px;color:var(--mute)}.trow .tm.run{color:var(--play)}
+.trow input,.tp-q input{width:56px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;font:inherit;font-size:12.5px;background:var(--card);color:var(--ink);text-align:right}
+.trow .x{width:24px;height:24px;font-size:11px}
+.tp-q{display:flex;align-items:center;gap:8px;padding:8px 8px 2px;flex-wrap:wrap}
+.tp-q>span{font-size:12px;color:var(--mute);width:86px}
+.tp-q .btn{font-size:12px;padding:4px 10px}
+.trow{grid-template-columns:84px 1fr auto 26px}
+.trow .td{text-transform:none;white-space:nowrap}
+.trow .td:first-letter{text-transform:uppercase}
+.timepop{width:360px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1714,7 +1738,7 @@ function taskRow(t){
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
-    '<div class="tmain">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+'</div>'+
+    '<div class="tmain">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+(elapsed(t.id)>=30000?'<button class="tworked" data-act="timeEdit" data-id="'+esc(t.id)+'" title="Tiempo trabajado: ajustar">'+dur(elapsed(t.id)/60000)+'</button>':'')+'</div>'+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Minutos"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
@@ -2002,7 +2026,7 @@ function execPanel(onlyStats=false){
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
   const main='<section class="xcard xtask'+(t?' flcard':'')+(t&&!running&&!t.done?' paused':'')+(t&&!t.done&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p>'+
+    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min'+(elapsed(t.id)>=30000?' · <button class="tworked on" data-act="timeEdit" data-id="'+esc(t.id)+'" title="Ajustar el tiempo trabajado">Trabajado '+dur(elapsed(t.id)/60000)+' · Ajustar</button>':'')+'</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
@@ -2479,6 +2503,28 @@ const pi=(label,act,attrs='',cls='')=>'<button class="pi '+cls+'" data-act="'+ac
 const pl=t=>'<div class="pl">'+t+'</div>';
 const pinput=(label,key,type,value)=>'<div class="pinput"><label>'+label+'</label><input type="'+type+'" data-pop-input="'+key+'" value="'+esc(value)+'"></div>';
 
+
+/* ---------- ajustar tiempo trabajado ---------- */
+let timeRect=null;
+const CLKI='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/></svg>';
+function timeHtml(id){
+  const t=task(id);if(!t)return '';
+  const es=s.entries.filter(e=>e.task===id).sort((a,b)=>b.start-a.start);
+  const fd=ms=>new Date(ms).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',timeZone:ZONE});
+  const ft=ms=>new Date(ms).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:ZONE});
+  const rows=es.map(e=>{const run=e.end==null;
+    return '<div class="trow"><span class="td">'+esc(fd(e.start))+'</span><span class="th">'+ft(e.start)+(run?' – ahora':'–'+ft(e.end))+'</span>'+
+    (run?'<span class="tm run">en curso</span>':'<span class="tm"><input type="number" min="0" step="1" data-ent="'+e.id+'" value="'+Math.round((e.end-e.start)/60000)+'" aria-label="Minutos"> min</span><button class="iconbtn x" data-act="entDel" data-ent="'+e.id+'" data-id="'+id+'" aria-label="Quitar este tramo" title="Quitar este tramo">✕</button>')+'</div>';}).join('');
+  return '<div class="timepop"><div class="tp-h"><b>Tiempo trabajado</b><span>'+dur(elapsed(id)/60000)+'</span></div><div class="tp-n">'+esc(t.name)+'</div>'+
+    '<div class="tp-rows">'+(rows||'<p class="empty">Sin tiempo registrado.</p>')+'</div>'+
+    '<div class="tp-q"><span>Quitar del final</span>'+[5,10,15].map(m=>'<button class="btn line" data-act="entTrim" data-id="'+id+'" data-m="'+m+'">−'+m+' min</button>').join('')+'</div>'+
+    '<div class="tp-q"><span>Añadir</span><input id="entadd" type="number" min="1" step="1" placeholder="min"><button class="btn line" data-act="entAdd" data-id="'+id+'">＋ Añadir</button></div></div>';
+}
+function showTimePop(id,anchor){
+  if(anchor){const r=anchor.getBoundingClientRect();timeRect=r;}
+  const r=timeRect;openPop({getBoundingClientRect:()=>r},timeHtml(id),{time:id});
+}
+
 /* ---------- edición en línea ---------- */
 function soon(){
   setTimeout(()=>{
@@ -2640,6 +2686,12 @@ function onClick(e){
     case 'wArea':wHoy=false;wArea=id;wProj='';render();break;
     case 'wStat':wStat=id;render();break;
     case 'wFilter':wHoy=false;wProj='';if(id==='__daily')wArea='__daily';else{wArea='Todas';wStat=id;}render();$('.wcenter')&&($('.wcenter').scrollTop=0);break;
+    case 'timeEdit':{showTimePop(id,b);break;}
+    case 'entDel':{s.entries=s.entries.filter(e=>e.id!==b.dataset.ent);save();showTimePop(id);break;}
+    case 'entTrim':{let rem=(+b.dataset.m)*60000;
+      for(const e of s.entries.filter(x=>x.task===id&&x.end!=null).sort((x,y)=>y.start-x.start)){if(rem<=0)break;const d=e.end-e.start;if(d<=rem){s.entries=s.entries.filter(x=>x!==e);rem-=d;}else{e.end-=rem;rem=0;}}
+      save();showTimePop(id);break;}
+    case 'entAdd':{const m=Math.round(+($('#entadd')?.value)||0);if(m>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-m*60000,end:now});save();}showTimePop(id);break;}
     case 'wSelect':{
       const k=id===DAILY.id?'':id;
       if(wSolo!==null){const same=wSolo===k;wSolo=null;wLast=k;flipRender(()=>render());if(!same)toBubble(id,80);else toBubble(id,80);break;}
@@ -2950,6 +3002,8 @@ document.addEventListener('input',e=>{
   if(e.target.dataset?.popInput==='daysearch'){const l=$('#poplist');if(l)l.innerHTML=addDayHtml(e.target.value);}
 });
 document.addEventListener('change',e=>{
+  const en=e.target.closest?.('input[data-ent]');
+  if(en){const x=s.entries.find(y=>y.id===en.dataset.ent);const m=Math.max(0,Math.round(+en.value));if(x&&en.value!==''){if(m===0)s.entries=s.entries.filter(y=>y!==x);else x.end=x.start+m*60000;save();if(popCtx?.time)showTimePop(popCtx.time);}return;}
   const ni=e.target.closest?.('input[data-notion]');
   if(ni){const p=project(ni.dataset.notion);if(p){let v=ni.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;p.notion=v;save();}return;}
   const an=e.target.closest?.('input[data-areaname]');
