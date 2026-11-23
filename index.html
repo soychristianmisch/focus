@@ -1539,20 +1539,6 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .ritem .rexp:hover{color:var(--ink);background:var(--card);border-color:var(--mute)}
 .ritem.solo .rexp{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff}
 .ritem.solo .rexp:hover{background:rgba(255,255,255,.26)}
-/* v96: tarjetas neutras, el color solo en la etiqueta */
-:root{--rbg:rgba(55,53,47,.065);--rbg-h:rgba(55,53,47,.1);--rsolo:#2b2a27;--rico:rgba(55,53,47,.09);--bbg:#fbfbfa;--bbd:rgba(55,53,47,.13)}
-:root[data-theme=dark]{--rbg:rgba(0,0,0,.34);--rbg-h:rgba(0,0,0,.46);--rsolo:#050505;--rico:rgba(255,255,255,.07);--bbg:#121212;--bbd:rgba(255,255,255,.09)}
-.ritem,.ritem.daily{background:var(--rbg)}
-.ritem:hover,.ritem.daily:hover{background:var(--rbg-h)}
-.ritem[aria-current=true],.ritem.daily[aria-current=true]{background:var(--rbg-h)}
-.ritem.solo,.ritem.solo:hover{background:var(--rsolo);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
-.ritem .gl,.ritem.daily .gl,.ritem .gl.sti{background:var(--rico);color:var(--mute)}
-.ritem.solo .gl,.ritem.solo .gl.sti{background:rgba(255,255,255,.12);color:#fff}
-.bubble,.bubble.daily{background:var(--bbg);border:1px solid var(--bbd);box-shadow:none}
-.bubble .bhead,.bubble .bbody{background:transparent}
-.bubble .bh-title .gl,.bubble .bh-title .gl.sti,.bubble .gl.static{background:var(--rico);color:var(--mute)}
-.bubble .bhead{border-bottom-color:var(--bbd)}
-.bubble .viewall{background:var(--rico);color:var(--mute)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
