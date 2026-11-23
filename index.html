@@ -1587,6 +1587,20 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .wmodes .wmode.foc:hover{background:color-mix(in srgb,var(--violet) 8%,var(--card))}
 .wmodes .wmode.foc[aria-pressed=true],.wmodes .wmode.foc[aria-pressed=true]:hover{background:color-mix(in srgb,var(--violet) 88%,#000);color:#fff;border-color:color-mix(in srgb,var(--violet) 88%,#000)}
 :root[data-theme=dark] .wmodes .wmode.foc[aria-pressed=true],:root[data-theme=dark] .wmodes .wmode.foc[aria-pressed=true]:hover{background:var(--violet);color:#1b1233;border-color:var(--violet)}
+/* v106 */
+.work.hoyon .wmain,.work.split2 .wmain{grid-template-columns:290px minmax(0,1.5fr) minmax(0,1fr)}
+.pjview{grid-template-columns:290px minmax(0,1fr)}
+.pj-cols{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.secall,.secall:hover,.secall.on{position:absolute;right:42px;top:24px;transform:translateY(-50%);width:40px;margin:0;padding:0;border:0;background:none;border-radius:0;font-size:12px;line-height:1;color:var(--faint);text-align:center;box-sizing:border-box}
+.secall:hover{color:var(--ink);text-decoration:underline}
+.bubble .task .tname:not(:focus){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tmain{min-width:0}
+.work .hoyright .bigstats{gap:10px}
+.work .hoyright .bigstats small{font-size:12px}
+.work .hoyright .bigstats b{font-size:25px;letter-spacing:-.6px}
+.hoyright .xtask .xclock{font-size:44px}
+.pjpage .bh-r .chips2{flex-wrap:wrap}
+.pjpage .bh-r .chipi{overflow:visible;text-overflow:clip;flex:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1917,7 +1931,7 @@ function taskRow(t){
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
-    '<div class="tmain'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+'</div>'+
+    '<div class="tmain'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+'</div>'+
     editable('task.worked',t.id,String(Math.round(workedMin(t))),'inputmode="numeric" title="Tiempo trabajado (min): haz clic y escribe el real"','tworked'+(workedMin(t)<.5?' zero':''))+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Minutos"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
