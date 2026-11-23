@@ -1425,6 +1425,12 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .trow .td{text-transform:none;white-space:nowrap}
 .trow .td:first-letter{text-transform:uppercase}
 .timepop{width:360px}
+/* v80 panel de tiempo más grande */
+#pop:has(.timepop){max-width:min(560px,94vw);max-height:90vh;overflow:hidden;padding:8px;border-radius:14px}
+.timepop{width:min(520px,90vw)}
+.tp-rows{max-height:calc(90vh - 230px);min-height:120px}
+.trow{grid-template-columns:96px 1fr auto 30px;padding:6px 10px;font-size:13px}
+.trow input{width:64px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
