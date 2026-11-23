@@ -1756,6 +1756,12 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .bubble.bcp .bh-r{flex:1 1 74px;min-width:74px;overflow:hidden}
 .bubble.bcp .bh-r .bprog{min-width:0}
 .bubble.bcp .bh-r .bprog .prog{min-width:20px}
+
+/* v127 grupos del feed de Hoy con contorno de color */
+.feed .fgrp{border:1.5px solid color-mix(in srgb,var(--ac) 40%,var(--line));border-radius:18px;padding:8px 10px 8px;margin:0 0 14px}
+.feed .fgrp .fhead{margin:0 0 2px}
+.feed .fgrp .fhead:first-child{margin-top:0}
+.feed .fgrp>.insm:last-child{display:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2400,8 +2406,12 @@ function feedHtml(){
   const ids=feedIds();
   if(!ids.length)return '<p class="empty pick">Nada planificado para este día.</p>';
   let h='<div class="feed">',prev=null;
-  ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;if(key!==prev){prev=key;h+=feedHead(ids,ix);}h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"')+insFeed(t,id,'');});
-  return h+'<div class="fend"></div></div>';
+  ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;
+    if(key!==prev){if(prev!==null)h+='</div>';prev=key;
+      const ob=t.objective?objective(t.objective):null,pp=ob?project(ob.project):null,tone=t.objective?areaTone(pp?.area||''):DAILY_TONE;
+      h+='<div class="fgrp" style="--ac:'+tone+'">'+feedHead(ids,ix);}
+    h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"')+insFeed(t,id,'');});
+  return h+'</div><div class="fend"></div></div>';
 }
 function focusStack(){
   const cp=fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
