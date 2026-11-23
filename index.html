@@ -1612,6 +1612,13 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .xtask .fl-b.big svg{width:20px;height:20px}
 .fl-b.stp:disabled{opacity:.35;cursor:default;pointer-events:none}
 .fl-b.ok:hover,.flcard .fl-b.ok:hover{transform:none}
+
+/* v109 completadas por secciones */
+.secblock.cdn{opacity:.78}
+.sec.ro.cdn .secgo{margin-left:auto;border:0;background:none;padding:0 2px;font:inherit;font-size:12px;color:var(--faint);cursor:pointer}
+.sec.ro.cdn .secgo:hover{color:var(--ink);text-decoration:underline}
+/* v109 más aire entre el recuadro y el texto de la tarea */
+.bubble .task .tmain{margin-left:4px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1888,6 +1895,7 @@ function stopTimer(){
 function finish(id){
   const t=task(id);if(!t||t.done)return;
   if(s.running?.id===id)closeTimer();
+  {const rp=s.reopen?.[t.objective||DAILY.id];if(rp&&!s.tasks.some(x=>x!==t&&!x.done&&x.objective===t.objective&&x.section===t.section))s.reopen[t.objective||DAILY.id]=rp.filter(x=>x!==t.section);}
   t.done=Date.now();s.pauseId='';s.paused=s.paused.filter(x=>x!==id);
   {const td=day();if(!t.days.includes(td)){t.days=[...t.days,td].sort();(s.order[td]??=[]);if(!s.order[td].includes(t.id))s.order[td].push(t.id);}}
   const pending=queue(day()).filter(x=>!x.done);
@@ -1986,10 +1994,12 @@ function bubble(o,today=false,embed=false){
       '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>')+
       '<span class="p" title="Tiempo que falta / tiempo total estimado del proyecto">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+(daily?'Restante: '+hrs(leftMin):'Restante: '+hrs(leftMin)+' / '+hrs(totalMin))+'</span></span>';
   }
+  const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
   body+=(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec);
     if(today&&!list.length)return '';
+    if(sec&&sec!==RECUR&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
     if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
@@ -2007,7 +2017,12 @@ function bubble(o,today=false,embed=false){
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(today&&!rendered)body+=endZ(oid,'','',o.id,true,true);
-  if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?'<div class="tasks" data-mode="done">'+done.map(t=>taskRow(t)).join('')+'</div>':'');
+  if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
+    const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
+    const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
+    const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+(hid?'<button class="secgo" data-act="secContinue" data-obj="'+esc(o.id)+'" data-sec="'+esc(sec)+'" title="Volver a abrir la sección para añadir más tareas">(continuar)</button>':'')+'</div>':'';
+    return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+dl.map(t=>taskRow(t)).join('')+'</div></div>';
+  }).join(''):'');
   if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
@@ -3015,6 +3030,7 @@ function onClick(e){
       save();break;
     }
     case 'toggleObj':collapsed.has(id)?collapsed.delete(id):collapsed.add(id);render();break;
+    case 'secContinue':{const k=b.dataset.obj,sc=b.dataset.sec;leaveHoy(k===DAILY.id?'':k);s.reopen??={};const r=(s.reopen[k]??=[]);if(!r.includes(sc))r.push(sc);save();break;}
     case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);render();break;
     case 'pickIcon':openPop(b,'<div class="emojis">'+EMOJIS.map(x=>'<button data-act="setIcon" data-val="'+x+'">'+x+'</button>').join('')+'</div>',{kind:b.dataset.kind,id});break;
     case 'setIcon':{const c=popCtx;closePop();if(!c)break;const item=c.kind==='obj'?objective(c.id):project(c.id);if(item){item.icon=b.dataset.val;save();}break;}
