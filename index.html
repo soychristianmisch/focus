@@ -1802,6 +1802,12 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .fgarr button:hover{background:var(--bg3);color:var(--ink)}
 
 /* v137 */
+
+/* v138 estimaciones */
+.chipi.rest{background:var(--bg3);color:var(--mute);font-weight:400}
+.sec .smeta{font-weight:400;font-size:11.5px;color:var(--faint)}
+.bigstats.two{grid-template-columns:repeat(3,1fr)}
+.xcard .bigstats b{white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1890,7 +1896,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const uid=()=>globalThis.crypto?.randomUUID?.()??Date.now().toString(36)+Math.random().toString(36).slice(2);
 const sumMin=(list,fn=t=>workedMin(t))=>list.reduce((a,t)=>a+fn(t),0);
 const shownMin=t=>Math.floor(workedMin(t)+1e-6);
-const secTime=l=>{const m=sumMin(l);return m>=1?hrs(m):'';};
+const secTime=l=>{const m=sumMin(l,minutesLeft);return m>=1?hrs(m):'';};
 const slug=v=>String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');
 
 /* ---------- datos ---------- */
@@ -2225,7 +2231,8 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
   const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
-  const chips=(cp?'':'<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>')+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
+  const leftAll=sumMin(openAll,minutesLeft);
+  const chips=(cp?'':'<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta en este objetivo">Faltan '+hrs(leftAll)+'</span>':'')+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
@@ -2559,10 +2566,15 @@ function execPanel(onlyStats=false){
       '<p class="empty" style="padding:6px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
     (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</section>';
   const hh=m=>new Date(m).toLocaleTimeString('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
-  const freeV=st.isToday?st.avail:Math.max(0,st.capm-st.used);
-  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats two"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>'+(st.isToday?'Tiempo restante hoy':'Libre')+'</small><b class="num">'+dur(freeV)+'</b></div></div>'+
-    '<div class="capbar"><i style="width:'+usedPct+'%"></i></div>'+
-    '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span></div></section>';
+  let ritmo;
+  if(!st.pending)ritmo='<b class="good">Todo lo previsto está hecho.</b>';
+  else if(!st.isToday)ritmo='Pendiente '+dur(st.pending)+' de '+dur(st.capm)+' de capacidad.';
+  else ritmo=(st.gap>=st.pending*.25?'<b class="good">Vas bien.</b>':st.gap>=0?'<b class="warnc">Vamos justos de tiempo.</b>':'<b class="badc">No cabe todo hoy.</b>')+' Hasta las '+esc(s.dayEnd||'20:00')+' quedan '+dur(st.avail)+'; lo estimado pendiente es '+dur(st.pending)+(st.gap>=0?' ('+dur(st.gap)+' de margen).':' (faltan '+dur(-st.gap)+').')+(st.gap<0?' Conviene acelerar o mover alguna tarea a otro día.':st.gap<st.pending*.25?' Conviene no parar.':'')+(st.isToday?' Si no paras, terminarías hacia las '+hh(st.finishAt)+'.':'');
+  const freeV=st.isToday?st.avail:Math.max(0,st.capm-st.used),pendOver=st.isToday?st.pending>st.avail+.5:st.capm-st.used-st.pending<0,pendTight=!pendOver&&st.isToday&&st.pending>0&&st.gap<st.pending*.25;
+  const stats='<section class="xcard"><h3>Tiempo del día</h3><div class="bigstats"><div><small>Trabajado</small><b class="num">'+dur(st.used)+'</b></div><div><small>Estimado restante</small><b class="num" style="'+(pendOver?'color:var(--red)':pendTight?'color:#b57d12':'')+'">'+dur(st.pending)+'</b></div><div><small>'+(st.isToday?'Tiempo restante hoy':'Libre')+'</small><b class="num">'+dur(freeV)+'</b></div></div>'+
+    '<div class="capbar'+(pendOver?' over':'')+'"><i style="width:'+usedPct+'%"></i><i style="width:'+pendPct+'%"></i></div>'+
+    '<p class="ritmo">'+ritmo+'</p>'+
+    '<div class="mini"><span>Capacidad<b class="num">'+dur(st.capm)+'</b></span><span>Tareas<b class="num">'+st.todo.filter(x=>x.done).length+'/'+st.todo.length+'</b></span>'+(st.ratio!=null?'<span>Ritmo real<b class="num">'+Math.round(st.ratio)+' %</b><small>de lo estimado</small></span>':'')+'</div></section>';
   const lastAct=x=>Math.max(x.done||0,...s.entries.filter(e=>e.task===x.id).map(e=>e.end??Date.now()));
   const doneL=s.tasks.filter(x=>x.done&&day(x.done)===d).sort((x,y)=>lastAct(y)-lastAct(x));
   const dReal=doneL.reduce((q,x)=>q+workedMin(x),0);
