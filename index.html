@@ -1800,6 +1800,9 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .fgh:hover .fgarr{opacity:1}
 .fgarr button{border:0;background:none;color:var(--faint);font:600 13px/1 Inter,sans-serif;width:22px;height:22px;border-radius:6px;cursor:pointer;text-transform:none}
 .fgarr button:hover{background:var(--bg3);color:var(--ink)}
+
+/* v137 */
+.fsolo .viewall{display:none}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2494,8 +2497,8 @@ function focusStack(){
   return h;
 }
 function workCenter(ids){
-  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+focusStack()+'</div>';
-  if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);return '<div class="wc-in solo">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op)+'</div></div>';}
+  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+(fHoy?focusStack():'')+'</div>';
+  if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);const fd=focusOn()&&fHoy;return '<div class="wc-in solo'+(fd?' fsolo':'')+'">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op,false,fd)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
   if(wHoy)return '<div class="wc-in feedc">'+dateHead()+'</div>'; /* centro vacío por ahora; feedHtml() queda guardado */
   return '<div class="wc-in empty-pick">'+dateHead()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un objetivo de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
@@ -3279,8 +3282,8 @@ function onClick(e){
     }
     case 'fgMove':{const w=b.closest('.fgwrap');if(!w)break;const sib=+b.dataset.dir>0?w.nextElementSibling:w.previousElementSibling;if(sib?.dataset.fgk)moveFg(id,sib.dataset.fgk,+b.dataset.dir>0);break;}
     case 'fByToggle':fBy=fBy==='mom'?'area':'mom';render();break;
-    case 'cpOpen':{if(e.target.closest('[data-edit],a,button,.lines,input'))break;const k=id===DAILY.id?'':id;fHoy=false;wSolo=k;wLast=k;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;}
-    case 'fHoyToggle':{const was=wSolo!==null;wSolo=null;fHoy=was?true:!fHoy;}render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
+    case 'cpOpen':{if(e.target.closest('[data-edit],a,button,.lines,input'))break;const k=id===DAILY.id?'':id;wSolo=k;wLast=k;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;}
+    case 'fHoyToggle':{fHoy=!fHoy;}render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
     case 'goProj':{const p=project(id);if(!p)break;closePop();view='Proyectos';openProj=id;openObj='';render();window.scrollTo(0,0);break;}
