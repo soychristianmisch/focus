@@ -1969,6 +1969,7 @@ const insTask=(obj,sec,after,before,today)=>'<button class="ins" tabindex="-1" d
 const insSection=(oid,before)=>'<button class="ins secins" tabindex="-1" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(before)+'" aria-label="Insertar sección aquí"><i></i></button>';
 const insMid=(obj,sec,after,next,today,oid)=>'<div class="insm"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before=""'+(today?' data-today="1"':'')+' aria-label="Nueva tarea aquí"><i></i></button><button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="'+esc(sec)+'" data-from="'+esc(next)+'" aria-label="Nueva sección aquí"><i></i></button></div>';
 const insLead=(obj,sec,first,today,top,oid)=>'<div class="insm lead"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="" data-before="'+esc(first)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea arriba"><i></i></button>'+(top?(sec===''?'<button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="" data-from="'+esc(first)+'" aria-label="Nueva sección arriba"><i></i></button>':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(sec)+'" aria-label="Nueva sección arriba"><i></i></button>'):'')+'</div>';
+const insDone=(obj,sec,after,before,lead)=>'<div class="insm'+(lead?' lead':'')+'"><button class="ez t" data-act="insTask" data-done="1" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'" aria-label="Nueva tarea aquí"><i></i></button></div>';
 const endZ=(obj,sec,nextSec,oid,onlyTask,today)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>';
 const hrs=m=>dur(m);
 const CAL='<rect x="4" y="5.5" width="16" height="14" rx="3"/><path d="M4 10h16M8.5 3.5v3M15.5 3.5v3"/>';
@@ -2022,8 +2023,8 @@ function bubble(o,today=false,embed=false){
   if(done.length)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
-    const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+(hid?'<button class="secgo" data-act="secContinue" data-obj="'+esc(o.id)+'" data-sec="'+esc(sec)+'" title="Volver a abrir la sección para añadir más tareas">(continuar)</button>':'')+'</div>':'';
-    return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+dl.map(t=>taskRow(t)).join('')+'</div></div>';
+    const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
+    return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
   if(today)body+='<button class="viewall" data-act="hoyOpen" data-id="'+o.id+'">'+(daily?'Ver todas las tareas del día a día':'Ver todo el proyecto')+' <span>⌄</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
@@ -2978,7 +2979,7 @@ function onClick(e){
     case 'tlToggle':tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render();break;
     case 'tlView':tlMode=id;tlScroll='today';render();break;
     case 'tlExpandAll':{const ids=s.objectives.map(o=>o.id);if(ids.length&&ids.every(x=>tlOpen.has(x)))tlOpen.clear();else ids.forEach(x=>tlOpen.add(x));render();break;}
-    case 'insTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1',b.dataset.before??'');break;
+    case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);try{localStorage.setItem('focus.doneOpen',JSON.stringify([...doneOpen]))}catch{}}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1',b.dataset.before??'');break;
     case 'insSection':{leaveHoy(id);
       const o=objective(id);if(!o)break;
       let n='Nueva sección',k=2;while(o.sections.includes(n))n='Nueva sección '+k++;
