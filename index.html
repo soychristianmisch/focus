@@ -1519,6 +1519,8 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .secblock>.sec,.secblock .sec{position:relative}
 .sec .secall+.sx{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0}
 .sec.recur .smeta{margin-left:4px}
+/* v91 */
+.secall{width:56px;margin-right:28px;padding:3px 0;font-size:12px;border-radius:999px;color:var(--mute)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1897,7 +1899,7 @@ function bubble(o,today=false,embed=false){
     else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+hrs(sumMin(list))+'</span>'+
-      '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Fecha todas</button>'+
+      '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Hoy</button>'+
       '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
     const tm=today||embed;
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
@@ -2840,6 +2842,7 @@ function onClick(e){
       const k=id===DAILY.id?'':id;
       if(wSolo!==null){const same=wSolo===k;wSolo=null;wLast=k;hoyOpen.clear();flipRender(()=>render());if(!same)toBubble(id,80);else toBubble(id,80);break;}
       if(wLast===k){wSolo=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
+      if(wHoy){wSolo=k;wLast=k;hoyOpen.clear();hoyOpen.add(id);render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
       wLast=k;render();toBubble(id);break;
     }
     case 'wProjBack':wProj='';render();break;
