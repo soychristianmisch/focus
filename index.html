@@ -2757,6 +2757,7 @@ function setWorked(id,m){
   if(Math.abs(diff)<1000)return;
   if(diff>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-diff,end:now,adj:true});}
   else{let rem=-diff;
+    {const re=s.entries.find(x=>x.task===id&&x.end==null);if(re){const take=Math.min(rem,Math.max(0,Date.now()-re.start));re.start+=take;rem-=take;}}
     for(const e of s.entries.filter(x=>x.task===id&&x.end!=null).sort((x,y)=>y.start-x.start)){if(rem<=0)break;const d=e.end-e.start;if(d<=rem){s.entries=s.entries.filter(x=>x!==e);rem-=d;}else{e.end-=rem;rem=0;}}}
   (s.adjLog??=[]).push({task:id,at:Date.now(),from:Math.round(cur/60000),to:m});
 }
@@ -2801,7 +2802,7 @@ function commitEdit(el,info){
   let bad=false;
   switch(kind){
     case 'task.name':{const t=task(id);if(!t)return;if(!v)bad=true;else t.name=v;break;}
-    case 'task.worked':{const t=task(id);if(!t)return;const cur=workedMin(t),base=Math.floor(cur+1e-6),m=evalMin(v,base);if(m==null||m<0||m>10080){notify('Escribe el tiempo en minutos. Puedes sumar o restar: 50-15 o +15.');bad=true;}else setWorked(id,m+(cur-base));break;}
+    case 'task.worked':{const t=task(id);if(!t)return;const cur=workedMin(t),base=Math.floor(cur+1e-6),m=evalMin(v,base);if(m==null||m>10080){notify('Escribe el tiempo en minutos. Puedes sumar o restar: 50-15 o +15.');bad=true;}else setWorked(id,Math.max(0,m)+(cur-base));break;}
     case 'task.min':{const t=task(id),m=parseMin(v);if(!t)return;if(m==null||m<1||m>10080){notify('Escribe una duración válida, por ejemplo 45, 1h30 o 90m.');bad=true;}else t.minutes=m;break;}
     case 'sec.name':{
       const o=objective(id),old=el.dataset.sec;if(!o||old===RECUR||v===RECUR){if(v===RECUR&&old!==RECUR)notify('Ese nombre está reservado para las tareas recurrentes.');bad=true;break;}
@@ -3578,6 +3579,7 @@ setInterval(()=>{
     });
   }
   const rt=task(s.running?.id);
+  if(rt){document.querySelectorAll('.tworked[data-id="'+rt.id+'"]').forEach(el=>{if(document.activeElement===el)return;const v=el.classList.contains('cdw')?String(Math.floor(workedMin(rt)+1e-6)):String(shownMin(rt));if(el.textContent!==v)el.textContent=v;el.classList.toggle('zero',workedMin(rt)<1);});}
   if(rt){const r=timerReading(rt,now),h=$('[data-hclock]');if(h)h.textContent=r.text;$('#runchip')?.classList.toggle('over',r.over);}
 },500);
 window.addEventListener('storage',e=>{
