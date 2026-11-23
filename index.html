@@ -1824,7 +1824,8 @@ let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Todos';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
-const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set((()=>{try{return JSON.parse(localStorage.getItem('focus.doneOpen')||'[]')}catch{return[]}})()), fresh=new Set();
+const hoyOpen=new Set(),collapsed=new Set(), doneOpen=new Set(), fresh=new Set();
+let doneSK='';
 let tlScroll=null;
 
 const $=(q,r=document)=>r.querySelector(q), $$=(q,r=document)=>[...r.querySelectorAll(q)];
@@ -2694,6 +2695,7 @@ function syncStatus(d=s){
   }
 }
 function render(){
+  {const sk=[view,wStat,wHoy,wSolo].join('|');if(sk!==doneSK){doneSK=sk;doneOpen.clear();}}
   document.querySelectorAll('.rte[data-rte]').forEach(r=>{const p=project(r.dataset.rte);if(p&&r.isConnected)p.notesHtml=cleanHtml(r.innerHTML);});
   const cs=$('#calscroll')?.scrollTop, ts=$('#tl'), tlpos=ts?[ts.scrollLeft,ts.scrollTop]:null, colScroll=$$('[data-scroll]').map(c=>c.scrollTop), pageScroll=window.scrollY;
   $('#top').innerHTML=header();
@@ -2971,7 +2973,7 @@ function onClick(e){
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
     case 'tlArrange':arrange();break;
     case 'hoyOpen':{const k=id===DAILY.id?'':id;hoyOpen.clear();hoyOpen.add(id);wSolo=k;wLast=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
-    case 'hoyClose':hoyOpen.delete(id);render();break;
+    case 'hoyClose':hoyOpen.delete(id);doneOpen.delete(id);render();break;
     case 'tlMode':{const o=objective(id);if(o){o.mode=b.dataset.val;save();}break;}
     case 'clearSecWin':{const o=objective(id);closePop();if(o?.secWin){delete o.secWin[b.dataset.sec];save();}break;}
     case 'projTab':projTab=id;if(id==='Cronología')tlScroll='today';render();break;
@@ -2979,7 +2981,7 @@ function onClick(e){
     case 'tlToggle':tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render();break;
     case 'tlView':tlMode=id;tlScroll='today';render();break;
     case 'tlExpandAll':{const ids=s.objectives.map(o=>o.id);if(ids.length&&ids.every(x=>tlOpen.has(x)))tlOpen.clear();else ids.forEach(x=>tlOpen.add(x));render();break;}
-    case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);try{localStorage.setItem('focus.doneOpen',JSON.stringify([...doneOpen]))}catch{}}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1',b.dataset.before??'');break;
+    case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1',b.dataset.before??'');break;
     case 'insSection':{leaveHoy(id);
       const o=objective(id);if(!o)break;
       let n='Nueva sección',k=2;while(o.sections.includes(n))n='Nueva sección '+k++;
@@ -3034,7 +3036,7 @@ function onClick(e){
     }
     case 'toggleObj':collapsed.has(id)?collapsed.delete(id):collapsed.add(id);render();break;
     case 'secContinue':{const k=b.dataset.obj,sc=b.dataset.sec;leaveHoy(k===DAILY.id?'':k);s.reopen??={};const r=(s.reopen[k]??=[]);if(!r.includes(sc))r.push(sc);save();break;}
-    case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);try{localStorage.setItem('focus.doneOpen',JSON.stringify([...doneOpen]))}catch{}render();break;
+    case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);if(doneOpen.has(id))leaveHoy(id);render();break;
     case 'pickIcon':openPop(b,'<div class="emojis">'+EMOJIS.map(x=>'<button data-act="setIcon" data-val="'+x+'">'+x+'</button>').join('')+'</div>',{kind:b.dataset.kind,id});break;
     case 'setIcon':{const c=popCtx;closePop();if(!c)break;const item=c.kind==='obj'?objective(c.id):project(c.id);if(item){item.icon=b.dataset.val;save();}break;}
     case 'menu':menuFor(b.dataset.kind,id,b);break;
