@@ -1627,6 +1627,24 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .xtask .xclock,.hoyright .xtask .xclock{margin-right:0}
 .bigstats.two{grid-template-columns:1fr 1fr}
 .tworked{text-align:right}
+
+/* v118 feed de Hoy */
+.feedc .feed{padding:6px 4px 40px}
+.feed .fhead{position:relative;display:flex;align-items:center;gap:8px;margin:22px 0 4px;padding-left:28px;min-height:26px}
+.feed .fhead:first-child{margin-top:8px}
+.feed .fhead .sname{font-size:14.5px;font-weight:650;color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.feed .fhead .sname svg{width:13px;height:13px;opacity:.55}
+.feed .fhead .fctx{font-size:12.5px;color:var(--mute)}
+.feed .fplus{margin-left:auto;border:0;background:none;color:var(--faint);font-size:18px;line-height:1;width:26px;height:26px;border-radius:7px;cursor:pointer;opacity:0}
+.feed .fhead:hover .fplus,.feed .fplus:focus-visible{opacity:1}
+.feed .fplus:hover{background:var(--hover);color:var(--ink)}
+.feed .task{font-size:13px}
+.feed .tname,.feed .task{font-size:13px}
+.feed .task .tname:not(:focus){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed .task .tmain{margin-left:4px}
+.feed .fend{min-height:48px;border-radius:8px}
+.feed .fend.drop-in{box-shadow:inset 0 0 0 2px var(--accent)}
+.feed .fhead.drop-before:before{top:-8px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2206,9 +2224,53 @@ function dateHead(){
   return '<div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas</span></div>'+
     '<div class="dnav"><button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div></div>';
 }
+/* ---------- feed de Hoy: lista plana combinada, solo recolocación ---------- */
+function feedBase(){
+  const q=queue(selectedDate).filter(t=>!t.done),out=[];
+  for(const k of dayOrder()){
+    const o=k===''?DAILY:objective(k);if(!o)continue;
+    const secs=k===''?[RECUR,'',...(o.sections||[]).filter(x=>x!==RECUR)]:['',...(o.sections||[])];
+    const L=s.tasks.filter(t=>q.includes(t)&&(t.objective||'')===k);
+    for(const sec of secs)for(const t of L)if(t.section===sec)out.push(t.id);
+    for(const t of L)if(!secs.includes(t.section))out.push(t.id);
+  }
+  return out;
+}
+function feedIds(){
+  const base=feedBase(),set=new Set(base),out=((s.feed||{})[selectedDate]||[]).filter(id=>set.has(id)),seen=new Set(out);
+  const ob=id=>task(id).objective||'';
+  for(let i=0;i<base.length;i++){
+    const id=base[i];if(seen.has(id))continue;
+    let p=-1;for(let j=i-1;j>=0;j--)if(seen.has(base[j])&&ob(base[j])===ob(id)){p=out.indexOf(base[j]);break;}
+    if(p>=0)out.splice(p+1,0,id);
+    else{let n=-1;for(let j=i+1;j<base.length;j++)if(seen.has(base[j])&&ob(base[j])===ob(id)){n=out.indexOf(base[j]);break;}
+      if(n>=0)out.splice(n,0,id);else out.push(id);}
+    seen.add(id);
+  }
+  return out;
+}
+function feedHead(ids,ix){
+  const t=task(ids[ix]),key=(t.objective||'')+'|'+t.section;
+  let j=ix;while(j+1<ids.length&&((task(ids[j+1]).objective||'')+'|'+task(ids[j+1]).section)===key)j++;
+  const o=t.objective?objective(t.objective):DAILY,p=t.objective?project(o?.project):null,area=p?.area||'';
+  const tone=t.objective?areaTone(area):DAILY_TONE,tag=t.objective&&p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'';
+  const oname=o?o.name:'Proyecto';
+  const title=t.section?(t.section===RECUR?esc(RECUR)+REPEAT_SVG:esc(t.section)):esc(oname);
+  const ctx=t.section?'<span class="fctx">'+esc(oname)+'</span>':'';
+  return '<div class="fhead" style="--ac:'+tone+'" data-first="'+esc(ids[ix])+'"><span class="sname">'+title+'</span>'+ctx+tag+
+    '<button class="fplus" data-act="insTask" data-today="1" data-obj="'+esc(t.objective||'')+'" data-sec="'+esc(t.section)+'" data-after="'+esc(ids[j])+'" data-before="" title="Nueva tarea en este proyecto" aria-label="Nueva tarea">＋</button></div>';
+}
+function feedHtml(){
+  const ids=feedIds();
+  if(!ids.length)return '<p class="empty pick">Nada planificado para este día.</p>';
+  let h='<div class="feed">',prev=null;
+  ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;if(key!==prev){prev=key;h+=feedHead(ids,ix);}h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"');});
+  return h+'<div class="fend"></div></div>';
+}
 function workCenter(ids){
   if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);return '<div class="wc-in solo">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
+  if(wHoy)return '<div class="wc-in feedc">'+dateHead()+feedHtml()+'</div>';
   return '<div class="wc-in empty-pick">'+dateHead()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un proyecto de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
 }
 const DAILYPILL=()=>'<button class="fpill daily" style="--ac:'+DAILY_TONE+'" data-act="wArea" data-id="__daily" aria-pressed="'+(!wHoy&&wArea==='__daily')+'">Día a día<b class="cnt">'+s.tasks.filter(t=>!t.objective&&!t.done).length+'</b></button>';
@@ -3359,6 +3421,13 @@ function dropInfo(e){
     if(row&&row.dataset.task!==drag.id){const a=half(row);return {type:'task',el:row,after:a,cls:a?'drop-after':'drop-before'};}
     const sec=el.closest('[data-secdrop]');if(sec&&!row)return {type:'sec',el:sec,cls:'drop-in'};
   }
+  if(k==='ftask'){
+    const row=el.closest('.feed .task');
+    if(row&&row.dataset.task!==drag.id){const a=half(row);return {type:'ftask',el:row,after:a,cls:a?'drop-after':'drop-before'};}
+    const fh=el.closest('.fhead');if(fh)return {type:'fhead',el:fh,cls:'drop-before'};
+    const fe=el.closest('.fend');if(fe)return {type:'fend',el:fe,cls:'drop-in'};
+    return null;
+  }
   if(k==='section'){
     const bub=el.closest('.bubble[data-obj]');
     if(bub&&bub.dataset.obj===drag.obj){
@@ -3398,6 +3467,15 @@ document.addEventListener('drop',e=>{
     if(dr.kind==='task'){const t=task(dr.id);if(t)placePlan(date,e.clientY,i.el,t);}
     else{const p=s.plans.find(x=>x.id===dr.id);if(p)placePlan(date,e.clientY,i.el,task(p.task),p);}
     return;
+  }
+  if(i.type==='ftask'||i.type==='fhead'||i.type==='fend'){
+    const t=task(dr.id);if(!t)return;
+    const arr=feedIds().filter(x=>x!==t.id);let at;
+    if(i.type==='ftask')at=arr.indexOf(i.el.dataset.task)+(i.after?1:0);
+    else if(i.type==='fhead')at=arr.indexOf(i.el.dataset.first);
+    else at=arr.length;
+    arr.splice(at<0?arr.length:at,0,t.id);
+    (s.feed??={})[selectedDate]=arr;save();return;
   }
   if(i.type==='garea'){for(const p of s.projects)if(p.area&&!s.areas.includes(p.area))s.areas.push(p.area);mv(s.areas,dr.id,i.el.dataset.area,i.after);save();return;}
   if(i.type==='stzone'){const o=objective(dr.id);if(o){o.status=i.el.dataset.st;const first=s.objectives.find(x=>x!==o&&x.status===o.status);if(first)mv(s.objectives,o,first,false);save();}return;}
