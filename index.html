@@ -1373,6 +1373,25 @@ button.gl.sti:hover{filter:brightness(.96)}
 .firstobj .fo-plus{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:22px;line-height:1;flex:none}
 .firstobj b{display:block;font-size:17px;font-weight:650;letter-spacing:-.2px}
 .firstobj small{display:block;font-size:12.5px;color:rgba(255,255,255,.7);margin-top:2px}
+
+/* v77 modo oscuro en Todos; tarjeta Tarea actual en verde / amarilla */
+.wmodes .wmode:not(.hoy):not(.comp)[aria-pressed=true]{color:var(--bg)}
+.xtask.flcard .xwhere{color:rgba(255,255,255,.78)}
+.xtask.flcard .xclock.over{color:#c0281f;background:#fff;border-radius:12px;padding:2px 10px;margin-left:-10px}
+@keyframes pz{0%,100%{background:#f5c542}50%{background:#fbe9a6}}
+.flcard.paused,html body.paused{background:#f5c542;animation:pz 1.6s ease-in-out infinite}
+.flcard.paused h3,.flcard.paused .est,.flcard.paused .xwhere{color:rgba(20,20,18,.7)}
+.flcard.paused .xtitle,.flcard.paused .xclock{color:#161614}
+.flcard.paused .xclock.over{color:#c0281f;background:none;padding:0;margin-left:0}
+.flcard.paused .fl-b,.flcard.paused .fl-b.run{background:#161614;color:#f5c542}
+.flcard.paused .fl-b:hover{background:#2b2b27;color:#f5c542}
+.flcard.paused .fl-b.ok{background:rgba(0,0,0,.12);color:#161614}
+.flcard.paused .fl-b.ok:hover{background:rgba(0,0,0,.2);color:#161614}
+html body.paused .flcard.paused{animation:none;background:transparent}
+@media(prefers-reduced-motion:reduce){.flcard.paused,html body.paused{animation:none}}
+.hoyright .xtask.flcard{height:auto;display:block;border-radius:24px;padding:28px 32px;border:0}
+.hoyright .xtask.flcard .xtitle{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;overflow:hidden}
+.hoyright .xtask.flcard .xline{margin-top:14px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1973,7 +1992,7 @@ function execPanel(onlyStats=false){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xcard xtask" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+  const main='<section class="xcard xtask'+(t?' flcard':'')+(t&&!running&&!t.done?' paused':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
     (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
@@ -3199,7 +3218,8 @@ function updateFloat(){
   const t=current(),running=!!t&&s.running?.id===t.id;
   const r=t?timerReading(t):null;
   const p=t?projectOf(t):null,o=t?objective(t.objective):null;
-  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>'+
+  floating.document.body.classList.toggle('paused',!!t&&!running&&!t.done);
+  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(!running&&!t.done?' paused':'')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="'+(r.over?'Fuera de tiempo':'Tiempo restante')+'">'+r.text+'</span>'+
     (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
 }
 
