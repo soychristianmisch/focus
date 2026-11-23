@@ -3650,9 +3650,9 @@ document.addEventListener('paste',e=>{
 
 function leaveHoy(oid){
   if(!wHoy||view!=='Trabajo')return;
-  {const k=oid===''||oid==null?DAILY.id:oid;if(hoyOpen.has(k)||(wSolo!==null&&(wSolo===''?DAILY.id:wSolo)===k))return;}
-  wHoy=false;wStat='Todos';wArea='Todas';wProj='';hoyOpen.clear();
-  toBubble(oid===''||oid==null?DAILY.id:oid,150);
+  const id=oid===''||oid==null?DAILY.id:oid,k=id===DAILY.id?'':id;
+  if(hoyOpen.has(id)||wSolo===k)return;
+  hoyOpen.clear();hoyOpen.add(id);wSolo=k;wLast=k;
 }
 function toBubble(id,delay=0){
   setTimeout(()=>{const c=$('.wcenter'),el=document.querySelector('.bubble[data-obj="'+id+'"]');if(!c||!el)return;
