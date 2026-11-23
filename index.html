@@ -1664,6 +1664,11 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .task.running .tplay.on{background:#fff;color:var(--play)}
 .task.running .tplay.on:hover{background:rgba(255,255,255,.9);color:var(--play)}
 .task.running .rcic{color:#fff;opacity:.8}
+
+/* v120 menú de tres puntos del proyecto */
+.bhead>.iconbtn.objmore,.iconbtn.objmore{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:transparent;display:grid;place-items:center;color:var(--mute);padding:0}
+.iconbtn.objmore:hover{background:var(--hover);color:var(--ink)}
+.bhead>.iconbtn.objmore svg{width:16px;height:16px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2069,7 +2074,7 @@ function bubble(o,today=false,embed=false){
   const chips='<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>'+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover proyecto"></span>':'';
-  const menu=((!today&&!daily)||embed)?'<button class="iconbtn" data-act="menu" data-kind="objdel" data-id="'+o.id+'" aria-label="Eliminar proyecto" title="Eliminar proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button>':'<span></span>';
+  const menu=((!today&&!daily)||embed)?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de área principal">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="projNote" data-id="'+proj.id+'" title="Abrir la nota principal de '+esc(proj.name)+'" aria-label="Abrir la nota principal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg></button>':'')+propsH+'</div>';
@@ -2998,7 +3003,7 @@ function menuFor(kind,id,anchor){
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
-  if(kind==='objmore')return openPop(anchor,pi('Eliminar proyecto','delObj','data-id="'+id+'"','danger'));
+  if(kind==='objmore')return openPop(anchor,pi(o?.notion?'Cambiar enlace de Notion':'Vincular a Notion','objNotionEdit','data-id="'+id+'"')+(o?.notion?pi('Abrir en Notion','openONotion','data-id="'+id+'"'):'')+pi('Eliminar proyecto','objDelAsk','data-id="'+id+'"','danger'));
   if(kind==='objnotion'){setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="pinput"><label>Enlace de Notion</label><input id="onin" value="'+esc(o?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"></div><div class="crow">'+(o?.notion?pi('Quitar enlace','saveONotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','saveONotion','data-id="'+id+'"')+'</div>');}
   if(kind==='areaedit'){setTimeout(()=>{const i=document.querySelector('#pop input[data-areaname]');if(i&&i.dataset.fresh){i.focus();i.select();}},30);return openPop(anchor,'<div class="pinput"><label>Nombre</label><input data-areaname="'+esc(id)+'" '+(freshArea===id?'data-fresh="1" ':'')+'value="'+esc(id)+'" spellcheck="false"></div>'+pl('Color')+'<div class="swatches">'+PALETTE_ALL.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>'+pi('Eliminar área global','delArea','data-id="'+esc(id)+'"','danger'));}
   if(kind==='parent'){const bad=descIds(id);return openPop(anchor,pi('Nivel superior (sin área superior)','setProp','data-kind="proj" data-id="'+id+'" data-key="parent" data-val=""',p.parent?'':'sel')+pl('Dentro de')+s.projects.filter(q=>!bad.includes(q.id)).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'setProp','data-kind="proj" data-id="'+id+'" data-key="parent" data-val="'+q.id+'"',p.parent===q.id?'sel':'')).join(''));}
@@ -3146,6 +3151,9 @@ function onClick(e){
     }
     case 'dayCal':{const ym=selectedDate.slice(0,7);openPop(b,calHtmlD(ym),{day:true,ym});break;}
     case 'closePopOnly':closePop();break;
+    case 'openONotion':{const o=objective(id);closePop();if(o?.notion)window.open(o.notion,'_blank','noopener');break;}
+    case 'objNotionEdit':{const a=document.querySelector('.bubble[data-obj="'+id+'"] .objmore')||b;menuFor('objnotion',id,a);break;}
+    case 'objDelAsk':{const a=document.querySelector('.bubble[data-obj="'+id+'"] .objmore')||b;menuFor('objdel',id,a);break;}
     case 'notionEdit':menuFor('objnotion',id,b);break;
     case 'saveONotion':{const o=objective(id);let v=b.dataset.clear?'':($('#onin')?.value||'').trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;closePop();if(o){o.notion=v;save();render();}break;}
     case 'delArea':{closePop();if(s.projects.some(p=>p.area===id)){notify('Primero mueve o elimina las áreas principales de «'+id+'».');break;}s.areas=s.areas.filter(x=>x!==id);if(openArea===id)openArea='';save();break;}
