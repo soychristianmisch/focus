@@ -2035,7 +2035,7 @@ function projPage(p){
    (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir ↗</a>':'')+'</div></div>'+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
-   '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj'+(pjClosed.has(o.id)?' closed':'')+'" data-fold="'+o.id+'"><button class="foldbtn" data-act="pjFold" data-id="'+o.id+'" aria-label="Plegar o desplegar proyecto" title="Plegar o desplegar">'+ICON.caret+'</button>'+bubble(o)+'</div>').join('')||'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer proyecto</b><small>en '+esc(p.name)+'</small></span></button>')+
+   '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer proyecto</b><small>en '+esc(p.name)+'</small></span></button>')+
    (myObjs.length?'<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Proyecto</button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
