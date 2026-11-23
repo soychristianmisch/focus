@@ -1533,6 +1533,12 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .pi.stopt.sel{background:var(--bg3)}
 .rsec .stn,.csec .stn{font-style:normal;font-weight:600;color:var(--faint);margin-left:7px;letter-spacing:0}
 button.gl.sti{cursor:pointer;border:0;font:inherit}
+/* v95 */
+.ritem .rexp{flex:none;margin-left:auto;align-self:center;width:26px;height:26px;display:grid;place-items:center;padding:0;border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:8px;background:color-mix(in srgb,var(--card) 70%,transparent);color:var(--mute);cursor:pointer}
+.ritem .rexp svg{width:15px;height:15px}
+.ritem .rexp:hover{color:var(--ink);background:var(--card);border-color:var(--mute)}
+.ritem.solo .rexp{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff}
+.ritem.solo .rexp:hover{background:rgba(255,255,255,.26)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2087,16 +2093,17 @@ function hoySecs(ids,fn,kind){
   const cls=kind==='rail'?'rsec':'csec',hd=t=>'<div class="'+cls+'">'+t+'</div>',pj=ids.filter(k=>k!==''),dd=ids.includes('');
   return (pj.length?hd('Focus hoy')+pj.map(fn).join(''):'')+(dd?hd('Día a día')+fn(''):'');
 }
+const EXPBTN=id=>'<button class="rexp" data-act="wExpand" data-id="'+id+'" title="Abrir el proyecto expandido (clic otra vez para salir)" aria-label="Abrir expandido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></button>';
 function railItem(k,sel){
   const id=k===''?DAILY.id:k,q=queue(selectedDate);
   if(k===''){
     const L=q.filter(t=>!t.objective&&!t.done),n=L.length;
-    return '<div class="ritem daily'+(wSolo===''?' solo':'')+'" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm">'+(n?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div></div>';
+    return '<div class="ritem daily'+(wSolo===''?' solo':'')+'" style="--ac:'+DAILY_TONE+'" data-act="wSelect" data-id="'+id+'"><span class="gl sm">'+glyph('sun')+'</span><div class="rt"><b>Día a día</b><div class="rm">'+(n?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div>'+EXPBTN(id)+'</div>';
   }
   const o=objective(k),p=project(o.project),area=p?.area||'';
   const L=q.filter(t=>t.objective===k&&!t.done);
   return '<div class="ritem'+(wSolo===k?' solo':'')+'" style="--ac:'+areaTone(area)+';--pc:'+(p?.color??PALETTE[0])+'" data-act="wSelect" data-id="'+k+'" draggable="true" data-drag="ritem">'+stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"',true)+
-    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div></div>';
+    '<div class="rt"><b>'+esc(o.name)+'</b><div class="rm">'+(p?'<span class="atag sm">'+esc(rootProject(p).name)+'</span>':'')+(L.length?'<small>Hoy: '+hrs(sumMin(L))+'</small>':'')+'</div></div>'+EXPBTN(k)+'</div>';
 }
 function dateHead(){
   const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
@@ -2858,6 +2865,10 @@ function onClick(e){
       for(const e of s.entries.filter(x=>x.task===id&&x.end!=null).sort((x,y)=>y.start-x.start)){if(rem<=0)break;const d=e.end-e.start;if(d<=rem){s.entries=s.entries.filter(x=>x!==e);rem-=d;}else{e.end-=rem;rem=0;}}
       save();showTimePop(id);break;}
     case 'entAdd':{const m=Math.round(+($('#entadd')?.value)||0);if(m>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-m*60000,end:now});save();}showTimePop(id);break;}
+    case 'wExpand':{
+      const k=id===DAILY.id?'':id;
+      if(wSolo===k){wSolo=null;wLast=k;hoyOpen.clear();flipRender(()=>render());toBubble(id,80);break;}
+      wSolo=k;wLast=k;hoyOpen.clear();if(wHoy)hoyOpen.add(id);render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
     case 'wSelect':{
       const k=id===DAILY.id?'':id;
       if(wSolo!==null){const same=wSolo===k;wSolo=null;wLast=k;hoyOpen.clear();flipRender(()=>render());if(!same)toBubble(id,80);else toBubble(id,80);break;}
