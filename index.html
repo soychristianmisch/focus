@@ -1998,12 +1998,12 @@ function bubble(o,today=false,embed=false){
   let lastSec='',rendered=0;
   body+=(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec);
-    if(today&&!list.length)return '';
+    if(today&&!list.length&&!(sec===RECUR&&daily))return '';
     if(sec&&sec!==RECUR&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
     if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
-    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num" title="Tiempo total diario">'+secTime(all.filter(x=>x.section===RECUR))+'</span></div>';
+    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'</div>';
     else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span>'+
