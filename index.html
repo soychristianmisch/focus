@@ -1518,6 +1518,7 @@ html body.paused .flcard.paused{animation:none;background:transparent}
 .secall.on{background:none;border-color:var(--line);color:var(--faint)}
 .secblock>.sec,.secblock .sec{position:relative}
 .sec .secall+.sx{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0}
+.sec.recur .smeta{margin-left:4px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1892,7 +1893,7 @@ function bubble(o,today=false,embed=false){
     if(!sec&&!list.length&&sections.filter(x=>x!==RECUR).length)return '';
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
-    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
+    if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'<span class="smeta num" title="Tiempo total diario">'+hrs(sumMin(all.filter(x=>x.section===RECUR)))+'</span></div>';
     else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+hrs(sumMin(list))+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+hrs(sumMin(list))+'</span>'+
