@@ -1645,6 +1645,25 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .feed .fend{min-height:48px;border-radius:8px}
 .feed .fend.drop-in{box-shadow:inset 0 0 0 2px var(--accent)}
 .feed .fhead.drop-before:before{top:-8px}
+
+/* v119 feed: alineación, barras, orden etiqueta/proyecto, tarea en marcha en verde */
+.feed .fhead{padding-left:26px}
+.feed .fhead .lines{position:absolute;left:4px;top:50%;margin:-7px 0 0;opacity:0}
+.feed .fhead:hover .lines{opacity:.85}
+.feed .fhead .sname{padding:0}
+.feed .fhead .fctx{margin-left:2px}
+.feed .insm .ez.t:before{left:26px}
+.feed .insm .ez.t:after{left:4px}
+.task.running{background:var(--play);color:#fff}
+.task.running:hover{background:var(--play-hi)}
+.task.running .tname,.task.running .tworked,.task.running .tworked:before,.task.running .tworked:after,.task.running .grip{color:#fff}
+.task.running .tworked.zero{opacity:1}
+.task.running .tworked:hover,.task.running .tworked:focus{background:rgba(255,255,255,.2);color:#fff}
+.task.running .check{border-color:#fff;background:transparent}
+.task.running .today,.task.running .today.on{background:rgba(255,255,255,.22)!important;color:#fff!important;opacity:1}
+.task.running .tplay.on{background:#fff;color:var(--play)}
+.task.running .tplay.on:hover{background:rgba(255,255,255,.9);color:var(--play)}
+.task.running .rcic{color:#fff;opacity:.8}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2257,14 +2276,16 @@ function feedHead(ids,ix){
   const oname=o?o.name:'Proyecto';
   const title=t.section?(t.section===RECUR?esc(RECUR)+REPEAT_SVG:esc(t.section)):esc(oname);
   const ctx=t.section?'<span class="fctx">'+esc(oname)+'</span>':'';
-  return '<div class="fhead" style="--ac:'+tone+'" data-first="'+esc(ids[ix])+'"><span class="sname">'+title+'</span>'+ctx+tag+
-    '<button class="fplus" data-act="insTask" data-today="1" data-obj="'+esc(t.objective||'')+'" data-sec="'+esc(t.section)+'" data-after="'+esc(ids[j])+'" data-before="" title="Nueva tarea en este proyecto" aria-label="Nueva tarea">＋</button></div>';
+  return '<div class="fhead" style="--ac:'+tone+'" data-first="'+esc(ids[ix])+'"><span class="lines" draggable="true" data-drag="fsec" data-id="'+esc(ids[ix])+'" title="Mover sección"></span><span class="sname">'+title+'</span>'+tag+ctx+
+    '<button class="fplus" data-act="insTask" data-today="1" data-obj="'+esc(t.objective||'')+'" data-sec="'+esc(t.section)+'" data-after="'+esc(ids[j])+'" data-before="" title="Nueva tarea en este proyecto" aria-label="Nueva tarea">＋</button></div>'+
+    insFeed(t,'',ids[ix]);
 }
+const insFeed=(t,after,before)=>'<div class="insm'+(before?' lead':'')+'"><button class="ez t" data-act="insTask" data-today="1" data-obj="'+esc(t.objective||'')+'" data-sec="'+esc(t.section)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'" aria-label="Nueva tarea aquí"><i></i></button></div>';
 function feedHtml(){
   const ids=feedIds();
   if(!ids.length)return '<p class="empty pick">Nada planificado para este día.</p>';
   let h='<div class="feed">',prev=null;
-  ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;if(key!==prev){prev=key;h+=feedHead(ids,ix);}h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"');});
+  ids.forEach((id,ix)=>{const t=task(id),key=(t.objective||'')+'|'+t.section;if(key!==prev){prev=key;h+=feedHead(ids,ix);}h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"')+insFeed(t,id,'');});
   return h+'<div class="fend"></div></div>';
 }
 function workCenter(ids){
@@ -3408,7 +3429,7 @@ document.addEventListener('dragstart',e=>{
   const h=e.target.closest?.('[data-drag]');if(!h)return;
   drag={kind:h.dataset.drag,id:h.dataset.id,obj:h.dataset.obj,x0:e.clientX};
   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',drag.id);
-  const row=h.closest('.task,.sec,.bubble,.pitem,.block,.ritem,.tlcard')||h;
+  const row=h.closest('.task,.sec,.fhead,.bubble,.pitem,.block,.ritem,.tlcard')||h;
   try{e.dataTransfer.setDragImage(row,12,12);}catch{}
   setTimeout(()=>row.classList.add('dragging'),0);document.body.classList.add('dnd');
 });
@@ -3420,6 +3441,13 @@ function dropInfo(e){
     const row=el.closest('.task');
     if(row&&row.dataset.task!==drag.id){const a=half(row);return {type:'task',el:row,after:a,cls:a?'drop-after':'drop-before'};}
     const sec=el.closest('[data-secdrop]');if(sec&&!row)return {type:'sec',el:sec,cls:'drop-in'};
+  }
+  if(k==='fsec'){
+    const row=el.closest('.feed .task');
+    if(row){const a=half(row);return {type:'fsec',el:row,after:a,cls:a?'drop-after':'drop-before'};}
+    const fh=el.closest('.fhead');if(fh&&fh.dataset.first!==drag.id)return {type:'fsechead',el:fh,cls:'drop-before'};
+    const fe=el.closest('.fend');if(fe)return {type:'fsecend',el:fe,cls:'drop-in'};
+    return null;
   }
   if(k==='ftask'){
     const row=el.closest('.feed .task');
@@ -3467,6 +3495,17 @@ document.addEventListener('drop',e=>{
     if(dr.kind==='task'){const t=task(dr.id);if(t)placePlan(date,e.clientY,i.el,t);}
     else{const p=s.plans.find(x=>x.id===dr.id);if(p)placePlan(date,e.clientY,i.el,task(p.task),p);}
     return;
+  }
+  if(i.type==='fsec'||i.type==='fsechead'||i.type==='fsecend'){
+    const ids=feedIds(),ix=ids.indexOf(dr.id);if(ix<0)return;
+    const kf=id=>(task(id).objective||'')+'|'+task(id).section,key=kf(dr.id),run=[];
+    for(let j=ix;j<ids.length&&kf(ids[j])===key;j++)run.push(ids[j]);
+    const arr=ids.filter(x=>!run.includes(x));let at;
+    if(i.type==='fsec'){const tg=i.el.dataset.task;if(run.includes(tg))return;at=arr.indexOf(tg)+(i.after?1:0);}
+    else if(i.type==='fsechead')at=arr.indexOf(i.el.dataset.first);
+    else at=arr.length;
+    arr.splice(at<0?arr.length:at,0,...run);
+    (s.feed??={})[selectedDate]=arr;save();return;
   }
   if(i.type==='ftask'||i.type==='fhead'||i.type==='fend'){
     const t=task(dr.id);if(!t)return;
