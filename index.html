@@ -1771,6 +1771,16 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .emptyz .endz .ez:only-child{height:36px}
 .emptyz .endz .ez.t:before{top:auto;bottom:0}
 .emptyz .endz .ez.s:before{top:0}
+
+/* v129 ficha de área principal: título · área · N · puntos; formulario de Notion en columna */
+.pj-line{gap:14px;flex-wrap:nowrap}
+.pj-line .pj-props{flex:none;gap:10px;flex-wrap:nowrap}
+.pj-props .nbox{width:26px;height:26px;border-radius:7px;font-size:13px;margin-left:0}
+.nform{display:flex;flex-direction:column;gap:8px;padding:12px 12px 8px;min-width:300px}
+.nform label{font-size:12.5px;font-weight:600;color:var(--mute)}
+.nform input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:13px;background:var(--card);color:var(--ink)}
+.nform input:focus{outline:none;border-color:var(--ink)}
+.nform .crow{padding:0;margin-top:0;justify-content:flex-end}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2282,9 +2292,8 @@ function projPage(p){
   return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+
    '<header class="pj-head"><div class="pj-line">'+editable('proj.name',p.id,p.name,'','ptitle','Área principal sin nombre')+
    '<div class="pj-props"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'"><i class="adot" style="background:'+areaTone(p.area)+'"></i>'+esc(p.area)+'</button>'+
-   '<button class="iconbtn" data-act="menu" data-kind="projmore" data-id="'+p.id+'" aria-label="Más opciones">'+ICON.more+'</button></div>'+
-   '<div class="pj-notion"><span class="nlogo">N</span><input class="notion-in" data-notion="'+p.id+'" value="'+esc(p.notion)+'" placeholder="Enlace de Notion" spellcheck="false">'+
-   (hasN?'<a class="btn line" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer">Abrir ↗</a>':'')+'</div></div>'+
+   (hasN?'<a class="nbox" data-pnotion-edit="'+p.id+'" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="pNotionEdit" data-id="'+p.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>')+
+   '<button class="iconbtn pjmore" data-act="menu" data-kind="pjmore" data-id="'+p.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button></div></div>'+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
    '<section id="pj-obj" class="pj-sec"><h2>Proyectos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer proyecto</b><small>en '+esc(p.name)+'</small></span></button>')+
@@ -3174,7 +3183,9 @@ function menuFor(kind,id,anchor){
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
   if(kind==='objmore')return openPop(anchor,pi(o?.notion?'Cambiar enlace de Notion':'Vincular a Notion','objNotionEdit','data-id="'+id+'"')+(o?.notion?pi('Abrir en Notion','openONotion','data-id="'+id+'"'):'')+pi('Eliminar proyecto','objDelAsk','data-id="'+id+'"','danger'));
-  if(kind==='objnotion'){setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="pinput"><label>Enlace de Notion</label><input id="onin" value="'+esc(o?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"></div><div class="crow">'+(o?.notion?pi('Quitar enlace','saveONotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','saveONotion','data-id="'+id+'"')+'</div>');}
+  if(kind==='objnotion'){setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="nform"><label for="onin">Enlace de Notion</label><input id="onin" value="'+esc(o?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"><div class="crow">'+(o?.notion?pi('Quitar enlace','saveONotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','saveONotion','data-id="'+id+'"')+'</div></div>');}
+  if(kind==='pnotion'){const pp=project(id);setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="nform"><label for="onin">Enlace de Notion</label><input id="onin" value="'+esc(pp?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"><div class="crow">'+(pp?.notion?pi('Quitar enlace','savePNotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','savePNotion','data-id="'+id+'"')+'</div></div>');}
+  if(kind==='pjmore'){const pp=project(id);return openPop(anchor,pi(pp?.notion?'Cambiar enlace de Notion':'Vincular a Notion','pNotionEdit','data-id="'+id+'"')+(pp?.notion?pi('Abrir en Notion','openNotion','data-id="'+id+'"'):'')+pi('Eliminar área principal','delProj','data-id="'+id+'"','danger'));}
   if(kind==='areaedit'){setTimeout(()=>{const i=document.querySelector('#pop input[data-areaname]');if(i&&i.dataset.fresh){i.focus();i.select();}},30);return openPop(anchor,'<div class="pinput"><label>Nombre</label><input data-areaname="'+esc(id)+'" '+(freshArea===id?'data-fresh="1" ':'')+'value="'+esc(id)+'" spellcheck="false"></div>'+pl('Color')+'<div class="swatches">'+PALETTE_ALL.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>'+pi('Eliminar área global','delArea','data-id="'+esc(id)+'"','danger'));}
   if(kind==='parent'){const bad=descIds(id);return openPop(anchor,pi('Nivel superior (sin área superior)','setProp','data-kind="proj" data-id="'+id+'" data-key="parent" data-val=""',p.parent?'':'sel')+pl('Dentro de')+s.projects.filter(q=>!bad.includes(q.id)).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'setProp','data-kind="proj" data-id="'+id+'" data-key="parent" data-val="'+q.id+'"',p.parent===q.id?'sel':'')).join(''));}
   if(kind==='projmore')return openPop(anchor,pl('Color')+'<div class="swatches">'+PALETTE_ALL.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>'+pi('Eliminar área principal','delProj','data-id="'+id+'"','danger'));
@@ -3329,6 +3340,8 @@ function onClick(e){
     case 'objNotionEdit':{const a=document.querySelector('.bubble[data-obj="'+id+'"] .objmore')||b;menuFor('objnotion',id,a);break;}
     case 'objDelAsk':{const a=document.querySelector('.bubble[data-obj="'+id+'"] .objmore')||b;menuFor('objdel',id,a);break;}
     case 'notionEdit':menuFor('objnotion',id,b);break;
+    case 'pNotionEdit':{const a=document.querySelector('.pjpage .pjmore')||b;menuFor('pnotion',id,a);break;}
+    case 'savePNotion':{const pp=project(id);let v=b.dataset.clear?'':($('#onin')?.value||'').trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;closePop();if(pp){pp.notion=v;save();render();}break;}
     case 'saveONotion':{const o=objective(id);let v=b.dataset.clear?'':($('#onin')?.value||'').trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;closePop();if(o){o.notion=v;save();render();}break;}
     case 'delArea':{closePop();if(s.projects.some(p=>p.area===id)){notify('Primero mueve o elimina las áreas principales de «'+id+'».');break;}s.areas=s.areas.filter(x=>x!==id);if(openArea===id)openArea='';save();break;}
     case 'secAll':{const sc={obj:nobj(b.dataset.obj),sec:b.dataset.sec},L=secList(sc);if(!L.length)break;const td=day();
@@ -4092,8 +4105,9 @@ function renameArea(old,v){
   if(openArea===old)openArea=v;if(wArea===old)wArea=v;
   closePop();save();render();
 }
-document.addEventListener('contextmenu',e=>{const n=e.target.closest?.('a.nbox[data-notion-edit]');if(n){e.preventDefault();menuFor('objnotion',n.dataset.notionEdit,n);}});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target?.id==='onin'){e.preventDefault();document.querySelector('[data-act=saveONotion]:not([data-clear])')?.click();}});
+document.addEventListener('contextmenu',e=>{const pn=e.target.closest?.('a.nbox[data-pnotion-edit]');if(pn){e.preventDefault();menuFor('pnotion',pn.dataset.pnotionEdit,pn);return;}
+  const n=e.target.closest?.('a.nbox[data-notion-edit]');if(n){e.preventDefault();menuFor('objnotion',n.dataset.notionEdit,n);}});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target?.id==='onin'){e.preventDefault();document.querySelector('[data-act=saveONotion]:not([data-clear]),[data-act=savePNotion]:not([data-clear])')?.click();}});
 
 setInterval(()=>{if(typing())return;if(rollRecurring()){save();render();}},60000);
 
