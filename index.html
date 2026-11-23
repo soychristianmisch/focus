@@ -1890,7 +1890,7 @@ function save(refresh=true){
 
 /* ---------- estado de interfaz ---------- */
 let wSolo=null,wLast=null;
-let wHoy=false,wArea='Todas',wObj='',wProj='',wStat='Focus';
+let wHoy=true,wArea='Todas',wObj='',wProj='',wStat='Todos';
 let view='Trabajo', selectedDate=day(), calWeek=false, openArea='Global', openProj='', openObj='', projTab='Nota maestra';
 const typing=()=>{const e=document.activeElement;return !!e&&(e.isContentEditable||/^(INPUT|TEXTAREA)$/.test(e.tagName)||!!e.closest?.('[data-edit]'));};
 let picked='', selected='', suggestion='', floating=null, tlZoom='Días', anRange=14, focusAfter=null, chainId='', pendingRender=false;
