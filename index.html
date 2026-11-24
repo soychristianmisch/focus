@@ -1808,6 +1808,15 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .sec .smeta{font-weight:400;font-size:11.5px;color:var(--faint)}
 .bigstats.two{grid-template-columns:repeat(3,1fr)}
 .xcard .bigstats b{white-space:nowrap}
+
+/* v139 grupos de Focus: contraer + puntos visibles */
+.fgh .lines{opacity:.5}
+.fgtog{border:0;background:none;color:var(--faint);width:22px;height:22px;padding:0;margin:0 2px 0 0;border-radius:6px;display:inline-grid;place-items:center;cursor:pointer;vertical-align:middle;transition:transform .15s}
+.fgtog svg{width:20px;height:20px}
+.fgtog:hover{background:var(--bg3);color:var(--ink)}
+.fgwrap.col .fgtog{transform:rotate(-90deg)}
+.fgwrap.col>.bubbles{display:none}
+.fgwrap.col{margin-bottom:-6px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1967,7 +1976,7 @@ function normalizeSections(d){
   }
 }
 function migrate(d){
-  d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];d.focusOrder=Array.isArray(d.focusOrder)?d.focusOrder:[];
+  d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];d.focusOrder=Array.isArray(d.focusOrder)?d.focusOrder:[];d.focusCollapsed=Array.isArray(d.focusCollapsed)?d.focusCollapsed:[];
   for(const k of ['projects','objectives','tasks','entries','plans','notes','inbox','paused'])d[k]??=[];
   d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
   d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(t.section===DDS)t.section='';}});
@@ -2373,17 +2382,18 @@ function focusGroups(objs,withDaily=true){
   const ix=k=>{const i=ord.indexOf(k);return i<0?1e9:i;};
   return all.map((g,i)=>({g,i})).sort((x,y)=>ix(x.g.key)-ix(y.g.key)||x.i-y.i).map(x=>x.g);
 }
-const focusKeys=()=>focusGroups(s.objectives.filter(o=>stOk(o))).map(g=>g.key);
+const momKeys=()=>{const base=['__daily',...ST_ORDER.map(x=>'st:'+x)],ord=s.focusOrder||[],ix=k=>{const i=ord.indexOf(k);return i<0?1e9:i;};return base.map((k,i)=>({k,i})).sort((x,y)=>ix(x.k)-ix(y.k)||x.i-y.i).map(x=>x.k);};
+const focusKeys=()=>fBy==='area'?focusGroups(s.objectives.filter(o=>stOk(o))).map(g=>g.key):momKeys();
 function moveFg(key,ref,after){
   const keys=focusKeys(),i=keys.indexOf(key);if(i<0||key===ref)return;
   keys.splice(i,1);let j=keys.indexOf(ref);if(j<0)j=keys.length;keys.splice(after?j+1:j,0,key);
-  s.focusOrder=keys;save();
+  s.focusOrder=[...keys,...(s.focusOrder||[]).filter(k=>!keys.includes(k))];save();
 }
 function wList(){
   if(wHoy){return [...dayOrder().filter(k=>k&&objective(k)&&stOk(objective(k))),''];}
   if(wArea==='__daily')return [''];
   if(wStat==='Focus'&&fBy==='area'){return focusGroups(s.objectives.filter(o=>stOk(o)&&fOk(o.id)),fOk('')).flatMap(g=>g.daily?['']:g.items.map(o=>o.id));}
-  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o)&&fOk(o.id));return (fOk('')?['']:[]).concat(ST_ORDER.flatMap(st=>L.filter(o=>(o.status||'Más adelante')===st).map(o=>o.id)));}
+  if(wStat==='Focus'){const L=s.objectives.filter(o=>stOk(o)&&fOk(o.id));return momKeys().flatMap(k=>k==='__daily'?(fOk('')?['']:[]):L.filter(o=>(o.status||'Más adelante')===k.slice(3)).map(o=>o.id));}
   const ids=s.objectives.filter(o=>(wArea==='Todas'||project(o.project)?.area===wArea)&&stOk(o)).map(o=>o.id);
   if(wArea==='Todas'&&wStat==='Todos'){const gs=railGroups(ids.map(objective).filter(Boolean));return gs.flatMap(g=>g.items.map(o=>o.id));}
   return ids;
@@ -2399,7 +2409,7 @@ function withSecs(ids,fn,kind){
     return out;
   }
   if(wStat==='Focus'){
-    return (ids.includes('')?hd('Día a día')+fn(''):'')+ST_ORDER.map(st=>{const L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
+    return momKeys().map(k=>{if(k==='__daily')return ids.includes('')?hd('Día a día')+fn(''):'';const st=k.slice(3),L=ids.filter(k=>k!==''&&(objective(k)?.status||'Más adelante')===st);
       if(fHoy&&!L.length)return '';
       return '<div class="'+cls+'" data-st="'+st+'">'+ST_PL[st]+(L.length?'<i class="stn">'+L.length+'</i>':'')+'</div>'+(L.length?L.map(fn).join(''):'<div class="'+cls+'h" data-st="'+st+'">Arrastra aquí los objetivos '+({'Hoy':'de hoy','Esta semana':'de esta semana','Este mes':'de este mes','Más adelante':'para más adelante','Completado':'terminados'})[st]+'</div>');}).join('');
   }
@@ -2483,21 +2493,19 @@ function feedHtml(){
 function focusStack(){
   const cp=fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
   const card=k=>bubble(k===''?DAILY:objective(k),false,false,false,cp);
+  const L0=s.objectives.filter(o=>!cp||has(o.id));
+  let gs;
+  if(fBy==='area')gs=focusGroups(L0,!cp||has('')).map(g=>({key:g.key,daily:g.daily,title:g.daily?'Día a día':(g.proj?g.proj.name:'Sin proyecto'),items:g.items,n:g.daily?0:g.items.length}));
+  else gs=momKeys().map(k=>{if(k==='__daily')return (!cp||has(''))?{key:k,daily:true,title:'Día a día',items:[],n:0}:null;
+    const st=k.slice(3),it=L0.filter(o=>(o.status||'Más adelante')===st);return it.length?{key:k,st,title:ST_PL[st],items:it,n:it.length}:null;}).filter(Boolean);
+  const arr='<span class="fgarr"><button type="button" data-act="fgMove" data-dir="-1" title="Subir" aria-label="Subir">↑</button><button type="button" data-act="fgMove" data-dir="1" title="Bajar" aria-label="Bajar">↓</button></span>';
+  const tri='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 9.5l5 6 5-6z"/></svg>';
   let h='';
-  if(fBy==='area'){
-    const gs=focusGroups(s.objectives.filter(o=>!cp||has(o.id)),!cp||has(''));
-    const arr='<span class="fgarr"><button type="button" data-act="fgMove" data-dir="-1" title="Subir" aria-label="Subir">↑</button><button type="button" data-act="fgMove" data-dir="1" title="Bajar" aria-label="Bajar">↓</button></span>';
-    for(const g of gs){
-      const n=g.daily?'':'<i class="stn">'+g.items.length+'</i>';
-      h+='<div class="fgwrap" data-fgk="'+esc(g.key)+'"><div class="csec fgh"><span class="lines" draggable="true" data-drag="fgrp" data-id="'+esc(g.key)+'" title="Mover"></span>'+(g.daily?'Día a día':esc(g.proj?g.proj.name:'Sin proyecto'))+n+arr.replace(/data-act="fgMove"/g,'data-act="fgMove" data-id="'+esc(g.key)+'"')+'</div><div class="bubbles">'+(g.daily?card(''):g.items.map(o=>card(o.id)).join(''))+'</div></div>';
-    }
-  }else{
-    if(!cp||has(''))h+='<div class="csec">Día a día</div><div class="bubbles">'+card('')+'</div>';
-    const L0=s.objectives.filter(o=>!cp||has(o.id));
-    for(const st of ST_ORDER){
-      const L=L0.filter(o=>(o.status||'Más adelante')===st);
-      if(L.length)h+='<div class="csec" data-st="'+st+'">'+ST_PL[st]+'<i class="stn">'+L.length+'</i></div><div class="bubbles">'+L.map(o=>card(o.id)).join('')+'</div>';
-    }
+  for(const g of gs){
+    const col=(s.focusCollapsed||[]).includes(g.key),k=esc(g.key);
+    h+='<div class="fgwrap'+(col?' col':'')+'" data-fgk="'+k+'"><div class="csec fgh"'+(g.st?' data-st="'+g.st+'"':'')+'><span class="lines" draggable="true" data-drag="fgrp" data-id="'+k+'" title="Mover"></span>'+
+      '<button type="button" class="fgtog" data-act="fgToggle" data-id="'+k+'" aria-expanded="'+!col+'" title="'+(col?'Expandir':'Contraer')+'">'+tri+'</button><span class="fgt">'+esc(g.title)+'</span>'+(g.n?'<i class="stn">'+g.n+'</i>':'')+arr.replace('data-act="fgMove"','data-act="fgMove" data-id="'+k+'"').replace('data-act="fgMove" data-dir="1"','data-act="fgMove" data-id="'+k+'" data-dir="1"')+'</div>'+
+      '<div class="bubbles">'+(g.daily?card(''):g.items.map(o=>card(o.id)).join(''))+'</div></div>';
   }
   if(cp&&!h)h='<p class="empty pick">Nada planificado para este día.</p>';
   return h;
@@ -3291,6 +3299,7 @@ function onClick(e){
       if(wSolo===k){wSolo=null;wLast=null;render();break;}
       wSolo=k;wLast=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;
     }
+    case 'fgToggle':{const c=s.focusCollapsed=s.focusCollapsed||[],i=c.indexOf(id);if(i<0)c.push(id);else c.splice(i,1);save();render();break;}
     case 'fgMove':{const w=b.closest('.fgwrap');if(!w)break;const sib=+b.dataset.dir>0?w.nextElementSibling:w.previousElementSibling;if(sib?.dataset.fgk)moveFg(id,sib.dataset.fgk,+b.dataset.dir>0);break;}
     case 'fByToggle':fBy=fBy==='mom'?'area':'mom';render();break;
     case 'cpOpen':{if(e.target.closest('[data-edit],a,button,.lines,input'))break;const k=id===DAILY.id?'':id;wSolo=k;wLast=k;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;}
