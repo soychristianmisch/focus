@@ -1817,6 +1817,24 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .fgwrap.col .fgtog{transform:rotate(-90deg)}
 .fgwrap.col>.bubbles{display:none}
 .fgwrap.col{margin-bottom:-6px}
+/* v140 notas de tarea */
+.noteb{flex:none;width:20px;height:20px;padding:0;border:0;background:none;border-radius:50%;color:var(--faint);opacity:.35;cursor:pointer;display:grid;place-items:center;transition:opacity .1s,color .1s}
+.noteb svg{width:16px;height:16px}
+.task:hover .noteb,.task.picked .noteb{opacity:.8}
+.noteb:hover{opacity:1;color:var(--ink)}
+.noteb.has{opacity:1;color:var(--mute)}
+.task.isimp:not(.running) .noteb,.task.running .noteb{color:#fff}
+#tnote{position:fixed;inset:0;z-index:150;background:rgba(15,15,15,.45);display:flex;align-items:center;justify-content:center;padding:18px}
+#tnote .tncard{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+#tnote .tnhead{display:flex;align-items:flex-start;gap:10px;padding:18px 20px 10px}
+#tnote .tnhead h3{margin:0;font-size:16px;line-height:1.4;flex:1;font-weight:600}
+#tnote .tnhead small{display:block;color:var(--mute);font-weight:400;font-size:12px;margin-top:2px}
+#tnote textarea{flex:1;min-height:300px;margin:0 20px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg2);color:var(--ink);font:inherit;font-size:14.5px;line-height:1.65;resize:vertical;outline:none}
+#tnote textarea:focus{border-color:var(--line2)}
+#tnote .tnfoot{display:flex;gap:8px;justify-content:flex-end;align-items:center;padding:12px 20px 18px}
+#tnote .tnfoot .tnmsg{flex:1;color:var(--mute);font-size:12px}
+#tnote .tnx{border:0;background:none;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
+#tnote .tnx:hover{background:var(--bg3);color:var(--ink)}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -1975,7 +1993,29 @@ function normalizeSections(d){
     for(const t of d.tasks)if(t.objective===o.id&&t.section&&!known.has(t.section)){o.sections.push(t.section);known.add(t.section);}
   }
 }
+/* v140 paquetes de objetivos preparados por Claude (se aplican una sola vez) */
+const PACKS=[{id:'flodesk-api-test',projectMatch:'fuego',projectName:'Fuego y Corazón',area:'Ministerio',
+  objective:{name:'Prueba API Flodesk',icon:'🧪',glyph:'code',status:'Esta semana',priority:'Alta'},
+  data:{"secs": ["Preparación en Flodesk", "Base técnica", "Las cinco pruebas", "Decisión"], "tasks": [["Preparación en Flodesk", "Generar la clave de API de Flodesk y guardarla en un lugar seguro", 10, "En Flodesk: Ajustes de cuenta → Integraciones → API keys → crear una clave nueva llamada «Prueba Fuego & Corazón».\n\nGuárdala en tu gestor de contraseñas. No la pegues en el chat ni en el código de la web: irá solo en el servidor (variable secreta). Si se expone, se borra y se crea otra."], ["Preparación en Flodesk", "Crear los campos personalizados de prueba en Flodesk", 10, "Crear dos campos personalizados (Audience → Custom fields):\n• fc_token: token firmado de cada persona (lo generará el servidor).\n• idioma_email: es / fr / en.\n\nApunta el nombre exacto de cada campo: lo necesitaremos para la API y para la etiqueta de combinación en el email."], ["Preparación en Flodesk", "Crear los segmentos de prueba", 10, "Crear tres segmentos con el prefijo TEST para no mezclarlos con los reales:\n• TEST Fuego & Corazón (la suscripción única)\n• TEST Diario\n• TEST Idioma FR\n\nApunta sus IDs más adelante (los verá la página de prueba con «Listar segmentos»)."], ["Preparación en Flodesk", "Crear el workflow «TEST Recorrido» con 3 emails cortos", 30, "Workflow de prueba:\n1. Email «Día 1» → espera (la más corta que permita Flodesk) → «Día 2» → espera → «Día 3».\n2. En la configuración del workflow, activar que los suscriptores puedan volver a entrar (re-entrada). Sin esto no se puede probar «Empezar de nuevo».\n3. Terminar con un paso de salida.\n4. En el email «Día 1», añadir un botón cuya URL use el campo fc_token, por ejemplo:\n   https://christianmisch.com/fc/prueba?t={{fc_token}}\n   (usa la etiqueta de combinación que Flodesk ofrezca para ese campo).\n5. Publicar el workflow sin disparador automático: entrará la gente solo por API."], ["Preparación en Flodesk", "Preparar dos direcciones de email de prueba", 5, "Una de Gmail y otra distinta (Outlook, iCloud…). Así vemos cómo se ven el botón y el enlace en dos clientes de correo."], ["Base técnica", "[Con Claude] Crear la tabla de prueba en Supabase", 30, "PROMPT PARA CLAUDE:\n\nEn el proyecto de Supabase de Fuego & Corazón (no el de Focus), crea una tabla de prueba `fc_test_contacts` con: id (uuid), email, nombre, idioma_web, idioma_web_origen (navegador|elegido), idioma_email, flodesk_id, token, created_at, updated_at. Y una tabla `fc_test_events` para registrar cada acción (tipo, contacto, payload, resultado, fecha). Activa RLS sin políticas públicas: solo el servidor escribe. Dame el SQL listo para pegar en el editor SQL de Supabase y explícame en dos líneas qué hace cada tabla."], ["Base técnica", "[Con Claude] Crear la función de servidor que habla con la API de Flodesk", 60, "PROMPT PARA CLAUDE:\n\nCrea una Supabase Edge Function `flodesk-test` que guarde la clave de API de Flodesk como secreto (FLODESK_API_KEY) y exponga estas acciones: crear o actualizar suscriptor con campos personalizados (fc_token, idioma_email), listar segmentos, añadir a segmentos, quitar de segmentos, listar workflows, añadir a workflow, quitar de workflow, dar de baja y consultar un suscriptor. El token debe ser un HMAC del id del contacto con un secreto propio (FC_TOKEN_SECRET), y la función debe validarlo antes de ejecutar acciones desde la página. Registra cada llamada en fc_test_events. Respeta los límites de Flodesk (100 peticiones/minuto). Dame los pasos exactos para desplegarla y configurar los secretos."], ["Base técnica", "[Con Claude] Construir la página HTML de prueba con los botones", 60, "PROMPT PARA CLAUDE:\n\nConstruye una página HTML sencilla y bonita, coherente con el estilo de christianmisch.com, en /fc/prueba. Lee el parámetro ?t= de la URL y muestra: nombre, email, idioma, segmentos actuales y estado. Botones: «Activar/desactivar diario», «Cambiar idioma de los emails a FR», «Empezar el recorrido», «Dejar el recorrido», «Empezar de nuevo», «Darme de baja de todo» y «Recargar estado». Cada botón llama a la función flodesk-test y muestra el resultado (éxito o error con el mensaje de Flodesk). Añade un bloque de registro visible con las últimas acciones para poder depurar. Sin la clave de Flodesk en el navegador."], ["Las cinco pruebas", "Prueba 1 · Crear un suscriptor por API con sus campos", 15, "Desde la página de prueba (o con la función), crear tu email de prueba con nombre, idioma_email = es y su fc_token.\n\nComprobar en el panel de Flodesk que aparece el suscriptor con los campos rellenos y en el segmento «TEST Fuego & Corazón».\n\n✓ Superada si los campos se ven en la ficha del suscriptor."], ["Las cinco pruebas", "Prueba 2 · El token en la URL del botón (la decisiva)", 30, "1. Meter al suscriptor de prueba en «TEST Recorrido» y abrir el email «Día 1» en Gmail.\n2. Mantener pulsado el botón y copiar el enlace: debe llevar ?t= seguido del token real, no la etiqueta vacía.\n3. Repetir con una campaña normal (no workflow) que tenga el mismo botón.\n4. Abrirlo en móvil y en ordenador.\n\n✓ Superada si en ambos casos el enlace abre la página con los datos de esa persona.\n✗ Si no funciona: plan B = enlace sin token + verificación con código por email (Supabase Auth). Anotar el resultado en «Decisión»."], ["Las cinco pruebas", "Prueba 3 · Los botones cambian Flodesk de verdad", 30, "Pulsar cada botón de la página y comprobar en el panel de Flodesk:\n• Activar/desactivar diario → entra/sale de «TEST Diario».\n• Cambiar idioma → idioma_email = fr y segmento «TEST Idioma FR».\n• Dejar el recorrido → sale del workflow y no llega el siguiente email.\n• Baja de todo → estado «unsubscribed».\n\n✓ Superada si cada cambio se ve en Flodesk en menos de un minuto."], ["Las cinco pruebas", "Prueba 4 · Empezar de nuevo un recorrido", 20, "Con el suscriptor dentro o al final de «TEST Recorrido», pulsar «Empezar de nuevo» (la función lo retira y lo vuelve a añadir).\n\n✓ Superada si vuelve a llegar el email «Día 1».\n✗ Si Flodesk da error: revisar que el workflow permite re-entrada y que el suscriptor no siga activo en él."], ["Las cinco pruebas", "[Con Claude] Prueba 5 · La baja nativa de Flodesk actualiza Supabase", 30, "PROMPT PARA CLAUDE:\n\nAñade a la función un endpoint para el webhook de Flodesk «subscriber.unsubscribed» que marque al contacto como dado de baja en fc_test_contacts y lo registre en fc_test_events. Dime cómo configurar el webhook en Flodesk y cómo verificar que la petición viene de Flodesk.\n\nLuego: darse de baja desde el enlace del pie de un email de prueba y comprobar que Supabase lo refleja.\n\n✓ Superada si el cambio aparece en la tabla."], ["Las cinco pruebas", "Abrir la página desde el móvil: Gmail, iPhone y Android", 20, "Abrir el enlace con token desde la app de Gmail en iPhone y en Android, y desde el navegador del ordenador. Comprobar que carga, que se ve bien y que los botones responden. Apuntar cualquier diferencia."], ["Decisión", "Anotar resultados y límites encontrados", 15, "Para cada prueba: superada / no superada / con matices, y qué límite de Flodesk apareció. Especialmente la Prueba 2: decide si la cuenta se abre con token o con código por email."], ["Decisión", "[Con Claude] Cerrar la arquitectura y actualizar el documento de traspaso", 30, "PROMPT PARA CLAUDE:\n\nTe paso los resultados de las cinco pruebas de la API de Flodesk. Con ellos, cierra la arquitectura de Fuego & Corazón (Flodesk + Supabase + web + YouTube + S3), dime qué cambia respecto a lo previsto y actualiza el documento de traspaso del proyecto con las decisiones tomadas y lo que queda abierto. Después borra o archiva lo que sea solo de prueba (segmentos TEST, workflow TEST, tablas fc_test_*)."]]}}];
+let PACK_NEW=false;
+function applyPacks(d){
+  d.packsApplied=Array.isArray(d.packsApplied)?d.packsApplied:[];
+  const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  for(const pk of PACKS){
+    if(d.packsApplied.includes(pk.id))continue;
+    const oid='pack-'+pk.id;
+    if(!d.objectives.some(o=>o.id===oid)){
+      let pr=d.projects.find(q=>!q.parent&&norm(q.name).includes(pk.projectMatch))||d.projects.find(q=>norm(q.name).includes(pk.projectMatch));
+      if(!pr){pr={id:uid(),name:pk.projectName,area:pk.area,color:'',icon:'🔥',notes:'',notesHtml:'',description:'',notion:'',parent:''};d.projects.push(pr);}
+      const mins=pk.data.tasks.reduce((a,x)=>a+x[2],0);
+      d.objectives.push({id:oid,project:pr.id,...pk.objective,hours:Math.ceil(mins/60),phase:'',deadline:'',sections:[...pk.data.secs],sched:true,notion:''});
+      pk.data.tasks.forEach(([sec,name,m,note],i)=>d.tasks.push({...mkTask(name,m,oid,sec),id:oid+'-'+i,note}));
+    }
+    d.packsApplied.push(pk.id);PACK_NEW=true;
+  }
+}
 function migrate(d){
+  for(const k of ['projects','objectives','tasks'])d[k]??=[];applyPacks(d);
   d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];d.focusOrder=Array.isArray(d.focusOrder)?d.focusOrder:[];d.focusCollapsed=Array.isArray(d.focusCollapsed)?d.focusCollapsed:[];
   for(const k of ['projects','objectives','tasks','entries','plans','notes','inbox','paused'])d[k]??=[];
   d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
@@ -2008,6 +2048,7 @@ function load(){
   catch{persist=false;return migrate(seed());}
 }
 let s=load();
+if(PACK_NEW){PACK_NEW=false;try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}}
 function save(refresh=true){
   normalizeSections(s);
   try{localStorage.setItem(KEY,JSON.stringify(s));persist=true;}
@@ -2158,13 +2199,15 @@ function whenChip(t){
   return '<button class="today '+cls+'" data-act="today" data-id="'+esc(t.id)+'" title="'+(w.k==='today'?'Planificada para hoy':long)+' · clic para cambiar la fecha">'+txt+'</button>';
 }
 const IMP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.4v5.6M12 16.5v.1"/></svg>';
+const NOTE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11"/><path d="M8.5 8h4M8.5 12h3M8.5 16h6"/><path d="M19.6 3.4a1.4 1.4 0 0 1 2 2L15 12l-2.6.6.6-2.6z"/></svg>';
 function taskRow(t){
   const running=s.running?.id===t.id;
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
-      '<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button></div>'+
+      '<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button>'+
+      '<button type="button" class="noteb'+(t.note?' has':'')+'" data-act="taskNote" data-id="'+esc(t.id)+'" aria-label="Notas" title="'+(t.note?'Ver notas de la tarea':'Añadir notas a la tarea')+'">'+NOTE_SVG+'</button></div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Estimación (minutos)"','tmin')+
     (t.done?'<span></span>':whenChip(t))+
@@ -3269,6 +3312,30 @@ function placePlan(date,clientY,cal,t,existing){
   if(!onDay(t,date))t.days.push(date);
   selectedDate=date;save();
 }
+/* v140 notas de tarea */
+function openTaskNote(t,doc=document){
+  doc.getElementById('tnote')?.remove();
+  const ob=t.objective&&objective(t.objective);
+  const el=doc.createElement('div');el.id='tnote';
+  el.innerHTML='<div class="tncard" role="dialog" aria-modal="true" aria-label="Notas de la tarea"><div class="tnhead"><h3>'+esc(t.name||'Tarea sin nombre')+(ob?'<small>'+esc(ob.name)+(t.section?' · '+esc(t.section):'')+'</small>':'')+'</h3><button class="tnx" data-tn="close" aria-label="Cerrar">×</button></div>'+
+    '<textarea placeholder="Notas, especificaciones, prompts… Se guardan solas.">'+esc(t.note||'')+'</textarea>'+
+    '<div class="tnfoot"><span class="tnmsg"></span><button class="btn" data-tn="copy">Copiar</button><button class="btn solid" data-tn="close">Listo</button></div></div>';
+  doc.body.appendChild(el);
+  const ta=el.querySelector('textarea'),msg=el.querySelector('.tnmsg');
+  const commit=()=>{const v=ta.value.replace(/\s+$/,'');if((t.note||'')!==v){if(v)t.note=v;else delete t.note;save(false);}};
+  const close=()=>{commit();el.remove();doc.removeEventListener('keydown',onKey,true);render();};
+  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
+  doc.addEventListener('keydown',onKey,true);
+  ta.addEventListener('input',()=>{clearTimeout(ta._t);ta._t=setTimeout(()=>{commit();msg.textContent='Guardado';},400);});
+  el.addEventListener('click',e=>{
+    e.stopPropagation();
+    const a=e.target.closest('[data-tn]')?.dataset.tn;
+    if(e.target===el||a==='close')close();
+    else if(a==='copy'){const sel=ta.selectionStart!==ta.selectionEnd?ta.value.slice(ta.selectionStart,ta.selectionEnd):ta.value;
+      (navigator.clipboard?.writeText(sel)||Promise.reject()).then(()=>msg.textContent='Copiado',()=>{ta.select();doc.execCommand('copy');msg.textContent='Copiado';});}
+  });
+  setTimeout(()=>ta.focus(),30);
+}
 function onClick(e){
   const inPop=e.target.closest('#pop');
   if(!inPop&&pop.classList.contains('open'))closePop();
@@ -3336,6 +3403,7 @@ function onClick(e){
     case 'dateToday':selectedDate=day();render();break;
     case 'calMode':calWeek=id==='1';render();break;
     case 'toggleImp':if(t){t.imp=!t.imp;save();}break;
+    case 'taskNote':if(t)openTaskNote(t,b.ownerDocument||document);break;
     case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
     case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
     case 'play':start(id);break;
@@ -4248,7 +4316,8 @@ async function pull(force=false){
     if(!force&&row.updated_at===cloud.remoteTs){setCloud('ok');return;}
     if(!force&&(cloud.dirty||typing()))return;
     if(!lsGet(SYNC_KEY)&&hasData(s)&&hasData(row.data))exportData();
-    s=migrate(row.data);cloud.remoteTs=row.updated_at;lsSet(SYNC_KEY,row.updated_at);
+    PACK_NEW=false;s=migrate(row.data);cloud.remoteTs=row.updated_at;lsSet(SYNC_KEY,row.updated_at);
+    if(PACK_NEW){PACK_NEW=false;setTimeout(()=>cloudSaved(),50);}
     try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}
     setCloud('ok');render();
   }catch(e){setCloud(navigator.onLine?'off':'off');}
