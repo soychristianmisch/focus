@@ -1835,6 +1835,15 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 #tnote .tnfoot .tnmsg{flex:1;color:var(--mute);font-size:12px}
 #tnote .tnx{border:0;background:none;color:var(--mute);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px}
 #tnote .tnx:hover{background:var(--bg3);color:var(--ink)}
+
+/* v140 tareas importantes arriba */
+.keyblock{display:grid;gap:12px;margin:0 0 22px}
+.kt{display:grid;gap:4px}
+.ktctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 6px;font-size:11.5px;color:var(--mute);min-height:18px}
+.ktsec{font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:10.5px;color:var(--faint)}
+.ktobj{color:var(--mute)}
+.kt .atag{cursor:default}
+.kt .task{padding-left:14px;padding-right:14px;border-radius:12px}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2553,12 +2562,23 @@ function focusStack(){
   if(cp&&!h)h='<p class="empty pick">Nada planificado para este día.</p>';
   return h;
 }
+/* tareas importantes: réplicas fijas arriba del todo, con su contexto */
+function keyBlock(){
+  const L=s.tasks.filter(t=>t.imp&&!t.done);if(!L.length)return '';
+  const rows=L.map(t=>{
+    const o=objective(t.objective),p=projectOf(t),daily=!t.objective,ac=daily?DAILY_TONE:(p&&p.id?areaTone(p.area||''):'#b4b4ae');
+    const ctx=(t.section&&t.section!==RECUR?'<span class="ktsec">'+esc(t.section)+'</span>':'')+(daily&&t.section===RECUR?'<span class="ktsec">'+esc(RECUR)+'</span>':'')+
+      '<span class="atag" style="--ac:'+ac+'">'+esc(daily?'Día a día':(p?p.name:'Sin proyecto'))+'</span>'+(o?'<span class="ktobj">'+esc(o.name)+'</span>':'');
+    return '<div class="kt"><div class="ktctx">'+ctx+'</div>'+taskRow(t).replace(' draggable="true" data-drag="task"','')+'</div>';
+  }).join('');
+  return '<section class="keyblock" aria-label="Tareas importantes">'+rows+'</section>';
+}
 function workCenter(ids){
-  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+(fHoy?focusStack():'')+'</div>';
-  if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);const fd=focusOn()&&fHoy;return '<div class="wc-in solo'+(fd?' fsolo':'')+'">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op,false,fd)+'</div></div>';}
+  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+keyBlock()+(fHoy?focusStack():'')+'</div>';
+  if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);const fd=focusOn()&&fHoy;return '<div class="wc-in solo'+(fd?' fsolo':'')+'">'+dateHead()+keyBlock()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op,false,fd)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
-  if(wHoy)return '<div class="wc-in feedc">'+dateHead()+'</div>'; /* centro vacío por ahora; feedHtml() queda guardado */
-  return '<div class="wc-in empty-pick">'+dateHead()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un objetivo de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
+  if(wHoy)return '<div class="wc-in feedc">'+dateHead()+keyBlock()+'</div>'; /* centro vacío por ahora; feedHtml() queda guardado */
+  return '<div class="wc-in empty-pick">'+dateHead()+keyBlock()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un objetivo de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
 }
 const DAILYPILL=()=>'<button class="fpill daily" style="--ac:'+DAILY_TONE+'" data-act="wArea" data-id="__daily" aria-pressed="'+(!wHoy&&wArea==='__daily')+'">Día a día<b class="cnt">'+s.tasks.filter(t=>!t.objective&&!t.done).length+'</b></button>';
 function viewTrabajo(){
