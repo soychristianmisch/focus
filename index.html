@@ -1922,7 +1922,7 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
   .bhead>:empty{display:none!important}
   .bubble .sec .sname{padding-left:0;margin-left:0}
   .task .tname{padding-left:0}
-  .endz{display:none}
+  .endz,.ins,.insm,.ez,.secins{display:none!important}
   .bhead>.lines{display:none!important}
   .bubble .sec .sname,.bubble .sec .sname *{font-size:14px}
   .bubble .bbody{padding-left:6px;padding-right:6px}
@@ -1965,7 +1965,8 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .addtxt{display:flex;gap:18px;padding:3px 8px 2px 4px}
 .addtxt button{border:0;background:none;padding:3px 0;font:inherit;font-size:12px;font-weight:400;color:var(--faint);cursor:pointer}
 .addtxt button:hover{color:var(--ink)}
-@media(max-width:760px){.addtxt{padding-left:0}.addtxt button{font-size:12.5px;padding:6px 0}}
+@media(min-width:761px){.addtxt{padding-left:26px}}
+@media(max-width:760px){.addtxt{padding-left:0;gap:34px}.addtxt button{font-size:12.5px;padding:8px 2px}}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
