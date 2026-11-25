@@ -1997,6 +1997,15 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
   .task .tmain.rec .tname{flex:0 1 auto;min-width:0}
   .task .tmain.rec>.tname+*{margin-left:0;margin-top:3px;flex:none}
 }
+
+/* v151 */
+@media(max-width:760px){
+  .task .tmain{display:flex!important;align-items:flex-start;gap:6px;min-width:0}
+  .task .tmain .tname{flex:0 1 auto;min-width:0}
+  .task .tmain>.tname+*{margin-left:0!important;margin-top:0;flex:none}
+  .task .tmain>.tlink{margin-top:0;width:20px;height:20px;align-self:flex-end}
+  .task .tmain>.rcic{margin-top:3px}
+}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
