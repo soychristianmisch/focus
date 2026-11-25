@@ -2029,6 +2029,33 @@ body.hasrb{--rb:30px}
 .mfeed .bubbles>.ritem{margin:0 0 8px;padding:12px 12px;cursor:pointer}
 .mfeed .bubbles>.ritem .rt b{font-size:14.5px}
 .mfeed .bubbles>.mopen{margin:0 0 10px}
+
+/* v154 barra de tarea en curso: estilo Tarea actual */
+.rb{height:48px;gap:12px;padding:0 16px;background:var(--play);color:#fff;border-bottom:0}
+.rb.over{background:var(--red);color:#fff}
+:root[data-theme=dark] .rb.over{background:var(--red);color:#fff}
+.rb .rbn{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:600;line-height:1.2;text-align:left;padding:0;cursor:pointer;display:block;overflow:hidden}
+.rb .rbn span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}
+.rb .rbn:hover span{text-decoration:underline}
+.rb b{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1;color:#fff}
+.rb .rbb{width:34px;height:34px;min-width:34px;aspect-ratio:1;border-radius:50%!important;border:0;padding:0;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.22);color:#fff}
+.rb .rbb svg{width:15px;height:15px}
+.rb .rbb:not(.ok){background:#fff;color:var(--play)}
+.rb.over .rbb:not(.ok){color:var(--red)}
+.rb .rbb:hover{background:rgba(255,255,255,.88)}
+.rb .rbb.ok:hover{background:rgba(255,255,255,.34)}
+body.hasrb{--rb:48px}
+.task.flash{animation:tflash 1.4s ease-out}
+@keyframes tflash{0%,40%{box-shadow:0 0 0 3px color-mix(in srgb,var(--play) 55%,transparent)}100%{box-shadow:0 0 0 3px transparent}}
+@media(max-width:760px){
+  .rb{height:76px;padding:0 12px;gap:10px;align-items:center}
+  .rb .rbn{font-size:14px;line-height:1.25}
+  .rb .rbn span{-webkit-line-clamp:3}
+  .rb b{font-size:28px}
+  .rb .rbb{width:38px;height:38px;min-width:38px}
+  .rb .rbb svg{width:17px;height:17px}
+  body.hasrb{--rb:76px}
+}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3269,7 +3296,7 @@ function viewInbox(){
 /* ---------- render ---------- */
 function runbar(t){
   const r=timerReading(t),p=projectOf(t);
-  return '<div class="rb'+(r.over?' over':'')+'"><span class="dot"></span><span class="rbn" title="'+esc(t.name)+'">'+esc(t.name)+'</span><b data-hclock>'+r.text+'</b>'+
+  return '<div class="rb'+(r.over?' over':'')+'"><button type="button" class="rbn" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea"><span>'+esc(t.name)+'</span></button><b data-hclock>'+r.text+'</b>'+
     '<button type="button" class="rbb" data-act="pause" data-id="'+esc(t.id)+'" aria-label="Pausar" title="Pausar">'+ICON.pause+'</button>'+
     '<button type="button" class="rbb ok" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar tarea">'+ICON.check+'</button>'+
     '<button type="button" class="rbb fl" data-act="float" aria-label="Ventana flotante" title="Ventana flotante">↗</button></div>';
@@ -3631,6 +3658,17 @@ function onClick(e){
       const k=id===DAILY.id?'':id;hoyOpen.clear();
       if(wSolo===k){wSolo=null;wLast=null;render();break;}
       wSolo=k;wLast=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;
+    }
+    case 'goTask':{
+      const t=task(id);if(!t)break;
+      const k=t.objective||'',ko=k===''?DAILY.id:k;
+      view='Trabajo';wProj='';fHoy=false;
+      if(isMob()){wSolo=null;if(wHoy)hoyOpen.add(ko);else{mOpen.add(ko);if(wStat==='Focus'&&!s.objectives.some(o=>o.id===k&&stOk(o)))wStat='Todos';}}
+      else{hoyOpen.clear();hoyOpen.add(ko);wSolo=k;wLast=k;if(!wList().includes(k)){wArea='Todas';wStat='Todos';}}
+      render();
+      {const r=document.querySelector('.task[data-task="'+CSS.escape(id)+'"]:not(.kt .task)')||document.querySelector('.task[data-task="'+CSS.escape(id)+'"]');
+       if(r){r.scrollIntoView({block:'center'});pick(id);r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),1400);}}
+      break;
     }
     case 'mTog':{const k=id;mOpen.has(k)?mOpen.delete(k):mOpen.add(k);render();if(!mOpen.has(k)){const r=document.querySelector('.ritem[data-id="'+k+'"]');r?.scrollIntoView({block:'center'});}break;}
     case 'fgToggle':{const c=s.focusCollapsed=s.focusCollapsed||[],i=c.indexOf(id);if(i<0)c.push(id);else c.splice(i,1);save();render();break;}
