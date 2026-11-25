@@ -3431,7 +3431,7 @@ function commitEdit(el,info){
     fresh.delete(id);
   }
   if(info.cancel){el.textContent=el._orig;return;}
-  if(v===orig&&!(info.enter&&kind==='task.name'&&chainId===id))return;
+  if(v===orig&&!(info.enter&&kind==='task.name'&&chainId===id)&&!(info.enter&&kind==='sec.name'&&v))return;
   let bad=false;
   switch(kind){
     case 'task.name':{const t=task(id);if(!t)return;if(!v)bad=true;else t.name=v;break;}
@@ -3459,6 +3459,16 @@ function commitEdit(el,info){
     save(false);
     addTask(t.objective,t.section,t.id,!!info.inToday);
     return;
+  }
+  if(info.enter&&kind==='sec.name'){
+    const o=objective(id),name=o&&(o.sections.includes(v)?v:el.dataset.sec);
+    if(o&&name&&name!==RECUR){
+      const mine=s.tasks.filter(x=>x.objective===nobj(id)&&x.section===name&&!x.done);
+      save(false);
+      if(mine.length){focusAfter={kind:'task.name',id:mine[0].id};render();}
+      else addTask(nobj(id),name,'',false);
+      return;
+    }
   }
   save(false);soon();
 }
