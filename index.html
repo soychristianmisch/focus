@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Focus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1863,6 +1863,77 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .tnlinks a svg{width:13px;height:13px;flex:none}
 .tnlinks a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tnlinks a:hover{text-decoration:underline}
+/* v144 móvil: feed + barra inferior */
+.tshort{display:none}
+@media(max-width:760px){
+  html,body{overflow-x:clip;max-width:100%;overscroll-behavior-x:none;-webkit-text-size-adjust:100%}
+  html,body{height:auto!important;min-height:100%}
+  body{touch-action:pan-y;padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
+  main,.work,.wmain,.wcenter,.wc-in{max-width:100vw;min-width:0}
+  textarea,input,select,.rte{font-size:16px!important}
+  /* barra superior compacta */
+  header.top{padding:0 12px;gap:8px;overflow:visible;height:46px}
+  header.top .brand{font-size:15px}
+  header.top .btn[data-act=float]{display:none}
+  header.top .cloud span{display:none}
+  .runchip{flex:1;min-width:0;max-width:none;overflow:hidden}
+  .runchip span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  /* navegación inferior tipo app */
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:70;flex:none;gap:0;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  header.top .tabs button{flex:1;min-width:0;flex-direction:column;gap:2px;padding:4px 2px;border-radius:10px;font-size:10px;font-weight:600;line-height:1.1;justify-content:center;background:none}
+  header.top .tabs button .ti svg{width:22px;height:22px}
+  .tlong{display:none}.tshort{display:inline-block;position:relative}
+  .tbadge{position:absolute;top:-30px;right:-12px;font-style:normal;background:var(--red);color:#fff;border-radius:999px;font-size:9px;padding:1px 5px}
+  header.top .tabs button[aria-current=page]{color:var(--ink)}
+  header.top .tabs button:not([aria-current=page]){color:var(--faint)}
+  /* feed a una columna, sin barra lateral */
+  .wmain,.work.hoyon .wmain{display:block}
+  .work{height:auto}
+  .wrail{display:contents}
+  .wrail>*:not(.wmodes){display:none!important}
+  .wmodes{position:sticky;top:46px;z-index:25;margin:0;padding:8px 10px;gap:6px;background:var(--bg);border-bottom:1px solid var(--line)}
+  .wmode,.wmode:hover,.wmode.hoy[aria-pressed=true]{flex:1;justify-content:center;padding:5px 8px;font-size:12px;gap:4px;min-height:30px}
+  .wmode svg{width:13px;height:13px}
+  .wcenter{overflow:visible}
+  .wc-in,.wc-in.feedc,.wc-in.focusc,.wc-in.solo{padding:12px 8px 20px!important;max-width:100%}
+  .bubble{border-radius:18px}
+  .bubbles{grid-template-columns:minmax(0,1fr)!important;gap:10px}
+  .daynote .rte{padding:12px 14px}
+  /* tarjetas de tarea: título en 2 líneas + meta en la última */
+  .task{grid-template-columns:30px auto auto minmax(0,1fr) 40px;grid-template-rows:auto auto;column-gap:4px;row-gap:1px;align-items:center;min-height:0;padding:7px 4px 7px 2px;font-size:15px}
+  .task>:nth-child(1){display:none}
+  .task>:nth-child(2){grid-column:1;grid-row:1;align-self:start;margin-top:3px}
+  .task>:nth-child(3){grid-column:2/5;grid-row:1}
+  .task>:nth-child(4){grid-column:2;grid-row:2}
+  .task>:nth-child(5){grid-column:3;grid-row:2}
+  .task>:nth-child(6){grid-column:4;grid-row:2;justify-self:start;margin-left:6px}
+  .task>:nth-child(7){grid-column:5;grid-row:1/span 2;justify-self:end;align-self:center}
+  .task .tmain{display:flex;align-items:center;gap:2px;min-width:0}
+  .task .tname,.bubble .tname,.bubble .task,.feed .tname{font-size:15px;line-height:1.3}
+  .task .tname{flex:1;min-width:0;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;white-space:normal!important;text-overflow:ellipsis;word-break:break-word}
+  .task .tname:focus{display:block;-webkit-line-clamp:unset;overflow:visible}
+  .task .tworked,.task .tmin{font-size:12px;padding:1px 3px;text-align:left}
+  .task .today,.task .when,.task .wchip{margin-left:0;font-size:12px}
+  .task .impb,.task .noteb,.task .tlink{width:26px;height:26px;opacity:.7}
+  .task .tplay{width:34px;height:34px}
+  .keyblock .task,.kt .task{padding-left:8px;padding-right:6px}
+  .bigstats b,.xcard .bigstats .num{font-size:17px}
+  .bigstats{gap:6px}
+  .fgarr{display:none}
+  .fgh .lines{display:none}
+  .bprog{flex-wrap:nowrap;white-space:nowrap}
+  .bubble .lines,.bubble .bgrip{display:none}
+  .bprog .prog{min-width:70px}
+  .colhead.fh{flex-wrap:wrap;gap:8px 8px;align-items:center}
+  .colhead.fh>div:first-child{flex:1 1 100%}
+  .colhead h2{font-size:21px}
+  .colhead.fh .wmode{flex:none;padding:5px 12px}
+  .bhead{padding:12px 12px}
+  .bubble .sec{padding-left:8px;padding-right:8px;margin-left:0;margin-right:0}
+  .bubble .bbody{padding-left:8px;padding-right:8px}
+  .bubble .sec .sname{font-size:13px}
+  .endz{min-height:26px}
+}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2230,6 +2301,8 @@ function whenChip(t){
   return '<button class="today '+cls+'" data-act="today" data-id="'+esc(t.id)+'" title="'+(w.k==='today'?'Planificada para hoy':long)+' · clic para cambiar la fecha">'+txt+'</button>';
 }
 const IMP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.4v5.6M12 16.5v.1"/></svg>';
+const MQ=window.matchMedia('(max-width:760px)');const isMob=()=>MQ.matches;
+try{MQ.addEventListener('change',()=>{try{render();}catch(e){}});}catch(e){}
 const NOTE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11"/><path d="M8.5 8h4M8.5 12h3M8.5 16h6"/><path d="M19.6 3.4a1.4 1.4 0 0 1 2 2L15 12l-2.6.6.6-2.6z"/></svg>';
 const LINK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
 function urlsIn(text){
@@ -2573,13 +2646,13 @@ function feedHtml(){
     h+=taskRow(t).replace('data-drag="task"','data-drag="ftask"')+insFeed(t,id,'');});
   return h+'</div><div class="fend"></div></div>';
 }
-function focusStack(){
-  const cp=fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
-  const card=k=>bubble(k===''?DAILY:objective(k),false,false,false,cp);
-  const L0=s.objectives.filter(o=>!cp||has(o.id));
+function focusStack(mob){
+  const all=mob==='all',flt=!all&&fHoy,cp=!mob&&fHoy,tq=queue(selectedDate).filter(t=>!t.done),has=k=>tq.some(t=>(t.objective||'')===k);
+  const card=k=>bubble(k===''?DAILY:objective(k),false,false,cp,!!mob&&flt);
+  const L0=s.objectives.filter(o=>(!all||stOk(o))&&(!flt||has(o.id)));
   let gs;
-  if(fBy==='area')gs=focusGroups(L0,!cp||has('')).map(g=>({key:g.key,daily:g.daily,title:g.daily?'Día a día':(g.proj?g.proj.name:'Sin proyecto'),items:g.items,n:g.daily?0:g.items.length}));
-  else gs=momKeys().map(k=>{if(k==='__daily')return (!cp||has(''))?{key:k,daily:true,title:'Día a día',items:[],n:0}:null;
+  if(fBy==='area'&&!all)gs=focusGroups(L0,!flt||has('')).map(g=>({key:g.key,daily:g.daily,title:g.daily?'Día a día':(g.proj?g.proj.name:'Sin proyecto'),items:g.items,n:g.daily?0:g.items.length}));
+  else gs=momKeys().map(k=>{if(k==='__daily')return (!flt||has(''))?{key:k,daily:true,title:'Día a día',items:[],n:0}:null;
     const st=k.slice(3),it=L0.filter(o=>(o.status||'Más adelante')===st);return it.length?{key:k,st,title:ST_PL[st],items:it,n:it.length}:null;}).filter(Boolean);
   const arr='<span class="fgarr"><button type="button" data-act="fgMove" data-dir="-1" title="Subir" aria-label="Subir">↑</button><button type="button" data-act="fgMove" data-dir="1" title="Bajar" aria-label="Bajar">↓</button></span>';
   const tri='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 9.5l5 6 5-6z"/></svg>';
@@ -2590,7 +2663,7 @@ function focusStack(){
       '<button type="button" class="fgtog" data-act="fgToggle" data-id="'+k+'" aria-expanded="'+!col+'" title="'+(col?'Expandir':'Contraer')+'">'+tri+'</button><span class="fgt">'+esc(g.title)+'</span>'+(g.n?'<i class="stn">'+g.n+'</i>':'')+arr.replace('data-act="fgMove"','data-act="fgMove" data-id="'+k+'"').replace('data-act="fgMove" data-dir="1"','data-act="fgMove" data-id="'+k+'" data-dir="1"')+'</div>'+
       '<div class="bubbles">'+(g.daily?card(''):g.items.map(o=>card(o.id)).join(''))+'</div></div>';
   }
-  if(cp&&!h)h='<p class="empty pick">Nada planificado para este día.</p>';
+  if(flt&&!h)h='<p class="empty pick">Nada planificado para este día.</p>';
   return h;
 }
 /* tareas importantes: réplicas fijas arriba del todo, con su contexto */
@@ -2609,7 +2682,17 @@ function noteBlock(){
   const h=cleanHtml((s.dayNotes||{})[selectedDate]||''),empty=!h.replace(/<[^>]*>/g,'').trim()&&!/<(img|iframe|hr)/.test(h);
   return '<section class="daynote"><div class="rte" contenteditable="true" spellcheck="false" data-rte="day:'+esc(selectedDate)+'" data-ph="Reflexión del día: qué voy a hacer hoy y por qué. Escribe / para títulos y listas." data-empty="'+(empty?1:0)+'">'+h+'</div></section>';
 }
+function mobFeedHoy(){
+  const ks=dayOrder();if(!ks.length)return '<p class="empty pick">Nada planificado para este día.</p>';
+  return '<div class="bubbles">'+ks.map(k=>{const ko=k===''?DAILY.id:k,op=hoyOpen.has(ko);return bubble(k===''?DAILY:objective(k),!op,op);}).join('')+'</div>';
+}
 function workCenter(ids){
+  if(isMob()&&wSolo===null&&!wProj){
+    const hd=dateHead()+noteBlock()+keyBlock();
+    if(wHoy)return '<div class="wc-in feedc mfeed">'+hd+mobFeedHoy()+'</div>';
+    if(wStat==='Focus')return '<div class="wc-in focusc mfeed">'+hd+focusStack(true)+'</div>';
+    return '<div class="wc-in mfeed">'+hd+focusStack('all')+'</div>';
+  }
   if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+noteBlock()+keyBlock()+(fHoy?focusStack():'')+'</div>';
   if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);const fd=focusOn()&&fHoy;return '<div class="wc-in solo'+(fd?' fsolo':'')+'">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op,false,fd)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
@@ -2618,7 +2701,7 @@ function workCenter(ids){
 }
 const DAILYPILL=()=>'<button class="fpill daily" style="--ac:'+DAILY_TONE+'" data-act="wArea" data-id="__daily" aria-pressed="'+(!wHoy&&wArea==='__daily')+'">Día a día<b class="cnt">'+s.tasks.filter(t=>!t.objective&&!t.done).length+'</b></button>';
 function viewTrabajo(){
-  const ids=wList();if(wSolo!==null&&!ids.includes(wSolo))wSolo=null;
+  const ids=wList();if(wSolo!==null&&(!ids.includes(wSolo)||isMob()))wSolo=null;
   const curSel=wHoy?wObj:(ids.includes(wObj)?wObj:ids[0]);
   const nObj=a=>a==='Todas'?s.objectives.filter(stOk).length:s.objectives.filter(o=>project(o.project)?.area===a&&stOk(o)).length;
   const nSt=st=>st==='Todos'?s.objectives.filter(o=>o.status!=='Completado').length:s.objectives.filter(o=>o.status===st).length;
@@ -3079,7 +3162,7 @@ function viewInbox(){
 /* ---------- render ---------- */
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
-  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica','Inbox'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'checkbox',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span>'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Objetivos & Tareas':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</button>').join('')+'</nav>'+
+  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica','Inbox'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'checkbox',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Objetivos & Tareas':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Objetivos',Proyectos:'Proyectos','Planificación':'Plan','Analítica':'Analítica',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
     (t?'<button class="runchip'+(r.over?' over':'')+'" data-act="float" id="runchip" title="Abrir ventana flotante"><span class="dot"></span><b data-hclock>'+r.text+'</b><span>'+esc(t.name)+'</span></button>':'<button class="btn" data-act="float" title="Ventana flotante del temporizador">Ventana flotante ↗</button>')+
     (typeof cloudBadge==='function'?cloudBadge():'')+'<button class="iconbtn" data-act="theme" id="themebtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">'+(document.documentElement.dataset.theme==='dark'?ICON.sun:ICON.moon)+'</button>'+
     '<button class="iconbtn" data-act="settings" aria-label="Ajustes" title="Ajustes">'+ICON.gear+'</button>';
