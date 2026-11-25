@@ -1852,6 +1852,17 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .daynote .rte h2{font-size:19px;margin:.6em 0 .2em}
 .daynote .rte h3{font-size:16px;margin:.6em 0 .2em}
 .daynote .rte[data-empty="1"]:before{top:14px;left:18px}
+/* v143 enlaces en tareas y notas */
+.tlink{flex:none;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;color:#2f6fdb;opacity:.9;text-decoration:none}
+.tlink svg{width:15px;height:15px}
+.tlink:hover{background:var(--bg3);opacity:1}
+.task.isimp:not(.running) .tlink,.task.running .tlink{color:#fff}
+.tnlinks{margin:10px 20px 0;display:flex;flex-wrap:wrap;gap:6px}
+.tnlinks[hidden]{display:none}
+.tnlinks a{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 11px;border-radius:999px;background:var(--bg3);color:#2f6fdb;font-size:12.5px;text-decoration:none}
+.tnlinks a svg{width:13px;height:13px;flex:none}
+.tnlinks a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tnlinks a:hover{text-decoration:underline}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2220,12 +2231,21 @@ function whenChip(t){
 }
 const IMP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.4v5.6M12 16.5v.1"/></svg>';
 const NOTE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11"/><path d="M8.5 8h4M8.5 12h3M8.5 16h6"/><path d="M19.6 3.4a1.4 1.4 0 0 1 2 2L15 12l-2.6.6.6-2.6z"/></svg>';
+const LINK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
+function urlsIn(text){
+  const out=[];for(const m of String(text||'').matchAll(/\b(?:https?:\/\/|www\.)[^\s<>"'`]+/gi)){
+    let u=m[0].replace(/[.,;:!?)\]}»”]+$/,'');if(!/^https?:/i.test(u))u='https://'+u;
+    try{u=new URL(u).href;}catch(e){continue;}if(!out.includes(u))out.push(u);}
+  return out;
+}
+const linkLabel=u=>{try{const x=new URL(u);return x.hostname.replace(/^www\./,'')+(x.pathname.length>1?x.pathname:'');}catch(e){return u;}};
 function taskRow(t){
   const running=s.running?.id===t.id;
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip" draggable="true" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
+      urlsIn(t.name).map(u=>'<a class="tlink" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" title="Abrir '+esc(linkLabel(u))+'" aria-label="Abrir enlace">'+LINK_SVG+'</a>').join('')+
       '<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button>'+
       '<button type="button" class="noteb'+(t.note?' has':'')+'" data-act="taskNote" data-id="'+esc(t.id)+'" aria-label="Notas" title="'+(t.note?'Ver notas de la tarea':'Añadir notas a la tarea')+'">'+NOTE_SVG+'</button></div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
@@ -3355,14 +3375,16 @@ function openTaskNote(t,doc=document){
   const el=doc.createElement('div');el.id='tnote';
   el.innerHTML='<div class="tncard" role="dialog" aria-modal="true" aria-label="Notas de la tarea"><div class="tnhead"><h3>'+esc(t.name||'Tarea sin nombre')+(ob?'<small>'+esc(ob.name)+(t.section?' · '+esc(t.section):'')+'</small>':'')+'</h3><button class="tnx" data-tn="close" aria-label="Cerrar">×</button></div>'+
     '<textarea placeholder="Notas, especificaciones, prompts… Se guardan solas.">'+esc(t.note||'')+'</textarea>'+
+    '<div class="tnlinks"></div>'+
     '<div class="tnfoot"><span class="tnmsg"></span><button class="btn" data-tn="copy">Copiar</button><button class="btn solid" data-tn="close">Listo</button></div></div>';
   doc.body.appendChild(el);
   const ta=el.querySelector('textarea'),msg=el.querySelector('.tnmsg');
+  const lk=el.querySelector('.tnlinks'),paintLinks=()=>{const us=urlsIn(ta.value);lk.hidden=!us.length;lk.innerHTML=us.map(u=>'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" title="'+esc(u)+'">'+LINK_SVG+'<span>'+esc(linkLabel(u))+'</span></a>').join('');};paintLinks();
   const commit=()=>{const v=ta.value.replace(/\s+$/,'');if((t.note||'')!==v){if(v)t.note=v;else delete t.note;save(false);}};
   const close=()=>{commit();el.remove();doc.removeEventListener('keydown',onKey,true);render();};
   const onKey=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
   doc.addEventListener('keydown',onKey,true);
-  ta.addEventListener('input',()=>{clearTimeout(ta._t);ta._t=setTimeout(()=>{commit();msg.textContent='Guardado';},400);});
+  ta.addEventListener('input',()=>{paintLinks();clearTimeout(ta._t);ta._t=setTimeout(()=>{commit();msg.textContent='Guardado';},400);});
   el.addEventListener('click',e=>{
     e.stopPropagation();
     const a=e.target.closest('[data-tn]')?.dataset.tn;
