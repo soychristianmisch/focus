@@ -2051,6 +2051,33 @@ body.hasrb{--rb:48px}
   .rb{height:76px;padding:0 12px;gap:10px;align-items:center}
   .rb .rbn{font-size:14px;line-height:1.25}
   .rb .rbn span{-webkit-line-clamp:3}
+  .rb b{font-size:26px}
+  .rb .rbb{width:38px;height:38px;min-width:38px}
+  .rb .rbb svg{width:17px;height:17px}
+  .rb .rbn,.rb .rbn span{white-space:normal;overflow-wrap:anywhere}
+  body.hasrb{--rb:76px}
+}
+
+/* v155 barra: más fina, pausa amarilla */
+.rb{height:38px;gap:10px;padding:0 16px}
+.rb b{font-size:20px}
+.rb .rbb{width:28px;height:28px;min-width:28px}
+.rb .rbb svg{width:13px;height:13px}
+body.hasrb{--rb:38px}
+.rb.paused{background:#f5c542;color:#161614}
+.rb.paused b{color:#161614}
+.rb.paused .rbb:not(.ok){background:#161614;color:#f5c542}
+.rb.paused .rbb:not(.ok):hover{background:#2b2b27}
+.rb.paused .rbb.ok{background:rgba(0,0,0,.12);color:#161614}
+.rb.paused .rbb.ok:hover{background:rgba(0,0,0,.2)}
+.rb.over:not(.paused) .rbb:not(.ok){color:#d4382f}
+.rb.over:not(.paused){background:#d4382f}
+.work .xtask.flcard.paused{animation:none}
+.xgo{all:unset;cursor:pointer;display:inline;text-decoration:underline dotted;text-decoration-thickness:1.5px;text-underline-offset:4px}
+.xgo:hover{text-decoration-style:solid}
+.xgo:focus-visible{outline:2px solid currentColor;outline-offset:2px;border-radius:4px}
+@media(max-width:760px){
+  .rb{height:76px}
   .rb b{font-size:28px}
   .rb .rbb{width:38px;height:38px;min-width:38px}
   .rb .rbb svg{width:17px;height:17px}
@@ -2319,6 +2346,7 @@ function minutesLeft(t){
 }
 const capacityOn=d=>((s.hoursOn?.[d]??s.hours[dow(d)])??0)*60;
 const usedOn=d=>s.entries.reduce((a,e)=>a+dayMs(e,d)/60000,0);
+const barTask=()=>{const t=task(s.running?.id);if(t&&!t.done)return t;const q=task(s.pauseId);return q&&!q.done?q:null;};
 const current=()=>task(s.running?.id)??task(selected)??queue(selectedDate).find(t=>!t.done);
 
 /* ---------- avisos y deshacer ---------- */
@@ -2881,8 +2909,9 @@ function execPanel(onlyStats=false){
   const maxP=Math.max(1,...byProj.values());
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
-  const main='<section class="xcard xtask'+(t&&running?' flcard':'')+(t&&running&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
-    (t?'<h2 class="xtitle">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+dur(t.minutes)+'</p>'+
+  const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;
+  const main='<section class="xcard xtask'+(t&&(running||pzd)?' flcard':'')+(pzd?' paused':'')+(t&&(running||pzd)&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+    (t?'<h2 class="xtitle"><button type="button" class="xgo" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea">'+esc(t.name)+'</button></h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+dur(t.minutes)+'</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
@@ -3295,11 +3324,10 @@ function viewInbox(){
 
 /* ---------- render ---------- */
 function runbar(t){
-  const r=timerReading(t),p=projectOf(t);
-  return '<div class="rb'+(r.over?' over':'')+'"><button type="button" class="rbn" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea"><span>'+esc(t.name)+'</span></button><b data-hclock>'+r.text+'</b>'+
-    '<button type="button" class="rbb" data-act="pause" data-id="'+esc(t.id)+'" aria-label="Pausar" title="Pausar">'+ICON.pause+'</button>'+
-    '<button type="button" class="rbb ok" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar tarea">'+ICON.check+'</button>'+
-    '<button type="button" class="rbb fl" data-act="float" aria-label="Ventana flotante" title="Ventana flotante">↗</button></div>';
+  const r=timerReading(t),run=s.running?.id===t.id;
+  return '<div class="rb'+(run?'':' paused')+(r.over?' over':'')+'"><button type="button" class="rbn" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea"><span>'+esc(t.name)+'</span></button><b data-hclock>'+r.text+'</b>'+
+    '<button type="button" class="rbb" data-act="'+(run?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(run?'Pausar':'Reanudar')+'" title="'+(run?'Pausar':'Reanudar')+'">'+(run?ICON.pause:ICON.play)+'</button>'+
+    '<button type="button" class="rbb ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar tarea">'+ICON.check+'</button></div>';
 }
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
@@ -3347,7 +3375,7 @@ function render0(){
   document.querySelectorAll('.rte[data-rte]').forEach(r=>{if(!r.isConnected)return;const k=r.dataset.rte;if(k.startsWith('day:')){const h=cleanHtml(r.innerHTML);s.dayNotes=s.dayNotes||{};if(h.replace(/<[^>]*>/g,'').trim()||/<(img|iframe|hr)/.test(h))s.dayNotes[k.slice(4)]=h;else delete s.dayNotes[k.slice(4)];return;}const p=project(k);if(p)p.notesHtml=cleanHtml(r.innerHTML);});
   const cs=$('#calscroll')?.scrollTop, ts=$('#tl'), tlpos=ts?[ts.scrollLeft,ts.scrollTop]:null, colScroll=$$('[data-scroll]').map(c=>c.scrollTop), pageScroll=window.scrollY;
   $('#top').innerHTML=header();
-  {const rbT=task(s.running?.id);$('#runbar').innerHTML=rbT&&!rbT.done?runbar(rbT):'';document.body.classList.toggle('hasrb',!!(rbT&&!rbT.done));}
+  {const rbT=barTask();$('#runbar').innerHTML=rbT?runbar(rbT):'';document.body.classList.toggle('hasrb',!!rbT);}
   const html={Trabajo:viewTrabajo,Hoy:viewHoy,Proyectos:viewProyectos,'Planificación':viewPlan,'Analítica':viewAnalytics,Inbox:viewInbox}[view]();
   $('#main').innerHTML=html;
   const cal=$('#calscroll');
