@@ -1972,6 +1972,21 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .task:not(.running):not(.isimp) .tplay{background:color-mix(in srgb,var(--play) 15%,var(--card));color:var(--play)}
 .task:not(.running):not(.isimp) .tplay:hover{background:color-mix(in srgb,var(--play) 26%,var(--card))}
 .task:not(.running):not(.isimp) .tplay svg{color:var(--play);fill:currentColor}
+
+/* v148 */
+.ez.s{display:none!important}
+.endz{height:0!important;margin:0!important;overflow:visible}
+.endz .ez{display:none!important}
+.emptyz .endz{height:0!important}
+.addtxt{margin-top:0;padding-top:2px;padding-bottom:10px}
+@media(max-width:760px){
+  .addtxt{margin-top:-3px;padding-top:0;padding-bottom:4px}
+  .addtxt button{padding:5px 2px 8px}
+  .task .tname{transform:translateY(-3px)}
+  .task .grip{transform:translateY(-1px)}
+  .task .tplay{width:28px!important;height:28px!important;justify-self:center;align-self:center}
+  .task .tplay svg{width:12px!important;height:12px!important}
+}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
