@@ -2430,7 +2430,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span>'+
       '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Hoy</button>'+
-      '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección (las tareas se conservan)" aria-label="Borrar sección">✕</button></div>';
+      '<button class="sx" data-act="delSection" data-id="'+o.id+'" data-sec="'+esc(sec)+'" title="Borrar sección y sus tareas" aria-label="Borrar sección">✕</button></div>';
     const tm=today||embed||dayOnly;
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
@@ -3615,12 +3615,28 @@ function onClick(e){
     }
     case 'delSection':{
       const o=objective(id);if(!o||b.dataset.sec===RECUR)break;
-      const name=b.dataset.sec,moved=s.tasks.filter(x=>x.objective===nobj(id)&&x.section===name).map(x=>x.id),idx=o.sections.indexOf(name);
-      o.sections=o.sections.filter(x=>x!==name);s.tasks.forEach(x=>{if(moved.includes(x.id))x.section='';});save();
-      notify('Sección «'+name+'» borrada · '+moved.length+' tareas pasan a «sin sección»',()=>{
+      const n=s.tasks.filter(x=>x.objective===nobj(id)&&x.section===b.dataset.sec).length;
+      if(!n){o.sections=o.sections.filter(x=>x!==b.dataset.sec);save();break;}
+      openPop(b,'<div style="padding:8px 10px 6px;font-size:13px;max-width:240px;line-height:1.35">¿Seguro que quieres borrar también '+(n===1?'la tarea':'las '+n+' tareas')+' de la sección?</div>'+pi('Sí, borrar todo','delSectionYes','data-id="'+esc(id)+'" data-sec="'+esc(b.dataset.sec)+'"','danger')+pi('No, salir','closePopX'));
+      break;
+    }
+    case 'closePopX':closePop();break;
+    case 'delSectionYes':{
+      closePop();
+      const o=objective(id);if(!o)break;
+      const name=b.dataset.sec,idx=o.sections.indexOf(name);
+      const gone=s.tasks.filter(x=>x.objective===nobj(id)&&x.section===name),ids=gone.map(x=>x.id);
+      const snap={tasks:gone.map(x=>({t:x,i:s.tasks.indexOf(x)})),entries:s.entries.filter(x=>ids.includes(x.task)),plans:s.plans.filter(x=>ids.includes(x.task)),notes:s.notes.filter(x=>ids.includes(x.task))};
+      if(s.running&&ids.includes(s.running.id))closeTimer();
+      s.tasks=s.tasks.filter(x=>!ids.includes(x.id));s.entries=s.entries.filter(x=>!ids.includes(x.task));s.plans=s.plans.filter(x=>!ids.includes(x.task));s.notes=s.notes.filter(x=>!ids.includes(x.task));s.paused=s.paused.filter(x=>!ids.includes(x));
+      for(const d of Object.keys(s.order))s.order[d]=s.order[d].filter(x=>!ids.includes(x));
+      if(ids.includes(selected))selected='';if(ids.includes(picked))picked='';
+      o.sections=o.sections.filter(x=>x!==name);save();
+      notify('Sección «'+name+'» borrada · '+ids.length+(ids.length===1?' tarea':' tareas'),()=>{
         const g=objective(id);if(!g)return;
         if(!g.sections.includes(name))g.sections.splice(Math.max(0,idx),0,name);
-        s.tasks.forEach(x=>{if(moved.includes(x.id))x.section=name;});save();
+        snap.tasks.sort((p,q)=>p.i-q.i).forEach(({t,i})=>s.tasks.splice(Math.min(i,s.tasks.length),0,t));
+        s.entries.push(...snap.entries);s.plans.push(...snap.plans);s.notes.push(...snap.notes);save();
       });break;
     }
     case 'addObj':{
