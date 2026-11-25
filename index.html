@@ -1987,6 +1987,16 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
   .task .tplay{width:28px!important;height:28px!important;justify-self:center;align-self:center}
   .task .tplay svg{width:12px!important;height:12px!important}
 }
+
+/* v150 */
+@media(max-width:760px){
+  .task>:nth-child(n+4){margin-top:-15px}
+  .task>:nth-child(6){margin-top:-15px}
+  .addtxt{margin-top:-6px}
+  .task .tmain.rec{display:flex;align-items:flex-start;gap:6px}
+  .task .tmain.rec .tname{flex:0 1 auto;min-width:0}
+  .task .tmain.rec>.tname+*{margin-left:0;margin-top:3px;flex:none}
+}
 </style></head>
 <body><header class="top" id="top"></header><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
