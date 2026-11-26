@@ -2159,6 +2159,19 @@ mark.hl{background:#ffe14d;color:#000}
 .pj-crumb span{color:var(--ink);font-weight:600;padding:2px 5px}
 .pj-dcard .dsub{font-style:normal;font-weight:600;color:var(--ac)}
 .firstobj.subp{padding:16px 18px;margin-top:12px}
+
+/* v166 rail */
+.prow{position:relative}
+.prow .pitem{padding-right:12px}
+.prow.hask .pitem{padding-right:44px}
+.pchev{all:unset;position:absolute;right:6px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:3px;height:24px;padding:0 6px;border-radius:8px;cursor:pointer;color:var(--faint)}
+.pchev:hover{background:var(--bg3);color:var(--ink)}
+.pchev svg{width:14px;height:14px;transition:transform .15s}
+.pchev.shut svg{transform:rotate(-90deg)}
+.pchev em{font-style:normal;font-size:11px;font-variant-numeric:tabular-nums}
+.prtool{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:7px;margin:2px 4px 0;padding:6px 8px;border-radius:9px;font-size:12.5px;color:var(--mute);cursor:pointer}
+.prtool:hover{background:var(--bg3);color:var(--ink)}
+.prtool svg{width:15px;height:15px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2704,14 +2717,21 @@ function pjChart(st){
   return '<div class="pjchart" role="img" aria-label="Tiempo trabajado en los últimos 30 días">'+days.map(d=>{const m=st.per.get(d)??0;return '<i class="'+(d===today?'now':'')+'" style="height:'+Math.max(m?6:2,Math.round(100*m/mx))+'%" title="'+cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(d)))+' · '+(m?dur(m):'sin trabajo')+'"></i>';}).join('')+'</div>'+
     '<div class="pjaxis"><span>'+fmt({day:'numeric',month:'short'},dateAt(days[0]))+'</span><span>'+fmt({day:'numeric',month:'short'},dateAt(days[14]))+'</span><span>Hoy</span></div>';
 }
+let pjFold=new Set((()=>{try{return JSON.parse(lsGet('focus.pjfold')||'[]');}catch{return [];}})());
+const pjFoldSave=()=>lsSet('focus.pjfold',JSON.stringify([...pjFold]));
+const isDesc=(id,anc)=>{let x=project(id),n=0;while(x&&x.parent&&n++<12){if(x.parent===anc)return true;x=project(x.parent);}return false;};
 function projItem(p,depth){
-  const sel=p.id===openProj;
-  return '<button class="pitem'+(sel?' sel':'')+'" style="--ac:'+p.color+';padding-left:'+(12+depth*18)+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span></button>'+
-    kidsOf(p.id).map(k=>projItem(k,depth+1)).join('');
+  const sel=p.id===openProj,kids=kidsOf(p.id),hasK=kids.length>0;
+  const folded=hasK&&pjFold.has(p.id)&&!isDesc(openProj,p.id);
+  const nd=n=>kidsOf(n).reduce((q,k)=>q+1+nd(k.id),0);
+  return '<div class="prow'+(hasK?' hask':'')+'" style="--ac:'+p.color+'"><button class="pitem'+(sel?' sel':'')+'" style="padding-left:'+(PJ_PAD+depth*18)+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span></button>'+
+    (hasK?'<button class="pchev'+(folded?' shut':'')+'" data-act="pjFold" data-id="'+p.id+'" aria-label="'+(folded?'Mostrar subproyectos':'Ocultar subproyectos')+'" title="'+(folded?'Mostrar '+nd(p.id)+' subproyecto(s)':'Ocultar subproyectos')+'">'+(folded?'<em>'+nd(p.id)+'</em>':'')+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>':'')+'</div>'+
+    (folded?'':kids.map(k=>projItem(k,depth+1)).join(''));
 }
+const PJ_PAD=16;
 function projRail(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
-  return '<aside class="prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div></div>'+areas.map(ar=>{
+  return '<aside class="prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+(()=>{const fo=s.projects.filter(p=>kidsOf(p.id).length);if(!fo.length)return '';const allShut=fo.every(p=>pjFold.has(p.id));return '<button type="button" class="prtool" data-act="pjFoldAll" title="'+(allShut?'Mostrar también los subproyectos':'Ver solo los proyectos principales')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(allShut?'<path d="M7 4l5 5 5-5M7 20l5-5 5 5"/>':'<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>')+'</svg>'+(allShut?'Mostrar subproyectos':'Solo proyectos')+'</button>';})()+'</div>'+areas.map(ar=>{
     const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id));
     return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="lines" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área"></span><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
       (roots.length?roots.map(p=>projItem(p,0)).join(''):'<p class="pempty">Sin proyectos</p>')+'</div>';
@@ -2733,12 +2753,12 @@ function projPage(p){
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
    '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
-   ((myObjs.length||allMy.length)?'<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Objetivo</button>':'')+'</section>'+
+   ((myObjs.length||allMy.length)?'<button class="firstobj subp" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea otro objetivo</b><small>en '+esc(p.name)+'</small></span></button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
    '<section id="pj-res" class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
    '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div>'+
-   (kids.length?'<div class="pj-card"><h3>Subproyectos</h3><div class="pj-kids">'+kids.map(k=>{const ks=projStats(k);return '<button class="pj-kid" style="--ac:'+k.color+'" data-act="selectProject" data-id="'+k.id+'"><b>'+esc(k.name)+'</b><small>'+ks.objs.length+' objetivos · '+dur(ks.left)+' pendientes</small></button>';}).join('')+'</div></div>':'')+
+   '</section><section id="pj-kids" class="pj-sec"><h2>Subproyectos'+(kids.length?' · '+kids.length:'')+'</h2>'+(kids.length?'<div class="pj-dlist">'+kids.map(k=>{const ks=projStats(k);return '<button type="button" class="pj-dcard kid" style="--ac:'+k.color+'" data-act="selectProject" data-id="'+k.id+'"><span class="gl sm dk"><i class="pdot"></i></span><span class="dt"><b>'+esc(k.name)+'</b><small>'+ks.objs.length+(ks.objs.length===1?' objetivo':' objetivos')+' · '+dur(ks.left)+' pendientes'+(kidsOf(k.id).length?' · '+kidsOf(k.id).length+' sub':'')+'</small></span></button>';}).join('')+'</div>':'')+
    '<button class="firstobj subp" data-act="addSubProject" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(kids.length?'Añade otro subproyecto':'Crea un subproyecto')+'</b><small>dentro de '+esc(p.name)+'</small></span></button></section>'+
    (()=>{const dn=st.objs.filter(o=>o.status==='Completado').sort((a,b)=>objSpan(b).doneAt-objSpan(a).doneAt);return dn.length?'<section id="pj-done" class="pj-sec"><h2>Objetivos completados · '+dn.length+'</h2><div class="pj-dlist">'+dn.map(o=>doneCard(o,p.id)).join('')+'</div></section>':'';})()+
    '</div></div></div>';
@@ -3572,8 +3592,9 @@ function setTheme(t){
 
 /* ---------- menú flotante ---------- */
 const pop=$('#pop');let popCtx=null;
+let lastAnchor=null;
 function openPop(anchor,html,ctx={}){
-  pop.innerHTML=html;popCtx=ctx;pop.classList.add('open');
+  lastAnchor=anchor;pop.innerHTML=html;popCtx=ctx;pop.classList.add('open');
   const r=anchor.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
   pop.style.left=Math.min(Math.max(8,r.left),innerWidth-w-8)+'px';
   let top=r.bottom+4;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-4);
@@ -3770,7 +3791,8 @@ function menuFor(kind,id,anchor){
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
-  if(kind==='objmore')return openPop(anchor,pi(o?.notion?'Cambiar enlace de Notion':'Vincular a Notion','objNotionEdit','data-id="'+id+'"')+(o?.notion?pi('Abrir en Notion','openONotion','data-id="'+id+'"'):'')+pi('Eliminar objetivo','objDelAsk','data-id="'+id+'"','danger'));
+  if(kind==='objmove'){const mv=(par,d)=>kidsOf(par).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i><span style="padding-left:'+d*14+'px">'+(d?'↳ ':'')+esc(q.name)+'</span>','objMoveTo','data-id="'+id+'" data-val="'+q.id+'"',o.project===q.id?'sel':'')+mv(q.id,d+1)).join('');const ars=[...s.areas];for(const q of s.projects)if(!ars.includes(q.area))ars.push(q.area);return openPop(anchor,pl('Mover «'+esc((o?.name||'').slice(0,28))+'» a…')+ars.map(ar=>{const rs=s.projects.filter(q=>q.area===ar&&!(q.parent&&project(q.parent)&&q.parent!==q.id));return rs.length?pl(esc(ar))+rs.map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'objMoveTo','data-id="'+id+'" data-val="'+q.id+'"',o.project===q.id?'sel':'')+mv(q.id,1)).join(''):'';}).join(''));}
+  if(kind==='objmore')return openPop(anchor,pi('Mover a otro proyecto…','objMoveOpen','data-id="'+id+'"')+pi(o?.notion?'Cambiar enlace de Notion':'Vincular a Notion','objNotionEdit','data-id="'+id+'"')+(o?.notion?pi('Abrir en Notion','openONotion','data-id="'+id+'"'):'')+pi('Eliminar objetivo','objDelAsk','data-id="'+id+'"','danger'));
   if(kind==='objnotion'){setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="nform"><label for="onin">Enlace de Notion</label><input id="onin" value="'+esc(o?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"><div class="crow">'+(o?.notion?pi('Quitar enlace','saveONotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','saveONotion','data-id="'+id+'"')+'</div></div>');}
   if(kind==='pnotion'){const pp=project(id);setTimeout(()=>{const i=$('#onin');i?.focus();i?.select();},30);return openPop(anchor,'<div class="nform"><label for="onin">Enlace de Notion</label><input id="onin" value="'+esc(pp?.notion||'')+'" placeholder="https://www.notion.so/…" spellcheck="false"><div class="crow">'+(pp?.notion?pi('Quitar enlace','savePNotion','data-id="'+id+'" data-clear="1"','danger'):'')+pi('Aceptar','savePNotion','data-id="'+id+'"')+'</div></div>');}
   if(kind==='pjmore'){const pp=project(id);return openPop(anchor,pi(pp?.notion?'Cambiar enlace de Notion':'Vincular a Notion','pNotionEdit','data-id="'+id+'"')+(pp?.notion?pi('Abrir en Notion','openNotion','data-id="'+id+'"'):'')+pi('Eliminar proyecto','delProj','data-id="'+id+'"','danger'));}
@@ -3875,6 +3897,10 @@ function onClick(e){
     case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
     case 'pjFold':{pjClosed.has(id)?pjClosed.delete(id):pjClosed.add(id);document.querySelector('.pj-obj[data-fold="'+id+'"]')?.classList.toggle('closed',pjClosed.has(id));break;}
+    case 'objMoveOpen':{const a=lastAnchor&&lastAnchor.isConnected?lastAnchor:b;menuFor('objmove',id,a);break;}
+    case 'objMoveTo':{const o=objective(id),np=project(b.dataset.val);closePop();if(!o||!np||o.project===np.id)break;const old=o.project;o.project=np.id;openProj=np.id;save();notify('Objetivo movido a «'+np.name+'»',()=>{o.project=old;openProj=old;save();});break;}
+    case 'pjFold':pjFold.has(id)?pjFold.delete(id):pjFold.add(id);pjFoldSave();render();break;
+    case 'pjFoldAll':{const fo=s.projects.filter(p=>kidsOf(p.id).length).map(p=>p.id);if(fo.every(x=>pjFold.has(x)))pjFold.clear();else fo.forEach(x=>pjFold.add(x));pjFoldSave();render();break;}
     case 'addSubProject':{const par=project(id);if(!par)break;const p={id:uid(),name:'Nuevo subproyecto',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};s.projects.push(p);openProj=p.id;focusAfter={kind:'proj.name',id:p.id,select:true};save();break;}
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
