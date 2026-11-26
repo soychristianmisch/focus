@@ -2273,6 +2273,8 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .plrail .pzone{padding-bottom:6px}
 
 /* v171 objetivos plegados en Proyectos */
+.pj-obj:not(.folded) .bhead[data-act=objHeadClose]{cursor:pointer}
+.pj-obj:not(.folded) .bhead[data-act=objHeadClose]:hover{background:color-mix(in srgb,var(--pc) 7%,var(--card))}
 .pj-obj.folded .bbody{display:none}
 .pj-obj.folded{margin-bottom:10px}
 .pj-obj.folded .bubble{border-radius:999px;cursor:pointer;transition:box-shadow .12s}
@@ -2766,7 +2768,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de proyecto">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="goProj" data-id="'+proj.id+'" title="Ir al proyecto '+esc(proj.name)+'" aria-label="Ir al proyecto '+esc(proj.name)+'">'+glyph('flag')+'</button>':'')+(cp?propsCp:propsH)+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="'+cpAct+'" data-id="'+esc(o.id)+'" title="'+(cpAct==='objOpen'?'Clic para desplegar el objetivo':'Abrir este objetivo entero')+'"':'')+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
+  return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="'+cpAct+'" data-id="'+esc(o.id)+'" title="'+(cpAct==='objOpen'?'Clic para desplegar el objetivo':'Abrir este objetivo entero')+'"':(closeBtn?' data-act="objHeadClose" data-id="'+esc(o.id)+'" title="Clic en la cabecera para cerrar el objetivo"':''))+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -4002,6 +4004,7 @@ function onClick(e){
     case 'selectObj':openObj=id;openProj='';render();break;
     case 'selectProject':{{const nq=normQ(pjQ).trim();if(nq)for(const o of s.objectives)if(o.project===id&&o.status!=='Completado'&&s.tasks.some(t=>t.objective===o.id&&!t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))pjOpenObj.add(o.id);}openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}pjHLScroll();break;}
     case 'objOpen':{if(e.target.closest('[data-edit],a,button,input,.lines'))break;pjOpenObj.add(id);pjOpenSave();render();break;}
+    case 'objHeadClose':{if(e.target.closest('[data-edit],[contenteditable],a,button,input,.lines,.chipi'))break;pjOpenObj.delete(id);pjOpenSave();render();break;}
     case 'objToggle':{pjOpenObj.has(id)?pjOpenObj.delete(id):pjOpenObj.add(id);pjOpenSave();render();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
