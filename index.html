@@ -2083,6 +2083,13 @@ body.hasrb{--rb:38px}
   .rb .rbb svg{width:17px;height:17px}
   body.hasrb{--rb:76px}
 }
+
+/* v156 */
+.flcard.paused .xclock,.flcard.paused .xclock.over,.xtask.flcard.paused .xclock.over{color:#161614!important;background:none!important;padding:0!important;margin-left:0!important}
+.rb.paused b{color:#161614}
+.prog.late i:nth-child(1),.prog.late i:nth-child(2){background:var(--red)}
+.prog.late i:nth-child(3){background:color-mix(in srgb,var(--red) 38%,var(--bg3))}
+.oprops .p.tot{font-weight:600;color:var(--ink);font-size:13px;display:inline-flex;align-items:center;padding:0 2px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2426,9 +2433,11 @@ const editable=(kind,id,text,extra='',cls='',ph='')=>'<span class="'+cls+'" cont
 const tagClass=v=>'s-'+slug(v);
 function progressOf(o,d=selectedDate){
   const list=s.tasks.filter(t=>t.objective===(o.id===DAILY.id?'':o.id));
-  const r=f=>list.length?100*list.filter(f).length/list.length:0;
+  const w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0)||0;
+  const r=f=>tot?100*list.filter(f).reduce((q,t)=>q+w(t),0)/tot:(list.length?100*list.filter(f).length/list.length:0);
   const prior=r(t=>t.done&&day(t.done)<d),done=r(t=>t.done&&day(t.done)===d),plan=r(t=>!t.done&&onDay(t,d));
-  return {prior,done,plan,pct:Math.round(prior+done),bar:'<div class="prog" title="'+Math.round(prior+done)+' % completado'+(plan?' · '+Math.round(prior+done+plan)+' % previsto':'')+'"><i style="width:'+prior+'%"></i><i style="width:'+done+'%"></i><i style="width:'+plan+'%"></i></div>'};
+  const tdy=day(),late=d===tdy&&list.some(t=>!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy));
+  return {prior,done,plan,late,pct:Math.round(prior+done),bar:'<div class="prog'+(late?' late':'')+'" title="'+Math.round(prior+done)+' % completado (por tiempo)'+(plan?' · '+Math.round(prior+done+plan)+' % previsto':'')+(late?' · hay tareas retrasadas':'')+'"><i style="width:'+prior+'%"></i><i style="width:'+done+'%"></i><i style="width:'+plan+'%"></i></div>'};
 }
 function taskWhen(t){
   const today=day(),ds=[...(t.days||[])].sort();
@@ -2508,10 +2517,9 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   let propsH='',propsCp='';
   {
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
-    propsH='<span class="oprops inl">'+(daily?'':
-      '<button class="p'+(o.deadline?dlInfo(o.deadline).cls:'')+'" data-act="objDate" data-id="'+o.id+'" title="Fecha límite">'+ic('<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')+'Fecha:'+(o.deadline?' '+esc(dlInfo(o.deadline).txt):'')+ic('<path d="M7 10l5 5 5-5"/>').replace('class="bi"','class="bi chev"')+'</button>')+
-      '<span class="p" title="Tiempo cronometrado en este objetivo">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Trabajado: '+hrs(totalMin)+'</span></span>';
-    propsCp='<span class="oprops inl"><span class="p" title="Tiempo cronometrado en este objetivo">'+ic('<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.4M9.5 3h5"/>')+'Trabajado: '+hrs(totalMin)+'</span></span>';
+    const tot='<span class="p tot" title="Tiempo total estimado del objetivo">Total: '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>';
+    propsH='<span class="oprops inl">'+tot+'</span>';
+    propsCp='<span class="oprops inl">'+tot+'</span>';
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
@@ -2550,7 +2558,8 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   const tdy=day(),isLate=t=>selectedDate===tdy&&!t.done&&t.days.length&&!t.days.includes(tdy)&&t.days.some(x=>x<tdy);
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
   const leftAll=sumMin(openAll,minutesLeft);
-  const chips=(cp?'':'<span class="chipi now" title="Tiempo cronometrado hoy">Hoy '+hrs(todayTot)+'</span>')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta en este objetivo">Faltan '+hrs(leftAll)+'</span>':'')+(lateT.length?'<button class="chipi late" data-act="moveToday" data-id="'+esc(o.id)+'" title="Retrasado: clic para pasar estas tareas a hoy">Ayer · '+lateT.length+'</button>':'');
+  const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
+  const chips=(todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy en este objetivo">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta en este objetivo">Faltan '+hrs(leftAll)+'</span>':'');
   const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
@@ -2558,7 +2567,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de proyecto">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="goProj" data-id="'+proj.id+'" title="Ir al proyecto '+esc(proj.name)+'" aria-label="Ir al proyecto '+esc(proj.name)+'">'+glyph('flag')+'</button>':'')+(cp?propsCp:propsH)+'</div>';
   return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="cpOpen" data-id="'+esc(o.id)+'" title="Abrir este objetivo entero"':'')+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
-    '<div class="bh-r">'+prog+'<div class="chips2'+(lateT.length?' wrapc':'')+'">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
+    '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
 /* ---------- proyectos por áreas ---------- */
@@ -3596,6 +3605,9 @@ function calHtmlT(t,ym){
     '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(w.k!=='none'?'<button class="rm" data-act="clearTaskDate" data-id="'+t.id+'">Borrar fecha</button>':'<span></span>')+'</div></div>';
 }
 const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t.done);
+let dateClk={k:'',n:0};
+/* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
+function dateClicks(k,hasDate){const n=dateClk.k===k?dateClk.n:(hasDate?1:0);const step=Math.min(n,2);dateClk={k,n:step===2?0:step+1};return step;}
 function setSecDay(L,date){for(const t of L){if(!date){t.days=[];continue;}t.days=[date];(s.order[date]??=[]);if(!s.order[date].includes(t.id))s.order[date].push(t.id);}save();}
 const secCommon=L=>{const d=L[0]?.days.length===1?L[0].days[0]:'';return d&&L.every(t=>t.days.length===1&&t.days[0]===d)?d:'';};
 const secPseudo=L=>({id:'__sec',days:[secCommon(L)||'0001-01-01']});
@@ -3738,7 +3750,7 @@ function onClick(e){
     case 'toggleImp':if(t){t.imp=!t.imp;save();}break;
     case 'taskNote':if(t)openTaskNote(t,b.ownerDocument||document);break;
     case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
-    case 'today':if(t){if(taskWhen(t).k==='none'){t.days=[day()];save();}else openTaskCal(t,b);}break;
+    case 'today':if(t){const n=dateClicks('t:'+t.id,taskWhen(t).k!=='none');if(n===0){t.days=[day()];save();}else if(n===1)openTaskCal(t,b);else{closePop();t.days=[];save();}}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
     case 'finish':finish(id);break;
@@ -3838,8 +3850,10 @@ function onClick(e){
     case 'delArea':{closePop();if(s.projects.some(p=>p.area===id)){notify('Primero mueve o elimina los proyectos de «'+id+'».');break;}s.areas=s.areas.filter(x=>x!==id);if(openArea===id)openArea='';save();break;}
     case 'secAll':{const sc={obj:nobj(b.dataset.obj),sec:b.dataset.sec},L=secList(sc);if(!L.length)break;const td=day();
       const cm=secCommon(L);
-      if(!cm){setSecDay(L,td);notify('Sección en hoy: '+L.length+(L.length===1?' tarea':' tareas'));}
-      else{const ym=cm.slice(0,7);openPop(b,calHtmlT(secPseudo(L),ym),{sec:sc,ym,task:true});}
+      const n=dateClicks('s:'+sc.obj+'|'+sc.sec,!!cm);
+      if(n===0){setSecDay(L,td);notify('Sección en hoy: '+L.length+(L.length===1?' tarea':' tareas'));}
+      else if(n===1){const ym=(cm||td).slice(0,7);openPop(b,calHtmlT(secPseudo(L),ym),{sec:sc,ym,task:true});}
+      else{closePop();setSecDay(L,'');}
       break;}
     case 'addArea':{let n='Nueva área',i=2;while(s.areas.includes(n))n='Nueva área '+i++;s.areas.push(n);freshArea=n;closePop();save();render();setTimeout(()=>{[...document.querySelectorAll('[data-kind=areaedit]')].find(x=>x.dataset.id===n)?.click();freshArea='';},60);break;}
     case 'delObj':b.dataset.act='delObjOk';b.textContent='¿Seguro? Se borrarán sus tareas y registros';break;
