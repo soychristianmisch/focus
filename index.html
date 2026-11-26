@@ -2191,7 +2191,27 @@ mark.hl{background:#ffe14d;color:#000}
 .plgh .cnt{font-weight:600;color:var(--faint);font-size:11.5px}
 .tb-band{position:relative;z-index:2;margin-top:12px;border-top:1.5px dashed var(--line2);padding-bottom:8px;width:var(--w)}
 .tb-band:first-of-type{border-top:0;margin-top:4px}
-.tb-bhead{height:36px;display:flex;align-items:center}
+.tb-bhead{height:36px;display:flex;align-items:center;position:relative}
+.tb-bd{position:absolute;top:0;height:100%;pointer-events:none}
+.tb-bd .cp{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.tb-bd .capin{pointer-events:auto;max-width:44px;font-size:11.5px;color:var(--faint)}
+.tb-bd .capin.ov{background:#fde68a;color:#5b4300;font-weight:650;border-color:#e8c44f}
+.tb-bn{font-size:11.5px;color:var(--faint);margin:-2px 0 4px 20px;position:sticky;left:20px;width:max-content}
+.capin.ro{display:inline-block;pointer-events:none}
+.wkt{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:2px 8px}
+.wkt b{font-size:11px;font-weight:650;color:var(--mute);text-align:center}
+.wkt input{width:100%;min-width:0;box-sizing:border-box;text-align:center;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:6px;padding:4px 0;font-size:12.5px}
+.bgrp{margin:6px 4px;padding:6px 0;border:1px solid var(--line);border-radius:10px;border-left:3px solid var(--bc)}
+.bgh{display:flex;align-items:center;gap:6px;padding:0 8px 4px}
+.bgh i{width:9px;height:9px;border-radius:50%;background:var(--bc);flex:none}
+.bgn{flex:1;min-width:0;border:1px solid transparent;background:transparent;color:var(--ink);font-weight:650;font-size:13px;border-radius:6px;padding:2px 5px}
+.bgn:hover,.bgn:focus{border-color:var(--line2);background:var(--bg);outline:none}
+.bgh small{color:var(--faint);font-size:11px}
+.bgx{all:unset;cursor:pointer;color:var(--faint);padding:2px 6px;border-radius:6px}.bgx:hover{background:var(--bg3);color:var(--ink)}
+.bga{display:flex;flex-wrap:wrap;gap:4px;padding:0 8px 6px}
+.bgc{all:unset;cursor:pointer;font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--mute)}
+.bgc.on{background:var(--bc);border-color:var(--bc);color:#fff}
+.bgs{font-size:11.5px;color:var(--faint);padding:2px 10px 6px}.bgs.bad{color:#c0392b}
 .tb-bl{position:sticky;left:14px;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);background:var(--bg);padding:3px 11px;border-radius:999px;border:1px solid var(--line);z-index:5;white-space:nowrap}
 .tb-bl>i{width:9px;height:9px;border-radius:50%;background:var(--bc)}
 .tb-bl b{font-weight:650}
@@ -2488,7 +2508,11 @@ function migrate(d){
   d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(t.section===DDS)t.section='';}});
   d.dailySections??=[];d.dailySections=d.dailySections.map(x=>x==='Tareas diarias'?RECUR:x);d.dailySections=[RECUR,...d.dailySections.filter(x=>x!==RECUR)];
   d.dailySections=d.dailySections.filter(x=>x!==DDS);
-  d.hoursOn??={};d.bandHours??={Ministerio:5,Negocios:3,Otras:2};d.planStart??=shift(day(),1);d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
+  d.hoursOn??={};d.bandHours??={Ministerio:5,Negocios:3,Otras:2};
+  if(!d.bands){const bh=d.bandHours,T=(bh.Ministerio+bh.Negocios+bh.Otras)||1,mk=(id,name,areas,rest)=>({id,name,areas,rest,hours:[0,1,2,3,4,5,6].map(w=>Math.round((d.hours[w]||0)*bh[id]/T*100)/100)});
+    d.bands=[mk('Ministerio','Ministerio',['Ministerio']),mk('Negocios','Negocios',['Negocios']),mk('Otras','Otras cosas',[],true)];
+    d.bandOn={};for(const [dt,h] of Object.entries(d.hoursOn||{}))for(const b of d.bands)(d.bandOn[b.id]??={})[dt]=Math.round(h*bh[b.id]/T*100)/100;}
+  d.bandOn??={};d.planStart??=shift(day(),1);d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
   if(!d.recurSeed){d.recurSeed=1;if(!d.tasks.some(t=>isRecur(t)&&t.name==='Hacer las cuentas diarias en Sheets'))d.tasks.push(mkTask('Hacer las cuentas diarias en Sheets',10,'',RECUR));}
   rollRecurring(d);
   if(!Array.isArray(d.hours)||d.hours.length!==7)d.hours=Array(7).fill(10);
@@ -2559,6 +2583,7 @@ function minutesLeft(t){
   if(Number.isFinite(t.remaining)&&Number.isFinite(t.remainingAt))return Math.max(0,t.remaining-Math.max(0,w-t.remainingAt));
   return Math.max(0,t.minutes-w);
 }
+const syncHours=()=>{for(let w=0;w<7;w++)s.hours[w]=Math.round(s.bands.reduce((a,x)=>a+(x.hours[w]||0),0)*100)/100;};
 const capacityOn=d=>((s.hoursOn?.[d]??s.hours[dow(d)])??0)*60;
 const usedOn=d=>s.entries.reduce((a,e)=>a+dayMs(e,d)/60000,0);
 const barTask=()=>{const t=task(s.running?.id);if(t&&!t.done)return t;const q=task(s.pauseId);return q&&!q.done?q:null;};
@@ -3293,7 +3318,7 @@ function barOf(o){
 const ZOOM={'Días':84,'Semanas':30,'Meses':9};
 const tlOpen=new Set();
 const hf=m=>m<=.5?'':mm(Math.max(1,m));
-const daysIn=(a,b)=>{const out=[];for(let d=a,n=0;d<=b&&n<500;d=shift(d,1),n++)if(capacityOn(d)>0)out.push(d);return out;};
+const daysIn=(a,b,bid)=>{const out=[];for(let d=a,n=0;d<=b&&n<500;d=shift(d,1),n++)if((bid?bandCap(bid,d):capacityOn(d))>0)out.push(d);return out;};
 /* reparto automático sin pasar de la capacidad diaria */
 /* barra de un proyecto no fijado: de su primer bloque secuencial al último día con horas */
 function spanBar(o,plan){
@@ -3304,15 +3329,20 @@ function spanBar(o,plan){
 }
 /* prioridad: fijados primero, luego por fecha límite, luego por el orden de la lista */
 function planOrder(){return s.objectives.filter(o=>o.sched);}
-const BANDS=['Ministerio','Negocios','Otras'],BAND_NAME={Ministerio:'Ministerio',Negocios:'Negocios',Otras:'Otras cosas'};
-const bandColor=b=>b==='Otras'?'#9a9a94':areaTone(b);
-const bandOf=o=>{const p=o&&project(o.project),a=p?(rootProject(p)?.area||p.area):'';return a==='Ministerio'||a==='Negocios'?a:'Otras';};
-const bandHours=()=>{const h=s.bandHours||{};return {Ministerio:h.Ministerio??5,Negocios:h.Negocios??3,Otras:h.Otras??2};};
-const bandCap=(b,d)=>{const h=bandHours(),T=BANDS.reduce((a,x)=>a+h[x],0)||1;return capacityOn(d)*h[b]/T;};
+const bandList=()=>s.bands;
+const restBand=()=>s.bands.find(x=>x.rest)||s.bands.at(-1);
+const bandById=id=>s.bands.find(x=>x.id===id)||restBand();
+const bandName=id=>bandById(id).name;
+const BAND_PAL=['#7c6bd6','#d0883a','#3f9d8f','#c25b7a','#5b8dd0'];
+const bandColor=id=>{const b=bandById(id);if(b.rest)return '#9a9a94';return b.areas[0]?areaTone(b.areas[0]):BAND_PAL[s.bands.indexOf(b)%BAND_PAL.length];};
+const bandOf=o=>{const p=o&&project(o.project),a=p?(rootProject(p)?.area||p.area):'';return (s.bands.find(x=>!x.rest&&x.areas.includes(a))||restBand()).id;};
+const bandStd=(id,d)=>(bandById(id).hours[dow(d)]||0)*60;
+const bandCap=(id,d)=>{const v=s.bandOn?.[id]?.[d];return (v!=null?v:bandById(id).hours[dow(d)]||0)*60;};
+const bandSum=d=>s.bands.reduce((a,x)=>a+bandCap(x.id,d),0);
 /* reparto por bandas: cada banda tiene sus horas al día; las secciones se colocan en sucesión y lo que no cabe pasa al día siguiente */
 function computePlan(){
-  const today=day(),from0=s.planStart&&s.planStart>today?s.planStart:today,res=new Map(),used=new Map(),bh=bandHours(),T=BANDS.reduce((a,x)=>a+bh[x],0)||1,usedT=usedOn(today);
-  const base=(b,d)=>d===today?usedT*bh[b]/T:0;
+  const today=day(),from0=s.planStart&&s.planStart>today?s.planStart:today,res=new Map(),used=new Map(),usedT=usedOn(today);
+  const base=(b,d)=>d===today?usedT*(bandCap(b,d)/(bandSum(d)||1)):0;
   const free=(b,d)=>Math.max(0,bandCap(b,d)-base(b,d)-(used.get(b+'|'+d)??0));
   const mk=b=>({days:new Map(),over:0,pin:new Map(),segs:[],band:b});
   const put=(r,b,d,sec,m,pinned)=>{
@@ -3323,7 +3353,7 @@ function computePlan(){
   };
   const order=['',...planOrder().map(o=>o.id)];
   for(const oid of order){
-    const o=objective(oid),b=o?bandOf(o):'Otras',r=mk(b);res.set(oid,r);
+    const o=objective(oid),b=o?bandOf(o):restBand().id,r=mk(b);res.set(oid,r);
     for(const t of s.tasks.filter(t=>t.objective===oid&&!t.done)){
       const m=minutesLeft(t),fd=t.days.filter(d=>d>=today);
       if(fd.length)fd.forEach(d=>put(r,b,d,t.section,m/fd.length,true));
@@ -3337,7 +3367,7 @@ function computePlan(){
     }
     if(!pool.size)continue;
     const st=o?.startOn&&o.startOn>from0?o.startOn:(o?.window?.pin&&o.window.start>from0?o.window.start:from0);
-    const ds=daysIn(st,shift(st,400));let di=0;
+    const ds=daysIn(st,shift(st,400),b);let di=0;
     const sl=o?o.sections:(s.dailySections||[]),secs=['',...sl].filter(x=>pool.has(x));
     for(const k of pool.keys())if(!secs.includes(k))secs.push(k);
     for(const sec of secs){
@@ -3402,7 +3432,7 @@ function timeline(projects,embedded=false){
     rows.push({o,p,oid,band,cells,segs,b:{start:ds[0],end:ds.at(-1)}});
   };
   for(const o of planOrder()){const p=projects.find(x=>x.id===o.project);if(p)mkRow(o,p,bandOf(o));}
-  mkRow(null,null,'Otras');
+  mkRow(null,null,restBand().id);
   const totals=new Map();
   for(const oid of ['',...s.objectives.map(o=>o.id)])for(const [d,c] of cellsOf(oid))totals.set(d,(totals.get(d)??0)+c.m);
   const all=rows.flatMap(r=>[r.b.start,r.b.end]);
@@ -3421,7 +3451,7 @@ function timeline(projects,embedded=false){
     else if(px>=8&&wd===1)m2.push('<span class="d" style="left:'+x+'px">'+dd+'</span>');
     if(wd===0||wd===6)shades.push('<i class="shade" style="left:'+(LEFT+x)+'px;width:'+px+'px"></i>');
     const capm=capacityOn(d),tot=totals.get(d)??0,over=!done&&tot>capm+.5;
-    if(px>=36)mc.push('<span class="cp" style="left:'+x+'px;width:'+px+'px"><input class="capin'+(s.hoursOn?.[d]!=null?' custom':'')+'" data-cap="'+d+'" value="'+capTxt(capm)+'" inputmode="text" aria-label="Horas disponibles el '+d+'"></span>');
+    if(px>=36)mc.push('<span class="cp" style="left:'+x+'px;width:'+px+'px"><span class="capin ro'+(s.hoursOn?.[d]!=null?' custom':'')+'">'+capTxt(capm)+'</span></span>');
     if(tot>.5){
       const ratio=capm?Math.min(1,tot/capm):1;
       m3.push(showN?'<span class="tc'+(over?' over':'')+'" style="left:'+x+'px;width:'+px+'px"><b>'+hf(tot)+'</b><i style="width:'+ratio*100+'%"></i></span>'
@@ -3433,7 +3463,7 @@ function timeline(projects,embedded=false){
     '<div class="tl-row hd"><div class="tl-scale" style="--w:'+W+'px">'+m2.join('')+'</div></div>'+
     (px>=36?'<div class="tl-row hc"><div class="tl-scale" style="--w:'+W+'px">'+mc.join('')+'</div></div>':'')+
     '<div class="tl-row ht"><div class="tl-scale tl-load" style="--w:'+W+'px">'+m3.join('')+'</div></div></div>';
-  const bh=bandHours(),dayCap=(b,d)=>bandCap(b,d)||600;
+  const dayCap=(b,d)=>bandCap(b,d)||600;
   const chv=open=>'<svg class="plchev'+(open?'':' shut')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   const group=r=>{
     const {o,p,oid,band,cells,segs,b}=r,pl=plan.get(oid),open=!!o&&tlOpen.has(oid);
@@ -3464,10 +3494,11 @@ function timeline(projects,embedded=false){
     return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+'"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
   let body='';
-  for(const b of BANDS){
-    const rs=rows.filter(r=>r.band===b),pendB=rs.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),endB=rs.map(r=>r.b.end).sort().at(-1);
-    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead"><span class="tb-bl"><i></i><b>'+BAND_NAME[b]+'</b><input class="bandin" data-band="'+b+'" value="'+capTxt(bh[b]*60)+'" inputmode="text" aria-label="Horas al día para '+BAND_NAME[b]+'"><small>al día</small>'+
-      (rs.length?'<em>· '+dur(pendB)+(done?' trabajados':' pendientes')+(endB&&!done?' · hasta el '+fmt({day:'numeric',month:'short'},dateAt(endB)).replace('.',''):'')+'</em>':'')+'</span></div>'+
+  for(const bd of bandList()){
+    const b=bd.id,rs=rows.filter(r=>r.band===b),pendB=rs.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),endB=rs.map(r=>r.b.end).sort().at(-1);
+    const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capTxt(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bd.name)+' el '+d+'"></span>';}).join('')+'</div>':'';
+    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bd.name)+'</b><input class="bandin" data-band="'+b+'" value="'+capTxt(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bd.name)+'"><small>al día</small></span></div>'+
+      (rs.length?'<div class="tb-bn">'+dur(pendB)+(done?' trabajados':' pendientes')+(endB&&!done?' · hasta el '+fmt({day:'numeric',month:'short'},dateAt(endB)).replace('.',''):'')+'</div>':'')+
       (rs.length?rs.map(group).join(''):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
   }
   const real=rows.filter(r=>r.o),allOpen=real.length&&real.every(r=>tlOpen.has(r.oid));
@@ -3488,11 +3519,11 @@ function planItem(o,plan){
     (when?'<div class="rbw"><small class="num pwhen">'+when+'</small></div>':'')+'</div></div>';
 }
 function viewPlan(){
-  const plan=computePlan(),on=s.objectives.filter(o=>o.sched),off=s.objectives.filter(o=>!o.sched&&o.status!=='Completado'),bh=bandHours();
+  const plan=computePlan(),on=s.objectives.filter(o=>o.sched),off=s.objectives.filter(o=>!o.sched&&o.status!=='Completado');
   const chv=open=>'<svg class="plchev'+(open?'':' shut')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   const sect=(key,t,n)=>'<div class="plsec"><span>'+t+'</span><b class="cnt">'+n+'</b></div>';
-  const tlHtml=BANDS.map(b=>{const it=on.filter(o=>bandOf(o)===b);if(!it.length)return '';
-    return '<div class="plband" style="--bc:'+bandColor(b)+'"><i></i>'+BAND_NAME[b]+' · '+capTxt(bh[b]*60)+' al día</div>'+it.map(o=>planItem(o,plan)).join('');}).join('');
+  const tlHtml=bandList().map(bd=>{const b=bd.id,it=on.filter(o=>bandOf(o)===b);if(!it.length)return '';
+    return '<div class="plband" style="--bc:'+bandColor(b)+'"><i></i>'+esc(bd.name)+' · '+capTxt((bd.hours.find(h=>h>0)??0)*60)+' al día</div>'+it.map(o=>planItem(o,plan)).join('');}).join('');
   const grp=railGroups(off).map(g=>{const k='g:'+(g.proj?.id||''),open=!plFold.has(k);
     return '<div class="plgrp" style="--ac:'+areaTone(g.proj?.area)+'"><button type="button" class="plgh" data-act="plFold" data-id="'+k+'">'+chv(open)+'<i></i><span>'+esc(g.proj?.name||'Sin proyecto')+'</span><b class="cnt">'+g.items.length+'</b></button>'+(open?g.items.map(o=>planItem(o,plan)).join(''):'')+'</div>';}).join('');
   return '<div class="plan2"><aside class="wrail plrail">'+sect('__tl','Timeline',on.length)+
@@ -3769,6 +3800,17 @@ function openPop(anchor,html,ctx={}){
   pop.style.left=Math.min(Math.max(8,r.left),innerWidth-w-8)+'px';
   let top=r.bottom+4;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-4);
   pop.style.top=top+'px';
+}
+function settingsHtml(){
+  const L=['D','L','M','X','J','V','S'],O=[1,2,3,4,5,6,0],h=v=>capTxt((v||0)*60);
+  const week='<div class="wkt">'+O.map(i=>'<b>'+L[i]+'</b>').join('')+O.map(i=>'<input data-pop-input="hour'+i+'" value="'+(s.hours[i]??0)+'" inputmode="decimal" aria-label="Horas '+L[i]+'">').join('')+'</div>';
+  const bands=s.bands.map(bd=>'<div class="bgrp" style="--bc:'+bandColor(bd.id)+'"><div class="bgh"><i></i><input class="bgn" data-pop-input="bname|'+bd.id+'" value="'+esc(bd.name)+'">'+(bd.rest?'<small>resto de áreas</small>':'<button class="bgx" data-act="bandDel" data-id="'+bd.id+'" title="Quitar grupo">✕</button>')+'</div>'+
+    (bd.rest?'':'<div class="bga">'+s.areas.map(a=>'<button class="bgc'+(bd.areas.includes(a)?' on':'')+'" data-act="bandArea" data-id="'+bd.id+'" data-area="'+esc(a)+'">'+esc(a)+'</button>').join('')+'</div>')+
+    '<div class="wkt">'+O.map(i=>'<b>'+L[i]+'</b>').join('')+O.map(i=>'<input data-pop-input="bh|'+bd.id+'|'+i+'" value="'+(bd.hours[i]||0)+'" inputmode="decimal" aria-label="'+esc(bd.name)+' '+L[i]+'">').join('')+'</div></div>').join('');
+  const mis=O.filter(i=>Math.abs(s.bands.reduce((a,x)=>a+(x.hours[i]||0),0)-(s.hours[i]||0))>.01);
+  const chk='<div class="bgs'+(mis.length?' bad':'')+'">'+(mis.length?'Los grupos no suman la capacidad en: '+mis.map(i=>L[i]).join(' ')+'. Al editar un grupo la capacidad se ajusta sola.':'Los grupos suman la capacidad diaria.')+'</div>';
+  return pl('Capacidad diaria en horas')+week+pl('Jornada')+pinput('Termina','dayend','time',s.dayEnd||'20:00')+pl('Timeline · grupos de áreas')+bands+chk+pi('+ Añadir grupo','bandAdd')+
+    pl('Datos')+pi('Exportar copia (JSON)','export')+pi('Importar copia','import')+pi('Empezar de cero','reset','','danger')+cloudMenu()+'<div class="pl" style="text-transform:none;letter-spacing:0">Zona horaria: Europe/Madrid · datos guardados en este navegador</div>';
 }
 function closePop(){pop.classList.remove('open');pop.innerHTML='';popCtx=null;}
 const pi=(label,act,attrs='',cls='')=>'<button class="pi '+cls+'" data-act="'+act+'" '+attrs+'>'+label+'</button>';
@@ -4279,10 +4321,14 @@ function onClick(e){
     }
     case 'delInbox':s.inbox=s.inbox.filter(x=>x.id!==id);save();break;
     case 'settings':{
-      const L=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-      openPop(b,pl('Capacidad diaria en horas')+[1,2,3,4,5,6,0].map(i=>pinput(L[i],'hour'+i,'number',s.hours[i])).join('')+pl('Jornada')+pinput('Termina','dayend','time',s.dayEnd||'20:00')+pl('Datos')+pi('Exportar copia (JSON)','export')+pi('Importar copia','import')+pi('Empezar de cero','reset','','danger')+cloudMenu()+'<div class="pl" style="text-transform:none;letter-spacing:0">Zona horaria: Europe/Madrid · datos guardados en este navegador</div>',{});
+      openPop(b,settingsHtml(),{});
       break;
     }
+    case 'bandAdd':{s.bands.splice(Math.max(0,s.bands.length-1),0,{id:uid(),name:'Grupo '+s.bands.length,areas:[],hours:[0,1,1,1,1,1,0]});syncHours();save();pop.innerHTML=settingsHtml();break;}
+    case 'bandDel':{const bd=bandById(id);if(bd.rest)break;s.bands=s.bands.filter(x=>x!==bd);delete s.bandOn[bd.id];syncHours();save();pop.innerHTML=settingsHtml();break;}
+    case 'bandArea':{const bd=bandById(id),a=b.dataset.area;if(bd.rest)break;
+      if(bd.areas.includes(a))bd.areas=bd.areas.filter(x=>x!==a);else{s.bands.forEach(x=>x.areas=x.areas.filter(y=>y!==a));bd.areas.push(a);}
+      save();pop.innerHTML=settingsHtml();break;}
     case 'syncNow':if(cloud.session){cloud.dirty?push(true):pull(true);}else loginUI();break;
     case 'logout':logout();break;
     case 'loginOpen':closePop();loginUI();break;
@@ -4425,11 +4471,14 @@ document.addEventListener('change',e=>{
   const oi=e.target.closest?.('input[data-onotion]');
   if(oi){const o=objective(oi.dataset.onotion);if(o){let v=oi.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;o.notion=v;save();render();}return;}
   const bi=e.target.closest?.('input[data-band]');
-  if(bi){const v=capParse(bi.value);
-    if(Number.isFinite(v)&&v>=0&&v<=24){s.bandHours={...bandHours(),[bi.dataset.band]:v};const Tt=BANDS.reduce((a,x)=>a+s.bandHours[x],0);s.hours=s.hours.map(x=>x>0?Math.min(24,Tt):0);save();}else render();return;}
-  const ci=e.target.closest?.('input[data-cap]');
-  if(ci){const d=ci.dataset.cap,v=capParse(ci.value);s.hoursOn??={};
-    if(!Number.isFinite(v)||v<0)delete s.hoursOn[d];else if(v===s.hours[dow(d)])delete s.hoursOn[d];else s.hoursOn[d]=Math.min(24,v);save();return;}
+  if(bi){const v=capParse(bi.value),bd=bandById(bi.dataset.band);
+    if(Number.isFinite(v)&&v>=0&&v<=24){const all0=bd.hours.every(h=>!h);bd.hours=bd.hours.map(h=>all0||h>0?v:0);syncHours();save();}else render();return;}
+  const ci=e.target.closest?.('input[data-bcap]');
+  if(ci){const [id,d]=ci.dataset.bcap.split('|'),v=capParse(ci.value),bd=bandById(id);
+    s.bandOn[id]??={};
+    if(!Number.isFinite(v)||v<0||v===(bd.hours[dow(d)]||0))delete s.bandOn[id][d];else s.bandOn[id][d]=Math.min(24,v);
+    const tot=bandSum(d)/60;s.hoursOn??={};if(Math.abs(tot-(s.hours[dow(d)]||0))<.01)delete s.hoursOn[d];else s.hoursOn[d]=tot;
+    save();return;}
   const i=e.target.closest?.('[data-pop-input]');if(!i)return;
   const key=i.dataset.popInput,v=i.value;
   if(key==='deadline'&&popCtx){const o=objective(popCtx.id);if(o){o.deadline=v;if(v===day())o.priority='Alta';closePop();save();}}
@@ -4454,7 +4503,9 @@ document.addEventListener('change',e=>{
     if(!a||!z)return;if(a>z){notify('La fecha de fin debe ser posterior al inicio.');return;}
     (o.secWin??={})[popCtx.sec]={start:a,end:z,pin:true};save();
   }
-  else if(/^hour\d$/.test(key)){const n=Number(v);if(Number.isFinite(n)&&n>=0&&n<=24){s.hours[+key.slice(4)]=n;save();}}
+  else if(key.startsWith('bname|')){const bd=bandById(key.slice(6));if(v.trim()){bd.name=v.trim();save();}}
+  else if(key.startsWith('bh|')){const [,id,w]=key.split('|'),n=capParse(v);if(Number.isFinite(n)&&n>=0&&n<=24){bandById(id).hours[+w]=n;syncHours();save();}pop.innerHTML=settingsHtml();}
+  else if(/^hour\d$/.test(key)){const n=Number(v);if(Number.isFinite(n)&&n>=0&&n<=24){s.hours[+key.slice(4)]=n;save();pop.innerHTML=settingsHtml();}}
 });
 $('#file').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
