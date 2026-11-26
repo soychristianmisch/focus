@@ -2255,6 +2255,14 @@ svg.hmap .hd{font-size:9.5px;fill:var(--mute);pointer-events:none}
 svg.hmap .hd.on{fill:#fff}
 svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;stroke-linejoin:round;pointer-events:none}
 @media(max-width:700px){.hbh,.hb2{grid-template-columns:minmax(90px,36%) minmax(0,1fr) 84px;gap:10px}.hbh span:nth-child(2){font-size:0}}
+
+/* v169 */
+.ritem.drop-before,.ritem.drop-after{box-shadow:none}
+.ritem.drop-before:before,.ritem.drop-after:after{left:10px;right:10px;height:2px;border-radius:2px}
+.ritem.drop-before:before{top:-3px}.ritem.drop-after:after{bottom:-3px}
+.plrail>*{flex:none}
+.plrail .plsec{margin-top:10px}
+.plrail .pzone{padding-bottom:6px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
