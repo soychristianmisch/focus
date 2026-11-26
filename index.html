@@ -2148,6 +2148,9 @@ mark.hl{background:#ffe14d;color:#000}
 .flcard.blue .fl-b:not(.ok),.flcard.blue .fl-b:not(.ok):hover{background:#fff!important;color:var(--fbg)!important}
 .flcard.blue .fl-b:not(.ok) svg,.flcard.blue .fl-b:not(.ok) svg path{color:var(--fbg)!important;fill:var(--fbg)!important}
 .flcard.blue .fl-b.ok svg{color:#fff}
+
+.ktg{gap:2px}
+.ktg .ktsecrow{margin-top:4px;padding-left:14px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2963,11 +2966,19 @@ function focusStack(mob){
 /* tareas importantes: réplicas fijas arriba del todo, con su contexto */
 function keyBlock(){
   const L=s.tasks.filter(t=>t.imp&&!t.done);if(!L.length)return '';
-  const rows=L.map(t=>{
-    const o=objective(t.objective),p=projectOf(t),daily=!t.objective,ac=daily?DAILY_TONE:(p&&p.id?areaTone(p.area||''):'#b4b4ae');
-    const ctx=(t.section&&t.section!==RECUR?'<span class="ktsec">'+esc(t.section)+'</span>':'')+(daily&&t.section===RECUR?'<span class="ktsec">'+esc(RECUR)+'</span>':'')+
-      '<span class="atag" style="--ac:'+ac+'">'+esc(daily?'Día a día':(p?p.name:'Sin proyecto'))+'</span>'+(o?'<span class="ktobj">'+esc(o.name)+'</span>':'');
-    return '<div class="kt"><div class="ktctx">'+ctx+'</div>'+taskRow(t).replace(' draggable="true" data-drag="task"','')+'</div>';
+  const groups=[];
+  for(const t of L){const k=t.objective||'';let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(t);}
+  const rows=groups.map(g=>{
+    const o=objective(g.k),t0=g.items[0],p=projectOf(t0),daily=!g.k,ac=daily?DAILY_TONE:(p&&p.id?areaTone(p.area||''):'#b4b4ae');
+    const head='<div class="ktctx"><span class="atag" style="--ac:'+ac+'">'+esc(daily?'Día a día':(p?p.name:'Sin proyecto'))+'</span>'+(o?'<span class="ktobj">'+esc(o.name)+'</span>':'')+'</div>';
+    let last=null;
+    const body=g.items.map(t=>{
+      const sec=t.section&&t.section!==RECUR?t.section:(daily&&t.section===RECUR?RECUR:'');
+      const sh=sec&&sec!==last?'<div class="ktctx ktsecrow"><span class="ktsec">'+esc(sec)+'</span></div>':'';
+      last=sec||last;
+      return sh+taskRow(t).replace(' draggable="true" data-drag="task"','');
+    }).join('');
+    return '<div class="kt ktg">'+head+body+'</div>';
   }).join('');
   return '<section class="keyblock" aria-label="Tareas importantes">'+rows+'</section>';
 }
