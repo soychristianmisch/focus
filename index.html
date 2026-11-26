@@ -2370,6 +2370,16 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .plo:hover{background:var(--bg3)}
 .plo .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plo>.tb-ar{flex:none;margin:0}
+.tb-blk{overflow:visible!important;z-index:1}
+.tb-blk b.ov{position:absolute;left:3px;z-index:2}
+.tb-pbar{height:22px;box-sizing:border-box;border-radius:11px;background:color-mix(in srgb,var(--pc) 24%,var(--card));border:1px solid color-mix(in srgb,var(--pc) 40%,var(--line));display:flex;align-items:center;cursor:pointer;position:relative;z-index:3;margin-bottom:5px}
+.tb-pbar>span{display:flex;align-items:center;gap:5px;white-space:nowrap;padding:0 9px;font-size:12.5px;font-weight:650;color:var(--ink)}
+.tb-pbar:hover{background:color-mix(in srgb,var(--pc) 34%,var(--card))}
+.tb-pbar .plchev{width:13px;height:13px}
+.dayview{max-width:980px}
+.dayview .colhead h2{font-size:30px;letter-spacing:-.7px}
+.dayview .viewall{display:none}
+.dayview .bubbles{margin-bottom:6px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2445,7 +2455,7 @@ const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
 const dayLabel=d=>cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
 const clock=ms=>{const s=Math.max(0,Math.floor(ms/1000));return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(n=>String(n).padStart(2,'0')).join(':');};
 const dur=m=>{m=Math.round(m);if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'');return m+' min';};
-const mm=m=>{m=Math.round(m);return m>=60?Math.floor(m/60)+'h'+(m%60?' '+String(m%60).padStart(2,'0'):''):m+'m';};
+const mm=m=>{m=Math.round(m);return m>=60?Math.floor(m/60)+'h'+(m%60?' '+String(m%60).padStart(2,'0')+'m':''):m+'m';};
 const parseMin=v=>{
   v=v.trim().toLowerCase().replace(',','.').replace(/\s+/g,'');
   let m;
@@ -2795,12 +2805,13 @@ const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
 const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
+let dvIds=null;
 function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',closeBtn=false){
   const daily=o.id===DAILY.id,oid=daily?'':o.id,proj=daily?null:project(o.project);
   const color=daily?DAILY.color:(proj?.color??PALETTE[0]);
   const pr=progressOf(o);
   const all=s.tasks.filter(t=>t.objective===oid);
-  const inDay=queue(selectedDate).filter(t=>t.objective===oid);
+  const inDay=(dvIds?s.tasks.filter(t=>dvIds.has(t.id)):queue(selectedDate)).filter(t=>t.objective===oid);
   const dayIds=new Set(inDay.map(t=>t.id)),mine=(today||dayOnly)?all.filter(t=>dayIds.has(t.id)):all;
   const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
   const sections=o.sections,key=o.id;
@@ -3504,20 +3515,19 @@ function dayTasks(oid,sec,d,plan,today){
 function dayView(projects,plan,cellsOf,done,d){
   const today=day(),ids=new Set(projects.map(p=>p.id));
   const objs=[...planOrder().filter(o=>ids.has(o.project)).map(o=>[o,bandOf(o)]),[null,restBand().id]];
-  let body='';
+  let body='',nT=0,tot=0;
   for(const bd of bandList()){
     const items=objs.filter(([o,b])=>b===bd.id&&(cellsOf(o?o.id:'').get(d)?.m>.5));
-    const used=items.reduce((a,[o])=>a+cellsOf(o?o.id:'').get(d).m,0),ov=s.bandOn?.[bd.id]?.[d]!=null;
-    body+='<section class="dv-band" style="--bc:'+bandColor(bd.id)+'"><div class="dv-bh"><i></i><b>'+esc(bn(bd))+'</b><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+bd.id+'|'+d+'" value="'+capTxt(bandCap(bd.id,d))+'" inputmode="text" aria-label="Horas de '+esc(bd.name)+'"><small>'+(used?dur(used)+(done?' trabajados':' planificados'):'sin trabajo este día')+'</small></div>'+
-      '<div class="dv-grid">'+items.map(([o,b])=>{
-        const oid=o?o.id:'',c=cellsOf(oid).get(d),p=o?project(o.project):null,ac=o?objAc(o):DAILY_TONE,sl=o?o.sections:(s.dailySections||[]),ks=['',...sl];
-        for(const k of c.sec.keys())if(!ks.includes(k))ks.push(k);
-        const secs=ks.filter(k=>(c.sec.get(k)??0)>.5).map(k=>{
-          const tk=done?[]:dayTasks(oid,k,d,plan,today);
-          return '<div class="dv-s"><div class="dv-sh"><b>'+esc(k||'Sin sección')+'</b><em>'+dur(c.sec.get(k))+'</em></div>'+tk.map(([t,m])=>'<div class="dv-t"><i class="bx"></i><span>'+esc(t.name)+'</span><em>'+(m>.5?dur(m):'')+'</em></div>').join('')+'</div>';}).join('');
-        return '<article class="dv-o" style="--ac:'+ac+'"><header><div><b>'+esc(o?o.name:'Día a día')+'</b>'+(p?'<small>'+esc(projPath(p))+'</small>':'')+'</div><em>'+dur(c.m)+'</em></header>'+secs+'</article>';}).join('')+'</div></section>';
+    const used=items.reduce((a,[o])=>a+cellsOf(o?o.id:'').get(d).m,0),ov=s.bandOn?.[bd.id]?.[d]!=null;tot+=used;
+    const cards=items.map(([o])=>{
+      const oid=o?o.id:'',c=cellsOf(oid).get(d),set=new Set();
+      if(done){for(const e of s.entries){if(e.end&&day(e.start)===d){const t=task(e.task);if(t&&t.objective===oid)set.add(t.id);}}}
+      else for(const k of c.sec.keys())for(const [t] of dayTasks(oid,k,d,plan,today))set.add(t.id);
+      nT+=set.size;dvIds=set;let h='';try{h=bubble(o||DAILY,true);}finally{dvIds=null;}return h;}).join('');
+    body+='<section class="dv-band" style="--bc:'+bandColor(bd.id)+'"><div class="dv-bh"><i></i><b>'+esc(bn(bd))+'</b><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+bd.id+'|'+d+'" value="'+capShort(bandCap(bd.id,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+'"><small>'+(used?dur(used)+(done?' trabajados':' planificados'):'sin trabajo este día')+'</small></div>'+(cards?'<div class="bubbles">'+cards+'</div>':'')+'</section>';
   }
-  return '<div class="dayview">'+body+'</div>';
+  const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
+  return '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+body+'</div>';
 }
 function timeline(projects,embedded=false){
   const rg=RANGES.find(r=>r[0]===tlRange),nWin=rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
@@ -3576,7 +3586,7 @@ function timeline(projects,embedded=false){
     const byDay=new Map();
     for(const g of segs){const c=byDay.get(g.d)??byDay.set(g.d,{a:1e9,z:0,m:0}).get(g.d);c.a=Math.min(c.a,g.off);c.z=Math.max(c.z,g.off+g.m);c.m+=g.m;}
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),t=hf(c.m);
-      return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(w>=34&&t?'<b>'+t+'</b>':'')+'</i>';}).join('');
+      return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(t?'<b'+(w>=34?'':' class="ov"')+'>'+t+'</b>':'')+'</i>';}).join('');
     let srows='';
     if(open){
       for(const sec of ['',...o.sections]){
@@ -3603,9 +3613,9 @@ function timeline(projects,embedded=false){
     const byDay=new Map();
     for(const g of segs){const c=byDay.get(g.d)??byDay.set(g.d,{a:1e9,z:0,m:0}).get(g.d);c.a=Math.min(c.a,g.off);c.z=Math.max(c.z,g.off+g.m);c.m+=g.m;}
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
-      return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(w>=34&&tx?'<b>'+tx+'</b>':'')+'</i>';}).join('');
+      return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(tx?'<b'+(w>=34?'':' class="ov"')+'>'+tx+'</b>':'')+'</i>';}).join('');
     if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
-      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+'<div class="rt"><b>'+esc(p.name)+(kidsT?chv(open):'')+'</b></div></div><div class="tb-line" style="margin-left:'+(BL+6)+'px;width:'+(BW-12)+'px"></div></div>';}
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+(BL+6)+'px;width:'+(BW-12)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+'"><span>'+(depth?ARR:'')+esc(p.name)+(kidsT?chv(open):'')+'</span></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
@@ -3618,7 +3628,7 @@ function timeline(projects,embedded=false){
     const sub=pid=>rs.filter(r=>r.p&&(r.p.id===pid||isDesc(r.p.id,pid)));
     const node=(pid,depth)=>{
       const p=project(pid),rsub=sub(pid);if(!p||!rsub.length)return '';
-      const skip=pid===rootId,open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,byP);
+      const skip=pid===rootId,open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true);
       if(open){const d2=skip?depth:depth+1;
         for(const k of kidsOf(pid))if(pset.has(k.id))h+=node(k.id,d2);
         if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))h+=group(r,d2);
@@ -3638,7 +3648,7 @@ function timeline(projects,embedded=false){
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+(nWin===1?cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(tlStart))).replace('.',''):lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1)))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span>'+(nWin===1?'':'<button class="btn line ic" data-act="tlLevelMenu" title="Qué niveles ver">'+ICO.unfold+'Ver: '+LEVELS.find(l=>l[0]===tlLevel)[1]+' ▾</button>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>'+
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>'+(nWin===1?'':'<button class="btn line ic" data-act="tlLevelMenu" title="Qué niveles ver">'+ICO.unfold+'Ver: '+LEVELS.find(l=>l[0]===tlLevel)[1]+' ▾</button>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div><span class="grow"></span>'+
     (nWin?mkNav():'<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>')+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   if(nWin===1)return (embedded?'':'<div class="an tlpage">')+bar2+dayView(projects,plan,cellsOf,done,tlStart)+(embedded?'':'</div>');
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
