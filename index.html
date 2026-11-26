@@ -2090,6 +2090,34 @@ body.hasrb{--rb:38px}
 .prog.late i:nth-child(1),.prog.late i:nth-child(2){background:var(--red)}
 .prog.late i:nth-child(3){background:color-mix(in srgb,var(--red) 38%,var(--bg3))}
 .oprops .p.tot{font-weight:600;color:var(--ink);font-size:13px;display:inline-flex;align-items:center;padding:0 2px}
+
+/* v157 proyectos: completados, búsqueda, página de objetivo */
+.pjsearch{padding:0 4px 10px;position:sticky;top:0;background:var(--bg);z-index:3}
+.pjsearch input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit;font-size:13.5px;padding:8px 11px;outline:none}
+.pjsearch input:focus{border-color:var(--accent)}
+#pjres:empty{display:none}
+#pjres{margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.prail.searching .agroup,.prail.searching .newarea{display:none}
+.pj-hit{all:unset;box-sizing:border-box;display:flex;align-items:flex-start;gap:9px;padding:8px 9px;border-radius:10px;cursor:pointer;width:100%}
+.pj-hit:hover{background:var(--bg3)}
+.pj-hit .pdot{width:9px;height:9px;border-radius:50%;background:var(--ac);flex:none;margin-top:5px}
+.pj-hit b{display:block;font-size:13.5px;font-weight:600;line-height:1.3}
+.pj-hit small{display:block;color:var(--mute);font-size:12px;line-height:1.3;margin-top:1px}
+.pj-dlist{display:flex;flex-direction:column;gap:6px}
+.pj-dcard{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:var(--bg3);cursor:pointer;width:100%}
+.pj-dcard:hover{background:color-mix(in srgb,var(--ac) 14%,var(--bg3))}
+.pj-dcard .dk{width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--ac) 22%,var(--card));color:var(--ac);display:grid;place-items:center;flex:none}
+.pj-dcard .dk svg{width:13px;height:13px}
+.pj-dcard .dt{min-width:0;flex:1}
+.pj-dcard b{display:block;font-size:14px;font-weight:600;line-height:1.3}
+.pj-dcard small{display:block;color:var(--mute);font-size:12px;margin-top:1px}
+.pjback{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--mute);padding:6px 10px 6px 4px;border-radius:10px;margin-bottom:10px}
+.pjback:hover{color:var(--ink);background:var(--bg3)}
+.pjback svg{width:18px;height:18px}
+.objstats{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;margin-bottom:18px}
+.pj-obj.flash{animation:tflash 1.4s ease-out;border-radius:16px}
+
+@media(max-width:900px){.pjview{grid-template-columns:minmax(0,1fr)!important;min-height:0}.prail{position:static!important;max-height:none!important;height:auto!important;border:0!important;width:auto!important;padding:10px 12px 4px}.pjmain{padding:6px 14px 90px!important;min-width:0}.pj-cols{grid-template-columns:minmax(0,1fr)!important}.pjpage{max-width:100%}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2637,7 +2665,7 @@ function projItem(p,depth){
 }
 function projRail(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
-  return '<aside class="prail">'+areas.map(ar=>{
+  return '<aside class="prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div></div>'+areas.map(ar=>{
     const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id));
     return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="lines" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área"></span><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
       (roots.length?roots.map(p=>projItem(p,0)).join(''):'<p class="pempty">Sin proyectos</p>')+'</div>';
@@ -2645,7 +2673,7 @@ function projRail(){
 }
 function projPage(p){
   const st=projStats(p),par=p.parent?project(p.parent):null,kids=kidsOf(p.id);
-  const myObjs=s.objectives.filter(o=>o.project===p.id);
+  const myObjs=s.objectives.filter(o=>o.project===p.id&&o.status!=='Completado'),allMy=s.objectives.filter(o=>o.project===p.id);
   const tls=descIds(p.id).map(id=>project(id)).filter(Boolean);
   const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
   const ent=s.entries.filter(e=>e.end&&st.oids.includes(task(e.task)?.objective)).sort((x,y)=>y.start-x.start).slice(0,8);
@@ -2657,19 +2685,53 @@ function projPage(p){
    '<button class="iconbtn pjmore" data-act="menu" data-kind="pjmore" data-id="'+p.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button></div></div>'+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
-   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>')+
-   (myObjs.length?'<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Objetivo</button>':'')+'</section>'+
+   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
+   ((myObjs.length||allMy.length)?'<button class="addrow" data-act="addObj" data-id="'+p.id+'">＋ Objetivo</button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
    '<section id="pj-res" class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
    '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div>'+
    (kids.length?'<div class="pj-card"><h3>Subproyectos</h3><div class="pj-kids">'+kids.map(k=>{const ks=projStats(k);return '<button class="pj-kid" style="--ac:'+k.color+'" data-act="selectProject" data-id="'+k.id+'"><b>'+esc(k.name)+'</b><small>'+ks.objs.length+' objetivos · '+dur(ks.left)+' pendientes</small></button>';}).join('')+'</div></div>':'')+
    '<button class="addrow" data-act="addSubProject" data-id="'+p.id+'">＋ Subproyecto</button></section>'+
-   '<section id="pj-act" class="pj-sec"><h2>Actividad</h2>'+(ent.length?'<div class="pj-log">'+ent.map(e=>{const t=task(e.task);return '<div class="logrow"><span class="t">'+cap(fmt({weekday:'short',day:'numeric'},e.start))+' '+hour(e.start)+'–'+hour(e.end)+'</span><span class="nm">'+esc(t.name)+'</span><span class="d num">'+dur((e.end-e.start)/60000)+'</span></div>';}).join('')+'</div>':'<p class="empty">Aún no hay tiempo registrado en este proyecto.</p>')+'</section>'+'</div></div></div>';
+   (()=>{const dn=st.objs.filter(o=>o.status==='Completado');return dn.length?'<section id="pj-done" class="pj-sec"><h2>Objetivos completados · '+dn.length+'</h2><div class="pj-dlist">'+dn.map(doneCard).join('')+'</div></section>':'';})()+
+   '</div></div></div>';
+}
+let pjObj='',pjQ='';
+const normQ=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function objSpan(o){
+  const ts=s.tasks.filter(t=>t.objective===o.id),ids=new Set(ts.map(t=>t.id));
+  const doneAt=Math.max(0,...ts.filter(t=>t.done).map(t=>t.done)),en=s.entries.filter(e=>ids.has(e.task));
+  return {ts,done:ts.filter(t=>t.done).length,worked:sumMin(ts),est:sumMin(ts,t=>+t.minutes||0),doneAt,first:en.length?Math.min(...en.map(e=>e.start)):0};
+}
+function doneCard(o){
+  const p=project(o.project),sp=objSpan(o);
+  return '<button type="button" class="pj-dcard" style="--ac:'+(p?.color||'#b4b4ae')+'" data-act="pjObjOpen" data-id="'+esc(o.id)+'"><span class="gl sm dk">'+ICON.check+'</span><span class="dt"><b>'+esc(o.name)+'</b><small>'+sp.ts.length+(sp.ts.length===1?' tarea':' tareas')+' · '+dur(sp.worked)+' trabajadas'+(sp.doneAt?' · '+fmt({day:'numeric',month:'short',year:'numeric'},sp.doneAt).replace('.',''):'')+'</small></span></button>';
+}
+function objPage(o){
+  const p=project(o.project),sp=objSpan(o);
+  const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
+  const fm=t=>fmt({day:'numeric',month:'short',year:'numeric'},t).replace('.','');
+  doneOpen.add(o.id);
+  return '<div class="pjpage objpage" style="--pc:'+(p?.color||'#b4b4ae')+';--ac:'+(p?.color||'#b4b4ae')+'"><button type="button" class="pjback" data-act="pjObjBack" title="Volver al proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'+esc(p?.name||'Proyecto')+'</button>'+
+    '<div class="pj-stats objstats">'+card('Estado',esc(o.status||''),sp.doneAt&&o.status==='Completado'?'completado el '+fm(sp.doneAt):'')+card('Trabajado',dur(sp.worked),'estimado '+dur(sp.est))+card('Tareas',sp.done+' / '+sp.ts.length,'completadas')+card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
+    '<div class="pj-obj" data-fold="'+esc(o.id)+'">'+bubble(o)+'</div></div>';
+}
+function pjSearch(q){
+  const n=normQ(q).trim();if(!n)return '';
+  const hit=x=>normQ(x).includes(n),out=[];
+  for(const p of s.projects)if(hit(p.name)||hit(p.description)||hit(p.notes))out.push('<button type="button" class="pj-hit" data-act="selectProject" data-id="'+esc(p.id)+'" style="--ac:'+p.color+'"><i class="pdot"></i><span><b>'+esc(p.name)+'</b><small>Proyecto · '+esc(p.area||'')+'</small></span></button>');
+  for(const o of s.objectives){
+    const p=project(o.project),ts=s.tasks.filter(t=>t.objective===o.id);
+    const t=hit(o.name)?null:ts.find(t=>hit(t.name)||hit(t.note));
+    if(!(hit(o.name)||t||o.sections.some(hit)))continue;
+    out.push('<button type="button" class="pj-hit" data-act="pjGoObj" data-id="'+esc(o.id)+'" style="--ac:'+(p?.color||'#b4b4ae')+'"><i class="pdot"></i><span><b>'+esc(o.name)+(o.status==='Completado'?' ✓':'')+'</b><small>'+esc(p?.name||'')+(t?' · tarea: '+esc(t.name):'')+'</small></span></button>');
+  }
+  return out.length?out.slice(0,40).join(''):'<p class="pempty">Sin resultados</p>';
 }
 function viewProyectos(){
+  const po=pjObj&&objective(pjObj);if(!po)pjObj='';if(po&&project(po.project))openProj=po.project;
   const cur=(openProj&&project(openProj))||s.projects[0];if(cur&&openProj!==cur.id)openProj=cur.id;
-  return '<div class="pjview">'+projRail()+'<main class="pjmain">'+(cur?projPage(cur):'<p class="empty" style="padding:40px">Aún no hay proyectos. Crea uno con ＋ en el área que quieras.</p>')+'</main></div>';
+  return '<div class="pjview">'+projRail()+'<main class="pjmain">'+(po?objPage(po):cur?projPage(cur):'<p class="empty" style="padding:40px">Aún no hay proyectos. Crea uno con ＋ en el área que quieras.</p>')+'</main></div>';
 }
 
 /* ---------- Trabajo: proyectos y hoy en una sola vista ---------- */
@@ -3254,7 +3316,7 @@ function viewAnalytics(){
   const kpis='<div class="kpis"><div class="card kpi"><small>Trabajado hoy</small><b>'+dur(usedOn(today))+'</b><span>de '+dur(capacityOn(today))+' de capacidad</span></div>'+
     '<div class="card kpi"><small>Esta semana</small><b>'+dur(weekTotal)+'</b><span>'+(capWeek?Math.round(weekTotal/capWeek*100):0)+' % de la capacidad semanal</span></div>'+
     '<div class="card kpi"><small>Completadas · '+N+' días</small><b>'+doneIn.length+'</b><span>'+dur(doneReal)+' trabajadas</span></div>'+
-    '<div class="card kpi"><small>Tareas abiertas</small><b>'+s.tasks.filter(t=>!t.done).length+'</b><span>en todos los objetivos</span></div></div></div>';
+    '<div class="card kpi"><small>Tareas abiertas</small><b>'+s.tasks.filter(t=>!t.done).length+'</b><span>en todos los objetivos</span></div></div>';
   /* barras apiladas por día */
   const CW=720,CH=250,ML=38,MB=26,MT=10,MR=6,pw=CW-ML-MR,ph=CH-MT-MB;
   const maxY=Math.max(60,...days.map(dayTotal),...days.map(capacityOn)),top=Math.ceil(maxY/60)*60;
@@ -3314,9 +3376,9 @@ function viewAnalytics(){
     '<div class="card c4"><h3 class="t">Reparto por proyecto</h3><p class="d">Dónde ha ido el tiempo en el periodo.</p>'+(parts.length?'<div class="donutwrap">'+donut+donutList+'</div>':'<p class="empty">Aún no hay tiempo registrado. Pulsa play en una tarea.</p>')+'</div>'+
     '<div class="card c12"><h3 class="t">Avance por objetivo</h3><p class="d">Tiempo trabajado en cada objetivo. A la derecha, el porcentaje de tareas completadas.</p>'+objChart+'</div>'+
     
-    '<div class="card c4"><h3 class="t">Constancia</h3><p class="d">Tiempo trabajado cada día durante 12 semanas.</p>'+hm+'</div>'+
+    '<div class="card c6"><h3 class="t">Constancia</h3><p class="d">Tiempo trabajado cada día durante 12 semanas.</p>'+hm+'</div>'+
     '<div class="card c6"><h3 class="t">Tareas completadas por día</h3><p class="d">Cuántas tareas has cerrado en el periodo.</p>'+cs+'</div>'+
-    '<div class="card c6"><h3 class="t">Últimos registros y notas</h3><p class="d">Sesiones recientes y notas rápidas.</p>'+(log||'<p class="empty">Sin registros.</p>')+(notes?'<div style="height:10px"></div>'+notes:'')+'</div></div></div>';
+    ''+'</div></div>';
 }
 
 /* ---------- inbox ---------- */
@@ -3679,7 +3741,10 @@ function onClick(e){
     case 'view':view=id;if(id==='Planificación')tlScroll='today';render();window.scrollTo(0,0);break;
     case 'selectArea':openArea=id;openProj='';openObj='';render();window.scrollTo(0,0);break;
     case 'selectObj':openObj=id;openProj='';render();break;
-    case 'selectProject':{openProj=id;openObj='';projTab='Nota maestra';render();break;}
+    case 'selectProject':{openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
+    case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
+    case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
+    case 'pjGoObj':{const o=objective(id);if(!o)break;openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';render();if(!pjObj){const el=document.querySelector('.pj-obj[data-fold="'+CSS.escape(id)+'"]');if(el){el.scrollIntoView({block:'start'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}}else window.scrollTo(0,0);break;}
     case 'wToggleHoy':case 'wMode':{
       const m=b.dataset.act==='wToggleHoy'?'Hoy':id;
       wSolo=null;wLast=null;
@@ -3992,7 +4057,8 @@ function splitIdeas(t){
   return t.split(/\n+|(?<=[.!?])\s+|;\s*|,?\s+(?:y luego|y después|y también|además|también tengo que|and then|also)\s+/i).map(x=>capz(x.replace(/^[,.\s]+|[.\s]+$/g,'').trim())).filter(x=>x.length>2);
 }
 function growCap(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,360)+'px';}
-document.addEventListener('input',e=>{if(e.target.id==='capin')growCap(e.target);});
+document.addEventListener('input',e=>{if(e.target.id==='capin')growCap(e.target);
+  if(e.target.id==='pjsearch'){pjQ=e.target.value;const r=$('#pjres');if(r)r.innerHTML=pjSearch(pjQ);$('.prail')?.classList.toggle('searching',!!pjQ.trim());}});
 let rec=null;
 function toggleMic(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
