@@ -3648,9 +3648,12 @@ function restoreEdit(k){
     if(n){r.setStart(n,Math.min(k.off??k.text.length,n.textContent.length));r.collapse(true);}else{r.selectNodeContents(el);r.collapse(false);}
     g.removeAllRanges();g.addRange(r);}catch{}
 }
+const NAV_VIEWS=['Trabajo','Hoy','Proyectos','Planificación','Analítica','Inbox'];
+function navSave(){lsSet('focus.nav',JSON.stringify({view,openArea,openProj,openObj,projTab,pjObj}));}
 function render(){
   const keep=captureEdit();rendering=true;
   try{render0();}finally{rendering=false;}
+  navSave();
   restoreEdit(keep);
   try{applyHL();}catch(e){}
 }
@@ -4740,6 +4743,18 @@ window.addEventListener('storage',e=>{
   if(typing()||(typeof cloud!=='undefined'&&cloud.dirty))return;
   try{const n=migrate(JSON.parse(e.newValue));if(n.running?.id!==s.running?.id){selected=n.running?.id??'';suggestion='';}s=n;render();}catch{}
 });
+/* al recargar, volver al apartado (y proyecto/objetivo) donde estabas */
+try{const n=JSON.parse(lsGet('focus.nav')||'null');
+  if(n){
+    if(NAV_VIEWS.includes(n.view))view=n.view;
+    if(n.openArea&&(n.openArea==='Global'||n.openArea===DAILY.id||s.areas.includes(n.openArea)))openArea=n.openArea;
+    if(n.openProj&&project(n.openProj))openProj=n.openProj;
+    if(n.openObj&&objective(n.openObj))openObj=n.openObj;
+    if(n.projTab)projTab=n.projTab;
+    if(n.pjObj&&objective(n.pjObj))pjObj=n.pjObj;
+    if(view==='Planificación')tlScroll='today';
+  }
+}catch{}
 render();
 
 /* ---------- editor de notas tipo Notion ---------- */
@@ -4957,7 +4972,8 @@ setInterval(()=>{if(typing())return;if(rollRecurring()){save();render();}},60000
 /* ---------- nube (Supabase) ---------- */
 const SB_URL='https://jdlennyjkwjycxlaqsox.supabase.co', SB_KEY='sb_publishable_RSRUwp-tdVruxvp5w0qiFQ_SBkTRBdh';
 const DIRTY_KEY='focus.dirty',SES_KEY='focus.session', SYNC_KEY='focus.lastsync', OFF_KEY='focus.offline';
-const lsGet=k=>{try{return localStorage.getItem(k);}catch{return null;}}, lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch{}};
+function lsGet(k){try{return localStorage.getItem(k);}catch{return null;}}
+function lsSet(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch{}}
 const b64=t=>{try{return JSON.parse(decodeURIComponent(escape(atob(t.replace(/-/g,'+').replace(/_/g,'/')))));}catch{return {};}};
 function sessionFrom(r){
   const jwt=b64((r.access_token||'').split('.')[1]||'');
