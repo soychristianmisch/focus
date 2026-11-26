@@ -2385,6 +2385,7 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .dvm-box{position:relative;width:min(980px,100%);max-height:92vh;overflow:auto;background:var(--bg);border-radius:20px;padding:14px 24px 40px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .dvm-top{position:sticky;top:-14px;z-index:5;display:flex;justify-content:flex-end;gap:6px;padding:6px 0;background:var(--bg)}
 .dvm .dayview{max-width:none}
+.seg.lvl button{display:inline-flex;align-items:center;gap:5px}.seg.lvl svg{width:15px;height:15px;flex:none}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3447,16 +3448,21 @@ function computePlan(){
     const o=objective(oid),r=res.get(oid),b=r.band,pool=new Map();
     for(const t of s.tasks.filter(t=>t.objective===oid&&!t.done)){
       if(t.days.some(d=>d>=today))continue;
-      const m=minutesLeft(t);if(m>.5)pool.set(t.section,(pool.get(t.section)??0)+m);
+      const m=minutesLeft(t);if(m>.5)pool.set(t.section,[...(pool.get(t.section)||[]),m]);
     }
     if(!pool.size)continue;
     const st=o?.startOn&&o.startOn>from0?o.startOn:(o?.window?.pin&&o.window.start>from0?o.window.start:from0);
     const ds=daysIn(st,shift(st,400),b);let di=0;
     const sl=o?o.sections:(s.dailySections||[]),secs=['',...sl].filter(x=>pool.has(x));
     for(const k of pool.keys())if(!secs.includes(k))secs.push(k);
-    for(const sec of secs){
-      let M=pool.get(sec);
-      while(M>.5&&di<ds.length){const av=free(b,ds[di]);if(av<=.5){di++;continue;}const g=Math.min(av,M);put(r,b,ds[di],sec,g,false);M-=g;}
+    for(const sec of secs)for(const m0 of pool.get(sec)){
+      let M=m0;
+      while(M>.5&&di<ds.length){
+        const d=ds[di],av=free(b,d),full=bandCap(b,d)-base(b,d);
+        if(av<=.5){di++;continue;}
+        if(M>av+.5&&M<=full+.5&&av<full-.5){di++;continue;} /* la tarea entera no cabe: pasa al día siguiente */
+        const g=Math.min(av,M);put(r,b,d,sec,g,false);M-=g;
+      }
       if(M>.5)r.over+=M;
     }
   }
@@ -3507,6 +3513,7 @@ const RANGES=[['week','7 días',7],['2w','2 semanas',14],['month','Un mes',30],[
 let tlLevel=lsGet('focus.tllevel')||'obj',tlRange=lsGet('focus.tlrange')||'all',tlStart=day();
 if(!LEVELS.some(l=>l[0]===tlLevel))tlLevel='obj';if(!RANGES.some(r=>r[0]===tlRange))tlRange='all';
 const tlPFold=new Set();
+const LVL_ICO={proj:glyph('flag'),sub:_s('<path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/>'),obj:_s(STI['Más adelante']),sec:_s('<path d="M4 7h16M4 12h16M4 17h10"/>')};
 const ARR='<svg class="tb-ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/></svg>';
 function dayTasks(oid,sec,d,plan,today){
   const ts=s.tasks.filter(t=>t.objective===oid&&!t.done&&(t.section||'')===sec),pinN=t=>Math.max(1,t.days.filter(x=>x>=today).length),pinOn=dd=>ts.filter(t=>t.days.includes(dd)&&dd>=today).reduce((a,t)=>a+minutesLeft(t)/pinN(t),0);
@@ -3663,7 +3670,7 @@ function timeline(projects,embedded=false){
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><button class="btn line ic" data-act="tlLevelMenu" title="Qué niveles ver">'+ICO.unfold+'Ver: '+LEVELS.find(l=>l[0]===tlLevel)[1]+' ▾</button><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
     '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
   return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
