@@ -2881,7 +2881,7 @@ function railItem(k,sel,act='wSelect'){
 function dateHead(){
   const fo=focusOn();
   const open=queue(selectedDate).filter(t=>!t.done),dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(selectedDate)));
-  const feedBtn=wHoy?'<button class="wmode hoy fhoy" data-act="hoyFeedToggle" aria-pressed="'+hoyFeed+'" title="'+(hoyFeed?'Quitar el feed de hoy':'Ver todas las actividades de hoy')+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="16" height="6.5" rx="1.8"/></svg><span>Feed</span></button>':'';
+  const feedBtn=wHoy?'<button class="wmode hoy fhoy" data-act="hoyFeedToggle" aria-pressed="'+(hoyFeed&&wSolo===null)+'" title="'+(hoyFeed&&wSolo===null?'Quitar el feed de hoy':'Ver todas las actividades de hoy')+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6.5" rx="1.8"/><rect x="4" y="13.5" width="16" height="6.5" rx="1.8"/></svg><span>Feed</span></button>':'';
   return '<div class="colhead'+(fo||wHoy?' fh':'')+'"><div><h2>'+esc(dl)+'</h2><span class="sub">'+open.length+' tareas</span></div>'+feedBtn+(fo?'<button class="wmode hoy fhoy" data-act="fHoyToggle" aria-pressed="'+fHoy+'" title="'+(fHoy?'Volver a la vista completa':'Solo lo de hoy, en una línea por objetivo')+'">'+glyph('checkbox')+'<span>Hoy</span></button><button class="wmode fgrp" data-act="fByToggle" title="'+(fBy==='mom'?'Ordenar por proyectos':'Ordenar por momentos')+'">'+(fBy==='mom'?'<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg><span>Proyectos</span>':'<svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><span>Momentos</span>')+'</button>':'')+
     '<div class="dnav"><button class="iconbtn" data-act="prev" aria-label="Día anterior">‹</button><button class="btn" data-act="dayCal" aria-label="Elegir día">Hoy</button><button class="iconbtn" data-act="next" aria-label="Día siguiente">›</button></div></div>';
 }
@@ -3858,7 +3858,7 @@ function onClick(e){
     case 'fByToggle':fBy=fBy==='mom'?'area':'mom';render();break;
     case 'cpOpen':{if(e.target.closest('[data-edit],a,button,.lines,input'))break;const k=id===DAILY.id?'':id;wSolo=k;wLast=k;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;}
     case 'fViewAll':fHoy=false;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
-    case 'hoyFeedToggle':hoyFeed=!hoyFeed;render();break;
+    case 'hoyFeedToggle':if(wSolo!==null){wSolo=null;hoyOpen.clear();hoyFeed=true;}else hoyFeed=!hoyFeed;render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'fHoyToggle':{fHoy=!fHoy;}render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
