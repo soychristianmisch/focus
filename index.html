@@ -2118,6 +2118,19 @@ body.hasrb{--rb:38px}
 .pj-obj.flash{animation:tflash 1.4s ease-out;border-radius:16px}
 
 @media(max-width:900px){.pjview{grid-template-columns:minmax(0,1fr)!important;min-height:0}.prail{position:static!important;max-height:none!important;height:auto!important;border:0!important;width:auto!important;padding:10px 12px 4px}.pjmain{padding:6px 14px 90px!important;min-width:0}.pj-cols{grid-template-columns:minmax(0,1fr)!important}.pjpage{max-width:100%}}
+
+/* v158 tarjeta azul en reposo */
+.flcard.blue{background:#2f5f94;color:#fff}
+.flcard.blue h3,.flcard.blue .est{color:rgba(255,255,255,.78)}
+.flcard.blue .xtitle,.flcard.blue .xclock,.xtask.flcard.blue .xclock.over{color:#fff;background:none;padding:0;margin-left:0}
+.flcard.blue .fl-b,.flcard.blue .fl-b.run{background:#fff;color:#2f5f94}
+.flcard.blue .fl-b:hover{background:rgba(255,255,255,.88);color:#2f5f94}
+.flcard.blue .fl-b.ok{background:rgba(255,255,255,.2);color:#fff}
+.flcard.blue .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
+:root[data-theme=dark] .flcard.blue{background:#2a4f7c}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .flcard.blue{background:#2a4f7c}}
+.rb .rbb.ok svg{width:12px;height:12px}
+.fl-b.big.ok svg{width:16px;height:16px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2425,6 +2438,11 @@ function autoCompleteObj(oid){
   const i=s.objectives.indexOf(o);s.objectives.splice(i,1);
   const j=s.objectives.findIndex(x=>x.status==='Completado');
   if(j<0)s.objectives.splice(i,0,o);else s.objectives.splice(j,0,o);
+}
+function stopTask(id){
+  const t=task(id);if(!t||t.done)return;
+  if(s.running?.id===id)closeTimer();
+  s.pauseId='';s.paused=s.paused.filter(x=>x!==id);selected=id;suggestion='';save();
 }
 function finish(id){
   const t=task(id);if(!t||t.done)return;
@@ -2981,12 +2999,13 @@ function execPanel(onlyStats=false){
   const paused=s.paused.map(task).filter(x=>x&&!x.done&&x.id!==t?.id);
   const usedPct=Math.min(100,st.capm?st.used/st.capm*100:0),pendPct=Math.min(100-usedPct,st.capm?st.pending/st.capm*100:0);
   const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;
-  const main='<section class="xcard xtask'+(t&&(running||pzd)?' flcard':'')+(pzd?' paused':'')+(t&&(running||pzd)&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
+  const blue=!!t&&!running&&!pzd&&!t.done;
+  const main='<section class="xcard xtask'+(t&&(running||pzd||blue)?' flcard':'')+(blue?' blue':'')+(pzd?' paused':'')+(t&&(running||pzd)&&timerReading(t).over?' over':'')+'" style="--pc:'+color+'"><h3>Tarea actual</h3>'+
     (t?'<h2 class="xtitle"><button type="button" class="xgo" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea">'+esc(t.name)+'</button></h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+dur(t.minutes)+'</p>'+
       '<div class="xline">'+(()=>{const r=timerReading(t);return '<span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>';})()+
       (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':
        '<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+' (Espacio)">'+(running?ICON.pause:ICON.play)+'</button>'+
-       '<button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar (C)">'+ICON.check+'</button>')+'</div>':
+       (running||pzd?'<button type="button" class="fl-b big ok" data-act="stopTask" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar: quita la barra y deja la tarea sin activar">'+ICON.stop+'</button>':'<button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar (C)">'+ICON.check+'</button>'))+'</div>':
       '<p class="empty" style="padding:6px 0">Añade una tarea al día o pulsa ▶ en cualquier tarea.</p>')+
     (suggestion&&task(suggestion)&&suggestion!==t?.id?'<div class="retake">¿Retomar «'+esc(task(suggestion).name)+'»? <button class="btn line" data-act="play" data-id="'+esc(suggestion)+'">Retomar</button> <button class="btn" data-act="dismiss">Ahora no</button></div>':'')+'</section>';
   const hh=m=>new Date(m).toLocaleTimeString('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
@@ -3398,7 +3417,7 @@ function runbar(t){
   const r=timerReading(t),run=s.running?.id===t.id;
   return '<div class="rb'+(run?'':' paused')+(r.over?' over':'')+'"><button type="button" class="rbn" data-act="goTask" data-id="'+esc(t.id)+'" title="Ir a la tarea"><span>'+esc(t.name)+'</span></button><b data-hclock>'+r.text+'</b>'+
     '<button type="button" class="rbb" data-act="'+(run?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(run?'Pausar':'Reanudar')+'" title="'+(run?'Pausar':'Reanudar')+'">'+(run?ICON.pause:ICON.play)+'</button>'+
-    '<button type="button" class="rbb ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar tarea">'+ICON.check+'</button></div>';
+    '<button type="button" class="rbb ok" data-act="stopTask" data-id="'+esc(t.id)+'" aria-label="Parar" title="Parar: quita la barra">'+ICON.stop+'</button></div>';
 }
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
@@ -3819,6 +3838,7 @@ function onClick(e){
     case 'play':start(id);break;
     case 'pause':pause();break;
     case 'finish':finish(id);break;
+    case 'stopTask':stopTask(id);break;
     case 'dismiss':suggestion='';render();break;
     case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1');break;
     case 'addSection':{leaveHoy(id,1);
