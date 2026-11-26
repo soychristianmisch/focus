@@ -2285,6 +2285,12 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .pj-obj.folded .bhead .bh-r{flex:none}
 .pj-obj.folded .bhead .bh-title{min-width:150px}
 .pj-obj.folded .bhead .btags .atag.pick,.pj-obj.folded .bhead .onotion,.pj-obj.folded .bhead .bh-title .pnote{display:none}
+
+/* v177 barras de la timeline clicables */
+.tb-bub.clk{cursor:pointer;transition:box-shadow .12s,border-color .12s,background-color .12s}
+.tb-g:hover .tb-bub.clk,.tb-bub.clk:hover{border-color:color-mix(in srgb,var(--pc) 55%,var(--line));box-shadow:0 2px 12px color-mix(in srgb,var(--pc) 22%,transparent)}
+.tb-bub.clk:hover .tb-blk{background:color-mix(in srgb,var(--pc) 52%,var(--card))}
+.tb-bub.clk:hover .tb-seg{background:color-mix(in srgb,var(--pc) 64%,var(--card))}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3449,7 +3455,7 @@ function timeline(projects,embedded=false){
     const path=p?projPath(p):'Día a día';
     const title='<div class="tb-title"'+(o?' draggable="true" data-drag="tlobj" data-id="'+oid+'" data-act="tlToggle" title="'+(open?'Plegar':'Desplegar')+' secciones · arrastra a otro día para fijar el inicio"':'')+' style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'">'+(o?stIcon(o):'')+
       '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
-    return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub" style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
+    return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+'"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
   let body='';
   for(const b of BANDS){
