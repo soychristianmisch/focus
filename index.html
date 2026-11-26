@@ -2033,7 +2033,6 @@ body.hasrb{--rb:30px}
 /* v154 barra de tarea en curso: estilo Tarea actual */
 .rb{height:48px;gap:12px;padding:0 16px;background:var(--play);color:#fff;border-bottom:0}
 .rb.over{background:var(--red);color:#fff}
-:root[data-theme=dark] .rb.over{background:var(--red);color:#fff}
 .rb .rbn{flex:1;min-width:0;border:0;background:none;color:inherit;font:inherit;font-size:13.5px;font-weight:600;line-height:1.2;text-align:left;padding:0;cursor:pointer;display:block;overflow:hidden}
 .rb .rbn span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-word}
 .rb .rbn:hover span{text-decoration:underline}
@@ -2137,6 +2136,18 @@ mark.hl{background:#ffe14d;color:#000}
 .objpage .pj-head{padding:24px 0 0;margin:0}
 .objpage .pjback{height:38px;box-sizing:border-box;margin:0;padding:0 12px 0 6px;font-size:15px;color:var(--ink)}
 .objpage .pj-cols{margin-top:12px}
+
+/* v160 */
+.rb.paused,:root[data-theme=dark] .rb.paused{background:#f5c542!important;color:#161614!important}
+.rb.paused b,.rb.paused .rbn{color:#161614!important}
+.rb.over:not(.paused){background:#d4382f!important;color:#fff!important}
+.flcard.blue{--fbg:#2f5f94}
+:root[data-theme=dark] .flcard.blue{--fbg:#2a4f7c}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .flcard.blue{--fbg:#2a4f7c}}
+.flcard.blue,:root[data-theme=dark] .flcard.blue{background:var(--fbg)!important}
+.flcard.blue .fl-b:not(.ok),.flcard.blue .fl-b:not(.ok):hover{background:#fff!important;color:var(--fbg)!important}
+.flcard.blue .fl-b:not(.ok) svg,.flcard.blue .fl-b:not(.ok) svg path{color:var(--fbg)!important;fill:var(--fbg)!important}
+.flcard.blue .fl-b.ok svg{color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -4542,7 +4553,7 @@ setInterval(()=>{
     doc?.querySelectorAll('[data-clock]').forEach(el=>{
       const t=task(el.dataset.clock);if(!t)return;
       const r=timerReading(t,now),lb=doc.querySelector('[data-clabel="'+el.dataset.clock+'"]');
-      el.textContent=r.text;el.classList.toggle('over',r.over);{const c=el.closest('.flcard');if(c&&!c.classList.contains('idle'))c.classList.toggle('over',r.over);}
+      el.textContent=r.text;el.classList.toggle('over',r.over);{const c=el.closest('.flcard');if(c&&!c.classList.contains('idle')&&!c.classList.contains('blue'))c.classList.toggle('over',r.over);}
       if(lb){lb.textContent=r.label;lb.classList.toggle('over',r.over);}
     });
   }
