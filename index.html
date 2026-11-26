@@ -2131,6 +2131,12 @@ body.hasrb{--rb:38px}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .flcard.blue{background:#2a4f7c}}
 .rb .rbb.ok svg{width:12px;height:12px}
 .fl-b.big.ok svg{width:16px;height:16px}
+
+mark.hl{background:#ffe14d;color:#000}
+::highlight(pjhl){background-color:#ffe14d;color:#000}
+.objpage .pj-head{padding:24px 0 0;margin:0}
+.objpage .pjback{height:38px;box-sizing:border-box;margin:0;padding:0 12px 0 6px;font-size:15px;color:var(--ink)}
+.objpage .pj-cols{margin-top:12px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2726,13 +2732,20 @@ function doneCard(o){
   return '<button type="button" class="pj-dcard" style="--ac:'+(p?.color||'#b4b4ae')+'" data-act="pjObjOpen" data-id="'+esc(o.id)+'"><span class="gl sm dk">'+ICON.check+'</span><span class="dt"><b>'+esc(o.name)+'</b><small>'+sp.ts.length+(sp.ts.length===1?' tarea':' tareas')+' · '+dur(sp.worked)+' trabajadas'+(sp.doneAt?' · '+fmt({day:'numeric',month:'short',year:'numeric'},sp.doneAt).replace('.',''):'')+'</small></span></button>';
 }
 function objPage(o){
-  const p=project(o.project),sp=objSpan(o);
+  const p=project(o.project),sp=objSpan(o),pc=p?.color||'#b4b4ae';
   const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
   const fm=t=>fmt({day:'numeric',month:'short',year:'numeric'},t).replace('.','');
   doneOpen.add(o.id);
-  return '<div class="pjpage objpage" style="--pc:'+(p?.color||'#b4b4ae')+';--ac:'+(p?.color||'#b4b4ae')+'"><button type="button" class="pjback" data-act="pjObjBack" title="Volver al proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'+esc(p?.name||'Proyecto')+'</button>'+
-    '<div class="pj-stats objstats">'+card('Estado',esc(o.status||''),sp.doneAt&&o.status==='Completado'?'completado el '+fm(sp.doneAt):'')+card('Trabajado',dur(sp.worked),'estimado '+dur(sp.est))+card('Tareas',sp.done+' / '+sp.ts.length,'completadas')+card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
-    '<div class="pj-obj" data-fold="'+esc(o.id)+'">'+bubble(o)+'</div></div>';
+  const per=new Map();for(const [d,c] of workedMap().get(o.id)??[])per.set(d,c.m);
+  const left=sumMin(sp.ts.filter(t=>!t.done),minutesLeft);
+  return '<div class="pjpage objpage" style="--pc:'+pc+';--ac:'+pc+'"><header class="pj-head"><button type="button" class="pjback" data-act="pjObjBack" title="Volver al proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'+esc(p?.name||'Proyecto')+'</button></header>'+
+    '<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Objetivo</h2><div class="pj-obj" data-fold="'+esc(o.id)+'">'+bubble(o)+'</div></section></div>'+
+    '<div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+      card('Estado',esc(o.status||''),sp.doneAt&&o.status==='Completado'?'completado el '+fm(sp.doneAt):'')+
+      card('Trabajado en total',dur(sp.worked),'estimado '+dur(sp.est))+
+      card('Tareas',sp.done+' / '+sp.ts.length,left>=1?'pendiente '+dur(left):'completadas')+
+      card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
+      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per})+'</div></section></div></div></div>';
 }
 function pjSearch(q){
   const n=normQ(q).trim();if(!n)return '';
@@ -2746,6 +2759,24 @@ function pjSearch(q){
   }
   return out.length?out.slice(0,40).join(''):'<p class="pempty">Sin resultados</p>';
 }
+/* resaltado de la búsqueda de Proyectos (CSS Custom Highlight API, no toca el DOM) */
+function applyHL(){
+  if(!window.CSS||!CSS.highlights||typeof Highlight==='undefined')return;
+  const q=normQ(pjQ).trim();
+  if(view!=='Proyectos'||!q){CSS.highlights.delete('pjhl');return;}
+  const root=document.querySelector('.pjmain');if(!root){CSS.highlights.delete('pjhl');return;}
+  const hl=new Highlight(),w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let n,first=null;
+  while((n=w.nextNode())){
+    const t=n.nodeValue;if(!t||!t.trim())continue;
+    const p=n.parentElement;if(p&&p.closest('script,style,svg,button.iconbtn'))continue;
+    const nt=normQ(t);if(nt.length!==t.length)continue;
+    let i=0;while((i=nt.indexOf(q,i))>=0){const r=new Range();r.setStart(n,i);r.setEnd(n,i+q.length);hl.add(r);if(!first)first=r;i+=q.length;}
+  }
+  CSS.highlights.set('pjhl',hl);
+  return first;
+}
+function pjHLScroll(){const r=applyHL();const el=r&&r.startContainer.parentElement;if(el)el.scrollIntoView({block:'center'});}
 function viewProyectos(){
   const po=pjObj&&objective(pjObj);if(!po)pjObj='';if(po&&project(po.project))openProj=po.project;
   const cur=(openProj&&project(openProj))||s.projects[0];if(cur&&openProj!==cur.id)openProj=cur.id;
@@ -3459,6 +3490,7 @@ function render(){
   const keep=captureEdit();rendering=true;
   try{render0();}finally{rendering=false;}
   restoreEdit(keep);
+  try{applyHL();}catch(e){}
 }
 function render0(){
   {const sk=[view,wStat,wHoy,wSolo].join('|');if(sk!==doneSK){doneSK=sk;doneOpen.clear();}}
@@ -3760,10 +3792,13 @@ function onClick(e){
     case 'view':view=id;if(id==='Planificación')tlScroll='today';render();window.scrollTo(0,0);break;
     case 'selectArea':openArea=id;openProj='';openObj='';render();window.scrollTo(0,0);break;
     case 'selectObj':openObj=id;openProj='';render();break;
-    case 'selectProject':{openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
+    case 'selectProject':{openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}pjHLScroll();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
-    case 'pjGoObj':{const o=objective(id);if(!o)break;openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';render();if(!pjObj){const el=document.querySelector('.pj-obj[data-fold="'+CSS.escape(id)+'"]');if(el){el.scrollIntoView({block:'start'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}}else window.scrollTo(0,0);break;}
+    case 'pjGoObj':{const o=objective(id);if(!o)break;openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
+      {const nq=normQ(pjQ).trim();if(nq&&s.tasks.some(t=>t.objective===o.id&&t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))doneOpen.add(o.id);}
+      render();pjHLScroll();
+      if(!pjObj){const el=document.querySelector('.pj-obj[data-fold="'+CSS.escape(id)+'"]');if(el){el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}}break;}
     case 'wToggleHoy':case 'wMode':{
       const m=b.dataset.act==='wToggleHoy'?'Hoy':id;
       wSolo=null;wLast=null;
@@ -4078,7 +4113,7 @@ function splitIdeas(t){
 }
 function growCap(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,360)+'px';}
 document.addEventListener('input',e=>{if(e.target.id==='capin')growCap(e.target);
-  if(e.target.id==='pjsearch'){pjQ=e.target.value;const r=$('#pjres');if(r)r.innerHTML=pjSearch(pjQ);$('.prail')?.classList.toggle('searching',!!pjQ.trim());}});
+  if(e.target.id==='pjsearch'){pjQ=e.target.value;const r=$('#pjres');if(r)r.innerHTML=pjSearch(pjQ);$('.prail')?.classList.toggle('searching',!!pjQ.trim());applyHL();}});
 let rec=null;
 function toggleMic(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
