@@ -2701,7 +2701,7 @@ const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
 const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
-function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen'){
+function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',closeBtn=false){
   const daily=o.id===DAILY.id,oid=daily?'':o.id,proj=daily?null:project(o.project);
   const color=daily?DAILY.color:(proj?.color??PALETTE[0]);
   const pr=progressOf(o);
@@ -2751,6 +2751,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen')
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
   if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="'+(today?'hoyOpen':'fViewAll')+'" data-id="'+o.id+'">Ver todas las tareas <span>⌄</span></button>';
+  if(closeBtn)body+='<button class="viewall" data-act="objToggle" data-id="'+o.id+'">Clic para cerrar el objetivo <span>⌃</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
   /* cabecera neutra: etiquetas de estado y área */
   const area=proj?.area||'',ac=daily?DAILY_TONE:(proj&&proj.id?areaTone(area):'#b4b4ae');
@@ -2866,7 +2867,7 @@ function projPage(p){
    (par?'<nav class="pj-crumb" aria-label="Ruta">'+(()=>{const chain=[];let x=p,n=0;while(x&&n++<10){chain.unshift(x);x=x.parent&&x.parent!==x.id?project(x.parent):null;}return chain.map((c,i)=>i<chain.length-1?'<button type="button" data-act="selectProject" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><i>›</i>':'<span>'+esc(c.name)+'</span>').join('');})()+'</nav>':'')+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
-   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>{const op=pjOpenObj.has(o.id);return '<div class="pj-obj'+(op?'':' folded')+'" data-fold="'+o.id+'">'+bubble(o,false,false,!op,false,'objOpen')+(op?'<button type="button" class="foldbtn" data-act="objToggle" data-id="'+o.id+'" aria-label="Plegar objetivo" title="Plegar objetivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>':'')+'</div>';}).join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
+   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>{const op=pjOpenObj.has(o.id);return '<div class="pj-obj'+(op?'':' folded')+'" data-fold="'+o.id+'">'+bubble(o,false,false,!op,false,'objOpen',op)+'</div>';}).join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
    ((myObjs.length||allMy.length)?'<button class="firstobj subp" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea otro objetivo</b><small>en '+esc(p.name)+'</small></span></button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
