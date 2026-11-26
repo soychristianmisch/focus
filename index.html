@@ -2194,7 +2194,7 @@ mark.hl{background:#ffe14d;color:#000}
 .tb-bhead{height:36px;display:flex;align-items:center;position:relative}
 .tb-bd{position:absolute;top:0;height:100%;pointer-events:none}
 .tb-bd .cp{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.tb-bd .capin{pointer-events:auto;max-width:44px;font-size:11.5px;color:var(--faint)}
+.tb-bd .capin{pointer-events:auto;max-width:62px;font-size:11.5px;color:var(--faint)}
 .tb-bd .capin.ov{background:#fde68a;color:#5b4300;font-weight:650;border-color:#e8c44f}
 .tb-bn{font-size:11.5px;color:var(--faint);margin:-2px 0 4px 20px;position:sticky;left:20px;width:max-content}
 .capin.ro{display:inline-block;pointer-events:none}
@@ -2215,7 +2215,7 @@ mark.hl{background:#ffe14d;color:#000}
 .tb-bl{position:sticky;left:14px;display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);background:var(--bg);padding:3px 11px;border-radius:999px;border:1px solid var(--line);z-index:5;white-space:nowrap}
 .tb-bl>i{width:9px;height:9px;border-radius:50%;background:var(--bc)}
 .tb-bl b{font-weight:650}
-.tb-bl .bandin{all:unset;width:44px;text-align:center;font-variant-numeric:tabular-nums;font-weight:650;border-radius:6px;padding:1px 3px;background:var(--bg3);cursor:text}
+.tb-bl .bandin{all:unset;width:58px;text-align:center;font-variant-numeric:tabular-nums;font-weight:650;border-radius:6px;padding:1px 3px;background:var(--bg3);cursor:text}
 .tb-bl .bandin:focus{outline:2px solid color-mix(in srgb,var(--bc) 60%,transparent)}
 .tb-bl small{color:var(--faint);font-size:11.5px;margin-left:-3px}
 .tb-bl em{font-style:normal;color:var(--mute);font-size:11.5px}
@@ -2354,15 +2354,22 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .eye{all:unset;cursor:pointer;width:24px;height:24px;display:grid;place-items:center;border-radius:7px;color:var(--faint);flex:none}
 .eye:hover{background:var(--bg3);color:var(--ink)}.eye svg{width:16px;height:16px}
 .plp.hid>.plph .pn,.plo.hid .ritem{opacity:.45}
-.plo{display:flex;align-items:center;gap:2px}
-.plo .ritem{flex:1;min-width:0}
-.plo>.tb-ar{margin:0 0 0 2px}
 .pjseg{margin:6px 4px 2px}
 .prow.pobj .pitem{font-size:13px;color:var(--mute)}
 .prow .pchev{z-index:2;right:auto;top:50%;padding:0;width:18px;justify-content:center}
 .prow.hask .pitem{padding-right:12px}
 .pitem .tb-ar{margin-right:-2px}
 .pcnt{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.tb-g.thin{margin-top:2px;padding-bottom:2px}
+.tb-g.thin .tb-title{margin-bottom:2px}
+.tb-g.thin .tb-title .rt b{font-size:13px;color:var(--mute)}
+.tb-line{height:5px;border-radius:3px;background:color-mix(in srgb,var(--pc) 50%,var(--card));margin-bottom:6px}
+.bgn.ro{flex:1;font-weight:650;font-size:13px;padding:2px 5px}
+.pjsel{width:100%;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px;font-size:13px}
+.plo{position:relative;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 18px;border-radius:9px;font-size:13px;color:var(--mute);cursor:grab}
+.plo:hover{background:var(--bg3)}
+.plo .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plo>.tb-ar{flex:none;margin:0}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2558,7 +2565,7 @@ function migrate(d){
   if(!d.bands){const bh=d.bandHours,T=(bh.Ministerio+bh.Negocios+bh.Otras)||1,mk=(id,name,areas,rest)=>({id,name,areas,rest,hours:[0,1,2,3,4,5,6].map(w=>Math.round((d.hours[w]||0)*bh[id]/T*100)/100)});
     d.bands=[mk('Ministerio','Ministerio',['Ministerio']),mk('Negocios','Negocios',['Negocios']),mk('Otras','Otras cosas',[],true)];
     d.bandOn={};for(const [dt,h] of Object.entries(d.hoursOn||{}))for(const b of d.bands)(d.bandOn[b.id]??={})[dt]=Math.round(h*bh[b.id]/T*100)/100;}
-  d.bandOn??={};d.hideP??=[];if(!d.schedAll){d.schedAll=1;d.objectives.forEach(o=>{if(o.status!=='Completado')o.sched=true;});}d.planStart??=shift(day(),1);d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
+  d.bandOn??={};d.pbands??=[];d.tlBy??='areas';d.hideP??=[];if(!d.schedAll){d.schedAll=1;d.objectives.forEach(o=>{if(o.status!=='Completado')o.sched=true;});}d.planStart??=shift(day(),1);d.order??={};d.running??=null;d.areaColors??={};d.dayEnd??='20:00';
   if(!d.recurSeed){d.recurSeed=1;if(!d.tasks.some(t=>isRecur(t)&&t.name==='Hacer las cuentas diarias en Sheets'))d.tasks.push(mkTask('Hacer las cuentas diarias en Sheets',10,'',RECUR));}
   rollRecurring(d);
   if(!Array.isArray(d.hours)||d.hours.length!==7)d.hours=Array(7).fill(10);
@@ -2629,7 +2636,9 @@ function minutesLeft(t){
   if(Number.isFinite(t.remaining)&&Number.isFinite(t.remainingAt))return Math.max(0,t.remaining-Math.max(0,w-t.remainingAt));
   return Math.max(0,t.minutes-w);
 }
-const syncHours=()=>{for(let w=0;w<7;w++)s.hours[w]=Math.round(s.bands.reduce((a,x)=>a+(x.hours[w]||0),0)*100)/100;};
+const byProj=()=>s.tlBy==='projects';
+const BL=()=>byProj()?s.pbands:s.bands;
+const syncHours=()=>{for(let w=0;w<7;w++)s.hours[w]=Math.round(BL().reduce((a,x)=>a+(x.hours[w]||0),0)*100)/100;};
 const capacityOn=d=>((s.hoursOn?.[d]??s.hours[dow(d)])??0)*60;
 const usedOn=d=>s.entries.reduce((a,e)=>a+dayMs(e,d)/60000,0);
 const barTask=()=>{const t=task(s.running?.id);if(t&&!t.done)return t;const q=task(s.pauseId);return q&&!q.done?q:null;};
@@ -3381,16 +3390,23 @@ function spanBar(o,plan){
 const projHidden=pid=>{let x=project(pid),n=0;while(x&&n++<12){if(s.hideP.includes(x.id))return true;x=x.parent&&x.parent!==x.id?project(x.parent):null;}return false;};
 const objHidden=o=>!o.sched||projHidden(o.project);
 function planOrder(){return s.objectives.filter(o=>!objHidden(o));}
-const bandList=()=>s.bands;
-const restBand=()=>s.bands.find(x=>x.rest)||s.bands.at(-1);
-const bandById=id=>s.bands.find(x=>x.id===id)||restBand();
-const bandName=id=>bandById(id).name;
+const bandList=()=>BL();
+const restBand=()=>BL().find(x=>x.rest)||BL().at(-1);
+const bandById=id=>BL().find(x=>x.id===id)||restBand();
+const bn=bd=>bd.project?(project(bd.project)?.name||bd.name||'Proyecto'):bd.name;
+const rootProjects=()=>s.projects.filter(p=>!(p.parent&&project(p.parent)&&p.parent!==p.id));
+function ensurePbands(){
+  if(s.pbands.length)return;
+  const roots=rootProjects().filter(p=>s.objectives.some(o=>o.status!=='Completado'&&(rootProject(project(o.project))||{}).id===p.id)),n=roots.length+1;
+  const base=[0,1,2,3,4,5,6].map(w=>Math.floor((s.hours[w]||0)/n*4)/4),extra=[0,1,2,3,4,5,6].map(w=>Math.round(((s.hours[w]||0)-base[w]*n)*100)/100);
+  s.pbands=[...roots.map((p,i)=>({id:uid(),project:p.id,hours:base.map((h,w)=>i===0?Math.round((h+extra[w])*100)/100:h)})),{id:'PRest',name:'Otras cosas',rest:true,hours:[...base]}];
+}
 const BAND_PAL=['#7c6bd6','#d0883a','#3f9d8f','#c25b7a','#5b8dd0'];
-const bandColor=id=>{const b=bandById(id);if(b.rest)return '#9a9a94';return b.areas[0]?areaTone(b.areas[0]):BAND_PAL[s.bands.indexOf(b)%BAND_PAL.length];};
-const bandOf=o=>{const p=o&&project(o.project),a=p?(rootProject(p)?.area||p.area):'';return (s.bands.find(x=>!x.rest&&x.areas.includes(a))||restBand()).id;};
+const bandColor=id=>{const b=bandById(id);if(b.rest)return '#9a9a94';if(b.project)return project(b.project)?.color||BAND_PAL[0];return b.areas[0]?areaTone(b.areas[0]):BAND_PAL[BL().indexOf(b)%BAND_PAL.length];};
+const bandOf=o=>{const p=o&&project(o.project);if(byProj()){const r=p&&rootProject(p);return (BL().find(x=>!x.rest&&x.project&&r&&x.project===r.id)||restBand()).id;}const a=p?(rootProject(p)?.area||p.area):'';return (BL().find(x=>!x.rest&&x.areas.includes(a))||restBand()).id;};
 const bandStd=(id,d)=>(bandById(id).hours[dow(d)]||0)*60;
 const bandCap=(id,d)=>{const v=s.bandOn?.[id]?.[d];return (v!=null?v:bandById(id).hours[dow(d)]||0)*60;};
-const bandSum=d=>s.bands.reduce((a,x)=>a+bandCap(x.id,d),0);
+const bandSum=d=>BL().reduce((a,x)=>a+bandCap(x.id,d),0);
 /* reparto por bandas: cada banda tiene sus horas al día; las secciones se colocan en sucesión y lo que no cabe pasa al día siguiente */
 function computePlan(){
   const today=day(),from0=s.planStart&&s.planStart>today?s.planStart:today,res=new Map(),used=new Map(),usedT=usedOn(today);
@@ -3463,6 +3479,7 @@ function workedMap(){
 const _s=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
 const ICO={unfold:_s('<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>'),fold:_s('<path d="M7 4l5 5 5-5M7 20l5-5 5 5"/>'),pend:_s('<circle cx="12" cy="12" r="8.5" stroke-dasharray="3 3"/><path d="M12 8v4l2.5 2"/>'),done:_s('<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/>')};
 const capTxt=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?(h+' h'+(r?' '+r+' min':'')):(r+' min');};
+const capShort=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r:'')):(r+' min');};
 const capParse=v=>{v=String(v).trim().toLowerCase().replace(',','.');let m;
   if((m=v.match(/^(\d+(?:\.\d+)?)\s*h(?:oras?)?\s*(?:(\d+)\s*(?:m|min|minutos?)?)?$/)))return +m[1]+(m[2]?+m[2]/60:0);
   if((m=v.match(/^(\d+):(\d{1,2})$/)))return +m[1]+ +m[2]/60;
@@ -3491,7 +3508,7 @@ function dayView(projects,plan,cellsOf,done,d){
   for(const bd of bandList()){
     const items=objs.filter(([o,b])=>b===bd.id&&(cellsOf(o?o.id:'').get(d)?.m>.5));
     const used=items.reduce((a,[o])=>a+cellsOf(o?o.id:'').get(d).m,0),ov=s.bandOn?.[bd.id]?.[d]!=null;
-    body+='<section class="dv-band" style="--bc:'+bandColor(bd.id)+'"><div class="dv-bh"><i></i><b>'+esc(bd.name)+'</b><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+bd.id+'|'+d+'" value="'+capTxt(bandCap(bd.id,d))+'" inputmode="text" aria-label="Horas de '+esc(bd.name)+'"><small>'+(used?dur(used)+(done?' trabajados':' planificados'):'sin trabajo este día')+'</small></div>'+
+    body+='<section class="dv-band" style="--bc:'+bandColor(bd.id)+'"><div class="dv-bh"><i></i><b>'+esc(bn(bd))+'</b><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+bd.id+'|'+d+'" value="'+capTxt(bandCap(bd.id,d))+'" inputmode="text" aria-label="Horas de '+esc(bd.name)+'"><small>'+(used?dur(used)+(done?' trabajados':' planificados'):'sin trabajo este día')+'</small></div>'+
       '<div class="dv-grid">'+items.map(([o,b])=>{
         const oid=o?o.id:'',c=cellsOf(oid).get(d),p=o?project(o.project):null,ac=o?objAc(o):DAILY_TONE,sl=o?o.sections:(s.dailySections||[]),ks=['',...sl];
         for(const k of c.sec.keys())if(!ks.includes(k))ks.push(k);
@@ -3580,42 +3597,44 @@ function timeline(projects,embedded=false){
       '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
     return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+'"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
-  const pgroup=(p,rsub,depth,open)=>{
+  const pgroup=(p,rsub,depth,open,thin=false)=>{
     const band=rsub[0].band,segs=rsub.flatMap(r=>r.segs),ds=rsub.flatMap(r=>[r.b.start,r.b.end]).sort(),st=ds[0],en=ds.at(-1);
     const ac=p.color||areaTone(p.area),x0=xOf(st),BL=x0-6,BW=(diffDays(st,en)+1)*px+12,rel=x=>x-x0;
     const byDay=new Map();
     for(const g of segs){const c=byDay.get(g.d)??byDay.set(g.d,{a:1e9,z:0,m:0}).get(g.d);c.a=Math.min(c.a,g.off);c.z=Math.max(c.z,g.off+g.m);c.m+=g.m;}
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
       return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(w>=34&&tx?'<b>'+tx+'</b>':'')+'</i>';}).join('');
+    if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+'<div class="rt"><b>'+esc(p.name)+(kidsT?chv(open):'')+'</b></div></div><div class="tb-line" style="margin-left:'+(BL+6)+'px;width:'+(BW-12)+'px"></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
       '<div class="rt"><b>'+esc(p.name)+(kids?chv(open):'')+'</b><div class="rm"><small>'+nO+(nO===1?' objetivo':' objetivos')+' · '+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+'</small></div></div></div>'+
       '<div class="tb-bub pb" style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div></div></div>';
   };
-  const renderBand=rs=>{
-    const pset=new Set();
+  const renderBand=(rs,bd)=>{
+    const byP=byProj(),rootId=byP&&bd.project?bd.project:null,pset=new Set();
     for(const r of rs)if(r.p){let x=r.p,n=0;while(x&&n++<12&&projects.some(q=>q.id===x.id)){pset.add(x.id);x=x.parent&&x.parent!==x.id?project(x.parent):null;}}
     const sub=pid=>rs.filter(r=>r.p&&(r.p.id===pid||isDesc(r.p.id,pid)));
     const node=(pid,depth)=>{
       const p=project(pid),rsub=sub(pid);if(!p||!rsub.length)return '';
-      const open=!tlPFold.has(pid)&&tlLevel!=='proj';let h=pgroup(p,rsub,depth,open);
-      if(open){
-        for(const k of kidsOf(pid))if(pset.has(k.id))h+=node(k.id,depth+1);
-        if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))h+=group(r,depth+1);
+      const skip=pid===rootId,open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,byP);
+      if(open){const d2=skip?depth:depth+1;
+        for(const k of kidsOf(pid))if(pset.has(k.id))h+=node(k.id,d2);
+        if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))h+=group(r,d2);
       }
       return h;
     };
     const roots=s.projects.filter(p=>pset.has(p.id)&&!(p.parent&&p.parent!==p.id&&pset.has(p.parent)));
-    return roots.map(p=>node(p.id,0)).join('')+rs.filter(r=>!r.p).map(r=>group(r,0)).join('');
+    return roots.map(p=>node(p.id,0)).join('')+(tlLevel==='proj'||tlLevel==='sub'?'':rs.filter(r=>!r.p).map(r=>group(r,0)).join(''));
   };
   let body='';
   for(const bd of bandList()){
     const b=bd.id,rs=rows.filter(r=>r.band===b),pendB=rs.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),endB=rs.map(r=>r.b.end).sort().at(-1);
-    const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capTxt(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bd.name)+' el '+d+'"></span>';}).join('')+'</div>':'';
-    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bd.name)+'</b><input class="bandin" data-band="'+b+'" value="'+capTxt(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bd.name)+'"><small>al día</small></span></div>'+
+    const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capShort(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+' el '+d+'"></span>';}).join('')+'</div>':'';
+    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bn(bd))+'</b><input class="bandin" data-band="'+b+'" value="'+capShort(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bn(bd))+'"><small>al día</small></span></div>'+
       (rs.length?'<div class="tb-bn">'+dur(pendB)+(done?' trabajados':' pendientes')+(endB&&!done?' · hasta el '+fmt({day:'numeric',month:'short'},dateAt(endB)).replace('.',''):'')+'</div>':'')+
-      (rs.length?renderBand(rs):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
+      (rs.length?renderBand(rs,bd):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+(nWin===1?cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(tlStart))).replace('.',''):lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1)))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
@@ -3642,8 +3661,8 @@ function viewPlan(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
   const live=o=>o.status!=='Completado';
   const cnt=id=>kidsOf(id).reduce((q,k)=>q+cnt(k.id),0)+s.objectives.filter(o=>o.project===id&&live(o)).length;
-  const objRow=(o,depth)=>{const off=objHidden(o),p=project(o.project);
-    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(depth*16)+'px">'+ARR+planItem(o,plan)+'<button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
+  const objRow=(o,depth)=>{const off=objHidden(o);
+    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(18+depth*16)+'px" draggable="true" data-drag="pitem" data-id="'+o.id+'">'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
     const kids=kidsOf(p.id),objs=s.objectives.filter(o=>o.project===p.id&&live(o)),has=kids.length||objs.length,folded=plFold.has(p.id),hid=projHidden(p.id),pad=depth*16;
     return '<div class="plp'+(hid?' hid':'')+'" style="--ac:'+p.color+'"><div class="plph" style="padding-left:'+(18+pad)+'px">'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+pad+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
@@ -3931,12 +3950,17 @@ function openPop(anchor,html,ctx={}){
 function settingsHtml(){
   const L=['D','L','M','X','J','V','S'],O=[1,2,3,4,5,6,0],h=v=>capTxt((v||0)*60);
   const week='<div class="wkt">'+O.map(i=>'<b>'+L[i]+'</b>').join('')+O.map(i=>'<input data-pop-input="hour'+i+'" value="'+(s.hours[i]??0)+'" inputmode="decimal" aria-label="Horas '+L[i]+'">').join('')+'</div>';
-  const bands=s.bands.map(bd=>'<div class="bgrp" style="--bc:'+bandColor(bd.id)+'"><div class="bgh"><i></i><input class="bgn" data-pop-input="bname|'+bd.id+'" value="'+esc(bd.name)+'">'+(bd.rest?'<small>resto de áreas</small>':'<button class="bgx" data-act="bandDel" data-id="'+bd.id+'" title="Quitar grupo">✕</button>')+'</div>'+
-    (bd.rest?'':'<div class="bga">'+s.areas.map(a=>'<button class="bgc'+(bd.areas.includes(a)?' on':'')+'" data-act="bandArea" data-id="'+bd.id+'" data-area="'+esc(a)+'">'+esc(a)+'</button>').join('')+'</div>')+
-    '<div class="wkt">'+O.map(i=>'<b>'+L[i]+'</b>').join('')+O.map(i=>'<input data-pop-input="bh|'+bd.id+'|'+i+'" value="'+(bd.hours[i]||0)+'" inputmode="decimal" aria-label="'+esc(bd.name)+' '+L[i]+'">').join('')+'</div></div>').join('');
-  const mis=O.filter(i=>Math.abs(s.bands.reduce((a,x)=>a+(x.hours[i]||0),0)-(s.hours[i]||0))>.01);
+  const wkRow=bd=>'<div class="wkt">'+O.map(i=>'<b>'+L[i]+'</b>').join('')+O.map(i=>'<input data-pop-input="bh|'+bd.id+'|'+i+'" value="'+(bd.hours[i]||0)+'" inputmode="decimal" aria-label="'+esc(bn(bd))+' '+L[i]+'">').join('')+'</div>';
+  const bands=byProj()?
+    BL().map(bd=>'<div class="bgrp" style="--bc:'+bandColor(bd.id)+'"><div class="bgh"><i></i><span class="bgn ro">'+esc(bn(bd))+'</span>'+(bd.rest?'<small>resto de proyectos</small>':'<button class="bgx" data-act="bandDel" data-id="'+bd.id+'" title="Quitar proyecto">✕</button>')+'</div>'+wkRow(bd)+'</div>').join(''):
+    s.bands.map(bd=>'<div class="bgrp" style="--bc:'+bandColor(bd.id)+'"><div class="bgh"><i></i><input class="bgn" data-pop-input="bname|'+bd.id+'" value="'+esc(bd.name)+'">'+(bd.rest?'<small>resto de áreas</small>':'<button class="bgx" data-act="bandDel" data-id="'+bd.id+'" title="Quitar grupo">✕</button>')+'</div>'+
+    (bd.rest?'':'<div class="bga">'+s.areas.map(a=>'<button class="bgc'+(bd.areas.includes(a)?' on':'')+'" data-act="bandArea" data-id="'+bd.id+'" data-area="'+esc(a)+'">'+esc(a)+'</button>').join('')+'</div>')+wkRow(bd)+'</div>').join('');
+  const free=rootProjects().filter(p=>!s.pbands.some(x=>x.project===p.id)),
+    addp=byProj()?(free.length?'<div class="pinput"><select class="pjsel" data-pop-input="addproj"><option value="">+ Añadir proyecto…</option>'+free.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('')+'</select></div>':''):pi('+ Añadir grupo','bandAdd');
+  const modeSeg='<div class="seg pjseg"><button data-act="tlBy" data-id="areas" aria-pressed="'+!byProj()+'">Grupos de áreas</button><button data-act="tlBy" data-id="projects" aria-pressed="'+byProj()+'">Proyectos</button></div>';
+  const mis=O.filter(i=>Math.abs(BL().reduce((a,x)=>a+(x.hours[i]||0),0)-(s.hours[i]||0))>.01);
   const chk='<div class="bgs'+(mis.length?' bad':'')+'">'+(mis.length?'Los grupos no suman la capacidad en: '+mis.map(i=>L[i]).join(' ')+'. Al editar un grupo la capacidad se ajusta sola.':'Los grupos suman la capacidad diaria.')+'</div>';
-  return pl('Capacidad diaria en horas')+week+pl('Jornada')+pinput('Termina','dayend','time',s.dayEnd||'20:00')+pl('Timeline · grupos de áreas')+bands+chk+pi('+ Añadir grupo','bandAdd')+
+  return pl('Capacidad diaria en horas')+week+pl('Jornada')+pinput('Termina','dayend','time',s.dayEnd||'20:00')+pl('Timeline')+modeSeg+bands+chk+addp+
     pl('Datos')+pi('Exportar copia (JSON)','export')+pi('Importar copia','import')+pi('Empezar de cero','reset','','danger')+cloudMenu()+'<div class="pl" style="text-transform:none;letter-spacing:0">Zona horaria: Europe/Madrid · datos guardados en este navegador</div>';
 }
 function closePop(){pop.classList.remove('open');pop.innerHTML='';popCtx=null;}
@@ -4458,8 +4482,9 @@ function onClick(e){
       openPop(b,settingsHtml(),{});
       break;
     }
+    case 'tlBy':{s.tlBy=id;if(id==='projects')ensurePbands();tlPFold.clear();save();pop.innerHTML=settingsHtml();break;}
     case 'bandAdd':{s.bands.splice(Math.max(0,s.bands.length-1),0,{id:uid(),name:'Grupo '+s.bands.length,areas:[],hours:[0,1,1,1,1,1,0]});syncHours();save();pop.innerHTML=settingsHtml();break;}
-    case 'bandDel':{const bd=bandById(id);if(bd.rest)break;s.bands=s.bands.filter(x=>x!==bd);delete s.bandOn[bd.id];syncHours();save();pop.innerHTML=settingsHtml();break;}
+    case 'bandDel':{const bd=bandById(id);if(bd.rest)break;if(byProj())s.pbands=s.pbands.filter(x=>x!==bd);else s.bands=s.bands.filter(x=>x!==bd);delete s.bandOn[bd.id];syncHours();save();pop.innerHTML=settingsHtml();break;}
     case 'bandArea':{const bd=bandById(id),a=b.dataset.area;if(bd.rest)break;
       if(bd.areas.includes(a))bd.areas=bd.areas.filter(x=>x!==a);else{s.bands.forEach(x=>x.areas=x.areas.filter(y=>y!==a));bd.areas.push(a);}
       save();pop.innerHTML=settingsHtml();break;}
@@ -4637,6 +4662,7 @@ document.addEventListener('change',e=>{
     if(!a||!z)return;if(a>z){notify('La fecha de fin debe ser posterior al inicio.');return;}
     (o.secWin??={})[popCtx.sec]={start:a,end:z,pin:true};save();
   }
+  else if(key==='addproj'){if(v){ensurePbands();s.pbands.splice(Math.max(0,s.pbands.length-1),0,{id:uid(),project:v,hours:[0,1,1,1,1,1,0]});syncHours();save();pop.innerHTML=settingsHtml();}}
   else if(key.startsWith('bname|')){const bd=bandById(key.slice(6));if(v.trim()){bd.name=v.trim();save();}}
   else if(key.startsWith('bh|')){const [,id,w]=key.split('|'),n=capParse(v);if(Number.isFinite(n)&&n>=0&&n<=24){bandById(id).hours[+w]=n;syncHours();save();}pop.innerHTML=settingsHtml();}
   else if(/^hour\d$/.test(key)){const n=Number(v);if(Number.isFinite(n)&&n>=0&&n<=24){s.hours[+key.slice(4)]=n;save();pop.innerHTML=settingsHtml();}}
@@ -4731,7 +4757,7 @@ function dropInfo(e){
   }
   if((k==='ritem'||k==='tobj')&&focusOn()){const z=el.closest('[data-st]');if(z)return {type:'stzone',el:z,cls:'drop-in'};}
   if(k==='garea'){const g=el.closest('.agroup');if(g&&g.dataset.area!==drag.id){const a=half(g);return {type:'garea',el:g,after:a,cls:a?'drop-after':'drop-before'};}return null;}
-  if(k==='pitem'){const tl=el.closest('#tl');if(tl){const px=+tl.dataset.px,rect=tl.getBoundingClientRect(),d=shift(tl.dataset.first,Math.max(0,Math.floor((e.clientX-rect.left+tl.scrollLeft)/px)));return {type:'tldate',el:tl,date:d,cls:'dropping',guide:{left:diffDays(tl.dataset.first,d)*px,w:px,d}};}const it=el.closest('.ritem[data-drag=pitem]');if(it&&it.dataset.id!==drag.id){const a=half(it);return {type:'pitem',el:it,after:a,cls:a?'drop-after':'drop-before'};}const z=el.closest('.pzone');if(z)return {type:'pzone',el:z,cls:'dropping'};}
+  if(k==='pitem'){const tl=el.closest('#tl');if(tl){const px=+tl.dataset.px,rect=tl.getBoundingClientRect(),d=shift(tl.dataset.first,Math.max(0,Math.floor((e.clientX-rect.left+tl.scrollLeft)/px)));return {type:'tldate',el:tl,date:d,cls:'dropping',guide:{left:diffDays(tl.dataset.first,d)*px,w:px,d}};}const it=el.closest('[data-drag=pitem]');if(it&&it.dataset.id!==drag.id){const a=half(it);return {type:'pitem',el:it,after:a,cls:a?'drop-after':'drop-before'};}const z=el.closest('.pzone');if(z)return {type:'pzone',el:z,cls:'dropping'};}
   if(k==='ritem'){const it=el.closest('.ritem');if(it&&it.dataset.id!==drag.id){const a=half(it);return {type:'ritem',el:it,after:a,cls:a?'drop-after':'drop-before'};}}
   if(k==='tobj'){const ob=el.closest('.bubble.tb,.bubble[data-obj]');if(ob&&ob.dataset.obj!==drag.id){const a=half(ob);return {type:'tobj',el:ob,after:a,cls:a?'drop-after':'drop-before'};}}
   if(k==='obj'){const ob=el.closest('.bubble[data-obj]');if(ob&&ob.dataset.obj!==drag.id){const a=e.clientY>ob.getBoundingClientRect().top+30;return {type:'obj',el:ob,after:false,cls:'drop-before'};}}
