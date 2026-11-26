@@ -2263,6 +2263,18 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .plrail>*{flex:none}
 .plrail .plsec{margin-top:10px}
 .plrail .pzone{padding-bottom:6px}
+
+/* v171 objetivos plegados en Proyectos */
+.pj-obj.folded .bbody{display:none}
+.pj-obj.folded{margin-bottom:10px}
+.pj-obj.folded .bubble{border-radius:999px;cursor:pointer;transition:box-shadow .12s}
+.pj-obj.folded .bubble:hover{box-shadow:0 1px 8px rgba(0,0,0,.08)}
+.pj-obj.folded .bubble .bhead{border-radius:999px;padding-left:44px}
+.pj-obj .foldbtn{right:60px;top:22px}
+.pj-obj.folded .bhead .bh-r .bprog .prog,.pj-obj.folded .bhead .pnote.ext{display:none}
+.pj-obj.folded .bhead .bh-r{flex:none}
+.pj-obj.folded .bhead .bh-title{min-width:150px}
+.pj-obj.folded .bhead .btags .atag.pick,.pj-obj.folded .bhead .onotion,.pj-obj.folded .bhead .bh-title .pnote{display:none}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2681,7 +2693,7 @@ const STI_DOT=st=>'<i class="sdot s-'+slug(st)+'"></i>';
 const stIcon=(o,tag='span',extra='',sm=false)=>{const st=o.status||'Más adelante';return '<'+tag+' class="gl sti s-'+slug(st)+(sm?' sm':'')+'" '+extra+' title="Estado: '+st+''+'"><svg class="gi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+STI[st]+'</svg></'+tag+'>';};
 
 /* tarjeta de proyecto. today: solo tareas del día · embed: vista completa dentro de Hoy */
-function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
+function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen'){
   const daily=o.id===DAILY.id,oid=daily?'':o.id,proj=daily?null:project(o.project);
   const color=daily?DAILY.color:(proj?.color??PALETTE[0]);
   const pr=progressOf(o);
@@ -2745,7 +2757,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false){
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
   const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de proyecto">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="goProj" data-id="'+proj.id+'" title="Ir al proyecto '+esc(proj.name)+'" aria-label="Ir al proyecto '+esc(proj.name)+'">'+glyph('flag')+'</button>':'')+(cp?propsCp:propsH)+'</div>';
-  return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="cpOpen" data-id="'+esc(o.id)+'" title="Abrir este objetivo entero"':'')+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
+  return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="'+cpAct+'" data-id="'+esc(o.id)+'" title="'+(cpAct==='objOpen'?'Clic para desplegar el objetivo':'Abrir este objetivo entero')+'"':'')+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
 
@@ -2793,6 +2805,8 @@ function areaPane(){
   return title+'<div class="split">'+rail+detail+'</div>';
 }
 const pjClosed=new Set();
+const pjOpenObj=new Set((()=>{try{return JSON.parse(lsGet('focus.pjobjopen')||'[]');}catch{return [];}})());
+const pjOpenSave=()=>lsSet('focus.pjobjopen',JSON.stringify([...pjOpenObj]));
 const kidsOf=id=>s.projects.filter(p=>p.parent===id&&p.id!==id);
 const descIds=(id,seen=new Set())=>{if(seen.has(id))return [];seen.add(id);const out=[id];for(const k of kidsOf(id))out.push(...descIds(k.id,seen));return out;};
 function projStats(p){
@@ -2844,7 +2858,7 @@ function projPage(p){
    (par?'<nav class="pj-crumb" aria-label="Ruta">'+(()=>{const chain=[];let x=p,n=0;while(x&&n++<10){chain.unshift(x);x=x.parent&&x.parent!==x.id?project(x.parent):null;}return chain.map((c,i)=>i<chain.length-1?'<button type="button" data-act="selectProject" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><i>›</i>':'<span>'+esc(c.name)+'</span>').join('');})()+'</nav>':'')+
    editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>'+
    '<div class="pj-cols"><div class="pj-left">'+
-   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>'<div class="pj-obj" data-fold="'+o.id+'">'+bubble(o)+'</div>').join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
+   '<section id="pj-obj" class="pj-sec"><h2>Objetivos</h2>'+(myObjs.map(o=>{const op=pjOpenObj.has(o.id);return '<div class="pj-obj'+(op?'':' folded')+'" data-fold="'+o.id+'">'+bubble(o,false,false,!op,false,'objOpen')+(op?'<button type="button" class="foldbtn" data-act="objToggle" data-id="'+o.id+'" aria-label="Plegar objetivo" title="Plegar objetivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>':'')+'</div>';}).join('')||(allMy.length?'':'<button class="firstobj" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea tu primer objetivo</b><small>en '+esc(p.name)+'</small></span></button>'))+
    ((myObjs.length||allMy.length)?'<button class="firstobj subp" data-act="addObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>Crea otro objetivo</b><small>en '+esc(p.name)+'</small></span></button>':'')+'</section>'+
    '<section id="pj-tl" class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?timeline(tls,true):'')+'</section>'+
    '</div><div class="pj-right">'+
@@ -3939,10 +3953,12 @@ function onClick(e){
     case 'view':view=id;if(id==='Planificación')tlScroll='today';render();window.scrollTo(0,0);break;
     case 'selectArea':openArea=id;openProj='';openObj='';render();window.scrollTo(0,0);break;
     case 'selectObj':openObj=id;openProj='';render();break;
-    case 'selectProject':{openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}pjHLScroll();break;}
+    case 'selectProject':{{const nq=normQ(pjQ).trim();if(nq)for(const o of s.objectives)if(o.project===id&&o.status!=='Completado'&&s.tasks.some(t=>t.objective===o.id&&!t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))pjOpenObj.add(o.id);}openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}pjHLScroll();break;}
+    case 'objOpen':{if(e.target.closest('[data-edit],a,button,input,.lines'))break;pjOpenObj.add(id);pjOpenSave();render();break;}
+    case 'objToggle':{pjOpenObj.has(id)?pjOpenObj.delete(id):pjOpenObj.add(id);pjOpenSave();render();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
-    case 'pjGoObj':{const o=objective(id);if(!o)break;openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
+    case 'pjGoObj':{const o=objective(id);if(!o)break;pjOpenObj.add(id);pjOpenSave();openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
       {const nq=normQ(pjQ).trim();if(nq&&s.tasks.some(t=>t.objective===o.id&&t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))doneOpen.add(o.id);}
       render();pjHLScroll();
       if(!pjObj){const el=document.querySelector('.pj-obj[data-fold="'+CSS.escape(id)+'"]');if(el){el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}}break;}
@@ -4063,7 +4079,7 @@ function onClick(e){
     }
     case 'addObj':{
       const o={id:uid(),project:id,name:'Nuevo objetivo',icon:'🎯',status:'Más adelante',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
-      s.objectives.push(o);wObj=o.id;wProj='';openObj=o.id;openProj=id;if(view==='Trabajo'&&!wHoy){wSolo=o.id;wLast=o.id;}focusAfter={kind:'obj.name',id:o.id,select:true};save();break;
+      s.objectives.push(o);pjOpenObj.add(o.id);pjOpenSave();wObj=o.id;wProj='';openObj=o.id;openProj=id;if(view==='Trabajo'&&!wHoy){wSolo=o.id;wLast=o.id;}focusAfter={kind:'obj.name',id:o.id,select:true};save();break;
     }
     case 'addProject':{
       const area=s.areas.includes(id)?id:s.areas[0];
