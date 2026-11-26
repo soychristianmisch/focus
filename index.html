@@ -3868,7 +3868,7 @@ function onClick(e){
     case 'tlToggle':tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render();break;
     case 'tlView':tlMode=id;tlScroll='today';render();break;
     case 'tlExpandAll':{const ids=s.objectives.map(o=>o.id);if(ids.length&&ids.every(x=>tlOpen.has(x)))tlOpen.clear();else ids.forEach(x=>tlOpen.add(x));render();break;}
-    case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1',b.dataset.before??'');break;
+    case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1'||inFeed(),b.dataset.before??'');break;
     case 'insSection':{leaveHoy(id,1);
       const o=objective(id);if(!o)break;
       let n='Nueva sección',k=2;while(o.sections.includes(n))n='Nueva sección '+k++;
@@ -3888,7 +3888,7 @@ function onClick(e){
     case 'finish':finish(id);break;
     case 'stopTask':stopTask(id);break;
     case 'dismiss':suggestion='';render();break;
-    case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1');break;
+    case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1'||inFeed());break;
     case 'addSection':{leaveHoy(id,1);
       const o=objective(id);if(!o)break;
       let n='Nueva sección',k=2;while(o.sections.includes(n))n='Nueva sección '+k++;
@@ -4752,7 +4752,9 @@ document.addEventListener('paste',e=>{
   rteSave(r);
 });
 
+const inFeed=()=>wHoy&&hoyFeed&&view==='Trabajo'&&(wSolo===null||isMob());
 function leaveHoy(oid,forSec){
+  if(inFeed()&&!forSec)return;
   if(fHoy&&!wHoy&&view==='Trabajo'){if(forSec){const k=oid===''||oid==null||oid===DAILY.id?'':oid;fHoy=false;wSolo=k;wLast=k;}return;}
   if(!wHoy||view!=='Trabajo')return;
   const id=oid===''||oid==null?DAILY.id:oid,k=id===DAILY.id?'':id;
