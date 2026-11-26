@@ -2380,6 +2380,11 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .dayview .colhead h2{font-size:30px;letter-spacing:-.7px}
 .dayview .viewall{display:none}
 .dayview .bubbles{margin-bottom:6px}
+.d.dc{cursor:pointer}.d.dc:hover{background:var(--bg3);border-radius:8px}
+.dvm{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.4);display:grid;place-items:center;padding:4vh 3vw}
+.dvm-box{position:relative;width:min(980px,100%);max-height:92vh;overflow:auto;background:var(--bg);border-radius:20px;padding:14px 24px 40px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dvm-top{position:sticky;top:-14px;z-index:5;display:flex;justify-content:flex-end;gap:6px;padding:6px 0;background:var(--bg)}
+.dvm .dayview{max-width:none}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3498,7 +3503,7 @@ const capParse=v=>{v=String(v).trim().toLowerCase().replace(',','.');let m;
   const n=parseFloat(v);return Number.isFinite(n)?n:NaN;};
 let tlMode='pend';
 const LEVELS=[['proj','Proyectos'],['sub','Subproyectos'],['obj','Objetivos'],['sec','Secciones']];
-const RANGES=[['day','Día',1],['week','7 días',7],['2w','2 semanas',14],['all','Todo',0]];
+const RANGES=[['week','7 días',7],['2w','2 semanas',14],['month','Un mes',30],['all','Todo',0]];
 let tlLevel=lsGet('focus.tllevel')||'obj',tlRange=lsGet('focus.tlrange')||'all',tlStart=day();
 if(!LEVELS.some(l=>l[0]===tlLevel))tlLevel='obj';if(!RANGES.some(r=>r[0]===tlRange))tlRange='all';
 const tlPFold=new Set();
@@ -3512,26 +3517,36 @@ function dayTasks(oid,sec,d,plan,today){
   for(const t of ts.filter(t=>!t.days.some(x=>x>=today))){const m=minutesLeft(t),a=Math.max(cum,before),z=Math.min(cum+m,before+here);if(z-a>.5)out.push([t,z-a]);cum+=m;}
   return out;
 }
-function dayView(projects,plan,cellsOf,done,d){
-  const today=day(),ids=new Set(projects.map(p=>p.id));
-  const objs=[...planOrder().filter(o=>ids.has(o.project)).map(o=>[o,bandOf(o)]),[null,restBand().id]];
-  let body='',nT=0,tot=0;
+let dvDay='';
+function dayModalHtml(d){
+  const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
+  const order=[];
   for(const bd of bandList()){
-    const items=objs.filter(([o,b])=>b===bd.id&&(cellsOf(o?o.id:'').get(d)?.m>.5));
-    const used=items.reduce((a,[o])=>a+cellsOf(o?o.id:'').get(d).m,0),ov=s.bandOn?.[bd.id]?.[d]!=null;tot+=used;
-    const cards=items.map(([o])=>{
-      const oid=o?o.id:'',c=cellsOf(oid).get(d),set=new Set();
-      if(done){for(const e of s.entries){if(e.end&&day(e.start)===d){const t=task(e.task);if(t&&t.objective===oid)set.add(t.id);}}}
-      else for(const k of c.sec.keys())for(const [t] of dayTasks(oid,k,d,plan,today))set.add(t.id);
-      nT+=set.size;dvIds=set;let h='';try{h=bubble(o||DAILY,true);}finally{dvIds=null;}return h;}).join('');
-    body+='<section class="dv-band" style="--bc:'+bandColor(bd.id)+'"><div class="dv-bh"><i></i><b>'+esc(bn(bd))+'</b><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+bd.id+'|'+d+'" value="'+capShort(bandCap(bd.id,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+'"><small>'+(used?dur(used)+(done?' trabajados':' planificados'):'sin trabajo este día')+'</small></div>'+(cards?'<div class="bubbles">'+cards+'</div>':'')+'</section>';
+    const visit=pid=>{for(const k of kidsOf(pid))visit(k.id);for(const o of planOrder())if(o.project===pid&&bandOf(o)===bd.id)order.push(o);};
+    rootProjects().forEach(p=>visit(p.id));
   }
+  const objs=[...order,null].filter(o=>cellsOf(o?o.id:'').get(d)?.m>.5);
+  let nT=0,tot=0;
+  const cards=objs.map(o=>{
+    const oid=o?o.id:'',c=cellsOf(oid).get(d),set=new Set();tot+=c.m;
+    if(done){for(const e of s.entries){if(e.end&&day(e.start)===d){const t=task(e.task);if(t&&t.objective===oid)set.add(t.id);}}}
+    else for(const k of c.sec.keys())for(const [t] of dayTasks(oid,k,d,plan,today))set.add(t.id);
+    nT+=set.size;dvIds=set;let h='';try{h=bubble(o||DAILY,true);}finally{dvIds=null;}return h;}).join('');
   const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
-  return '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+body+'</div>';
+  return '<div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
+    '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+
+    (cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
+function syncDayModal(){
+  let m=document.getElementById('dvm');
+  if(!dvDay){m?.remove();return;}
+  if(!m){m=document.createElement('div');m.id='dvm';m.className='dvm';m.dataset.act='dayCloseBg';m.innerHTML='<div class="dvm-box" role="dialog" aria-modal="true"></div>';document.body.appendChild(m);}
+  const box=m.firstChild,st=box.scrollTop;box.innerHTML=dayModalHtml(dvDay);box.scrollTop=st;
 }
 function timeline(projects,embedded=false){
   const rg=RANGES.find(r=>r[0]===tlRange),nWin=rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
-  const px=nWin?Math.max(30,Math.floor(((document.querySelector('.plmain')?.clientWidth||document.querySelector('#main')?.clientWidth||900)-30)/nWin)):ZOOM[tlZoom],showN=px>=48;
+  const px=ZOOM[tlZoom],showN=px>=48;
   const cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const pendOf=o=>s.tasks.filter(t=>t.objective===o.id&&!t.done);
   let rows=[];
@@ -3560,8 +3575,8 @@ function timeline(projects,embedded=false){
   dates.forEach((d,i)=>{
     const x=i*px,dd=+d.slice(8),wd=dow(d);
     if(dd===1||i===0)m1.push('<span class="m" style="left:'+x+'px">'+cap(fmt({month:'long',year:'numeric'},dateAt(d)))+'</span>');
-    if(px>=48)m2.push('<span class="d'+(d===today?' is-today':'')+(wd===0||wd===6?' we':'')+'" style="left:'+x+'px;width:'+px+'px"><small>'+cap(fmt({weekday:'short'},dateAt(d))).replace('.','')+'</small>'+dd+'</span>');
-    else if(px>=26)m2.push('<span class="d'+(d===today?' is-today':'')+'" style="left:'+x+'px;width:'+px+'px">'+dd+'</span>');
+    if(px>=48)m2.push('<span class="d dc'+(d===today?' is-today':'')+(wd===0||wd===6?' we':'')+'" data-act="dayOpen" data-id="'+d+'" style="left:'+x+'px;width:'+px+'px"><small>'+cap(fmt({weekday:'short'},dateAt(d))).replace('.','')+'</small>'+dd+'</span>');
+    else if(px>=26)m2.push('<span class="d dc'+(d===today?' is-today':'')+'" data-act="dayOpen" data-id="'+d+'" style="left:'+x+'px;width:'+px+'px">'+dd+'</span>');
     else if(px>=8&&wd===1)m2.push('<span class="d" style="left:'+x+'px">'+dd+'</span>');
     if(wd===0||wd===6)shades.push('<i class="shade" style="left:'+(LEFT+x)+'px;width:'+px+'px"></i>');
     const capm=capacityOn(d),tot=totals.get(d)??0,over=!done&&tot>capm+.5;
@@ -3647,10 +3662,9 @@ function timeline(projects,embedded=false){
       (rs.length?renderBand(rs,bd):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
   }
   const real=rows.filter(r=>r.o);
-  const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+(nWin===1?cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(tlStart))).replace('.',''):lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1)))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>'+(nWin===1?'':'<button class="btn line ic" data-act="tlLevelMenu" title="Qué niveles ver">'+ICO.unfold+'Ver: '+LEVELS.find(l=>l[0]===tlLevel)[1]+' ▾</button>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div><span class="grow"></span>'+
-    (nWin?mkNav():'<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>')+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
-  if(nWin===1)return (embedded?'':'<div class="an tlpage">')+bar2+dayView(projects,plan,cellsOf,done,tlStart)+(embedded?'':'</div>');
+  const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><button class="btn line ic" data-act="tlLevelMenu" title="Qué niveles ver">'+ICO.unfold+'Ver: '+LEVELS.find(l=>l[0]===tlLevel)[1]+' ▾</button><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
+    '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
   return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
     '<p class="tlnote">'+note+'</p>'+(embedded?'':'</div>');
@@ -3921,6 +3935,7 @@ function render0(){
     else{tl.scrollLeft=tlpos[0];tl.scrollTop=tlpos[1];}
   }
   window.scrollTo(0,pageScroll);
+  syncDayModal();
   $$('textarea.notes').forEach(autoGrow);
   if(focusAfter){const f=focusAfter;focusAfter=null;focusEdit(f.kind,f.id,f.select,f.attr);}
   updateFloat();
@@ -4446,6 +4461,9 @@ function onClick(e){
     }
     case 'tlZoom':tlZoom=id;tlScroll='today';render();break;
     case 'tlRange':tlRange=id;lsSet('focus.tlrange',id);tlScroll='today';if(id!=='all'&&tlStart<day())tlStart=day();render();break;
+    case 'dayOpen':dvDay=id;syncDayModal();break;
+    case 'dayCloseBg':if(b.id==='dvm'&&e.target!==b)break;dvDay='';syncDayModal();break;
+    case 'dayNav':dvDay=shift(dvDay,+id);syncDayModal();break;
     case 'tlNav':{const n=RANGES.find(r=>r[0]===tlRange)[2];tlStart=shift(tlStart,+id*(n||1));render();break;}
     case 'tlLevelMenu':openPop(b,LEVELS.map(([k,l])=>pi(l+(k===tlLevel?' ✓':''),'tlLevel','data-id="'+k+'"')).join(''),{});break;
     case 'tlLevel':tlLevel=id;lsSet('focus.tllevel',id);tlPFold.clear();if(id!=='sec')tlOpen.clear();closePop();render();break;
@@ -4575,7 +4593,7 @@ function toggleMic(){
   rec.onerror=()=>{notify('No se pudo usar el micrófono.');};
   rec.start();$('#mic').classList.add('on');
 }
-document.addEventListener('keydown',e=>{
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}
   const ed=e.target.closest?.('[data-edit]');
   if(ed){
     if(e.isComposing)return;
