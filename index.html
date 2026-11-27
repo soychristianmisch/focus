@@ -5219,7 +5219,7 @@ function dropInfo(e){
           let nb=el.closest('.tl-pbox[data-proj]');
           while(nb){const q=project(nb.dataset.proj);if(nb.dataset.proj===drag.id)return null;if(q&&par(q)===par(dp)&&(par(q)||q.area===dp.area)&&!isDesc(q.id,dp.id))break;nb=nb.parentElement?.closest('.tl-pbox[data-proj]');}
           if(!nb)return null;
-          const r=nb.getBoundingClientRect(),a=e.clientY>r.top+r.height/2;
+          const a=s.projects.indexOf(dp)<s.projects.indexOf(project(nb.dataset.proj));
           return {type:'pproj',el:nb,after:a,cls:a?'drop-after':'drop-before'};}
       }
       return {type:'tlshift',el:tl,date:d,n,cls:'dropping',guide:{left:diffDays(tl.dataset.first,d)*px,w:px,d}};}
@@ -5245,7 +5245,7 @@ function dropInfo(e){
     let n=el.closest('.plp,.pnode');
     while(n){const q=project(n.dataset.proj);if(n.dataset.proj===drag.id)return null;if(q&&par(q)===par(dp)&&(par(q)||q.area===dp.area)&&!isDesc(q.id,dp.id))break;n=n.parentElement?.closest('.plp,.pnode');}
     if(!n)return null;
-    const r=n.getBoundingClientRect(),a=e.clientY>r.top+r.height/2;
+    const a=s.projects.indexOf(dp)<s.projects.indexOf(project(n.dataset.proj));
     return {type:'pproj',el:n,after:a,cls:a?'drop-after':'drop-before'};
   }
   if(k==='robj'){
