@@ -3625,10 +3625,10 @@ const capParse=v=>{v=String(v).trim().toLowerCase().replace(',','.');let m;
   if((m=v.match(/^(\d+)\s*(?:m|min|minutos?)$/)))return +m[1]/60;
   const n=parseFloat(v);return Number.isFinite(n)?n:NaN;};
 let tlMode='pend';
-const LEVELS=[['proj','Proyectos'],['sub','Subproyectos'],['obj','Objetivos'],['sec','Secciones']];
+const LEVELS=[['sub','Subproyectos'],['obj','Objetivos'],['sec','Secciones']];
 const RANGES=[['week','7 días',7],['2w','2 semanas',14],['month','Un mes',30],['all','Todo',0]];
 let tlLevel=lsGet('focus.tllevel')||'obj',tlRange=lsGet('focus.tlrange')||'all',tlStart=day();
-if(!LEVELS.some(l=>l[0]===tlLevel))tlLevel='obj';if(!RANGES.some(r=>r[0]===tlRange))tlRange='all';
+if(tlLevel==='proj')tlLevel='sub';if(!LEVELS.some(l=>l[0]===tlLevel))tlLevel='obj';if(!RANGES.some(r=>r[0]===tlRange))tlRange='all';
 const tlPFold=new Set();
 const LVL_ICO={proj:glyph('flag'),sub:_s('<path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/>'),obj:_s(STI['Más adelante']),sec:_s('<path d="M4 7h16M4 12h16M4 17h10"/>')};
 const ARR='<svg class="tb-ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/></svg>';
@@ -3765,7 +3765,7 @@ function timeline(projects,embedded=false){
     const node=(pid,depth)=>{
       const p=project(pid),rsub=sub(pid);if(!p||!rsub.length)return '';
       const hasSub=kidsOf(pid).some(k=>pset.has(k.id)),rootHide=depth===0&&!p.parent&&!(tlLevel==='proj'||(tlLevel==='sub'&&!hasSub)),skip=pid===rootId||rootHide;
-      const open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true,byP&&rootProject(p)?.id===rootId?'':(p.parent?(rootProject(p)||{}).name:''));
+      const open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true,p.parent?(rootProject(p)||{}).name:'');
       if(open){const d2=skip?depth:depth+1;
         const its=[];
         for(const k of kidsOf(pid))if(pset.has(k.id))its.push([key(sub(k.id)),()=>node(k.id,d2)]);
@@ -4090,7 +4090,7 @@ function setTheme(t){
 
 /* ---------- menú flotante ---------- */
 const pop=$('#pop');let popCtx=null;
-let lastAnchor=null;
+let lastAnchor=null,popIsSettings=false;
 function openPop(anchor,html,ctx={}){
   lastAnchor=anchor;pop.innerHTML=html;popCtx=ctx;pop.classList.add('open');
   const r=anchor.getBoundingClientRect(),w=pop.offsetWidth,h=pop.offsetHeight;
@@ -4114,7 +4114,7 @@ function settingsHtml(){
   return pl('Capacidad diaria en horas')+week+pl('Jornada')+pinput('Termina','dayend','time',s.dayEnd||'20:00')+pl('Timeline')+modeSeg+bands+chk+addp+
     pl('Datos')+pi('Exportar copia (JSON)','export')+pi('Importar copia','import')+pi('Empezar de cero','reset','','danger')+cloudMenu()+'<div class="pl" style="text-transform:none;letter-spacing:0">Zona horaria: Europe/Madrid · datos guardados en este navegador</div>';
 }
-function closePop(){pop.classList.remove('open');pop.innerHTML='';popCtx=null;}
+function closePop(){popIsSettings=false;pop.classList.remove('open');pop.innerHTML='';popCtx=null;}
 const pi=(label,act,attrs='',cls='')=>'<button class="pi '+cls+'" data-act="'+act+'" '+attrs+'>'+label+'</button>';
 const pl=t=>'<div class="pl">'+t+'</div>';
 const pinput=(label,key,type,value)=>'<div class="pinput"><label>'+label+'</label><input type="'+type+'" data-pop-input="'+key+'" value="'+esc(value)+'"></div>';
@@ -4351,7 +4351,7 @@ function openTaskNote(t,doc=document){
   setTimeout(()=>ta.focus(),30);
 }
 function onClick(e){
-  const inPop=e.target.closest('#pop');
+  const inPop=e.target.closest('#pop'),wasSettings=popIsSettings&&!inPop&&pop.classList.contains('open');
   if(!inPop&&pop.classList.contains('open'))closePop();
   const b=e.target.closest('[data-act]');
   if(!b)return;
@@ -4640,7 +4640,8 @@ function onClick(e){
     }
     case 'delInbox':s.inbox=s.inbox.filter(x=>x.id!==id);save();break;
     case 'settings':{
-      openPop(b,settingsHtml(),{});
+      if(wasSettings)break;
+      openPop(b,settingsHtml(),{});popIsSettings=true;
       break;
     }
     case 'tlBy':{s.tlBy=id;if(id==='projects')ensurePbands();tlPFold.clear();save();pop.innerHTML=settingsHtml();break;}
