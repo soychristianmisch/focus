@@ -4168,7 +4168,7 @@ function calHtmlT(t,ym){
 const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t.done);
 let dateClk={k:'',n:0};
 /* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
-function dateClicks(k,hasDate){const n=dateClk.k===k?dateClk.n:(hasDate?1:0);const step=Math.min(n,2);dateClk={k,n:step===2?0:step+1};return step;}
+function dateClicks(k,hasDate,steps=2){const n=dateClk.k===k?dateClk.n:(hasDate?1:0);const step=Math.min(n,steps);dateClk={k,n:step===steps?0:step+1};return step;}
 function setSecDay(L,date){for(const t of L){if(!date){t.days=[];continue;}t.days=[date];(s.order[date]??=[]);if(!s.order[date].includes(t.id))s.order[date].push(t.id);}save();}
 const secCommon=L=>{const d=L[0]?.days.length===1?L[0].days[0]:'';return d&&L.every(t=>t.days.length===1&&t.days[0]===d)?d:'';};
 const secPseudo=L=>({id:'__sec',days:[secCommon(L)||'0001-01-01']});
@@ -4327,7 +4327,8 @@ function onClick(e){
     case 'toggleImp':if(t){t.imp=!t.imp;save();}break;
     case 'taskNote':if(t)openTaskNote(t,b.ownerDocument||document);break;
     case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
-    case 'today':if(t){const n=dateClicks('t:'+t.id,taskWhen(t).k!=='none');if(n===0){t.days=[day()];save();}else if(n===1)openTaskCal(t,b);else{closePop();t.days=[];save();}}break;
+    case 'today':if(t){const key='t:'+t.id,w=taskWhen(t).k,steps=(w==='past'||(dateClk.k===key&&dateClk.n>=3))?3:2,n=dateClicks(key,w!=='none',steps);
+      if(n===0){t.days=[day()];save();}else if(n===1)openTaskCal(t,b);else if(n===2&&steps===3){closePop();t.days=[day()];save();}else{closePop();t.days=[];save();}}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
     case 'finish':finish(id);break;
