@@ -3444,6 +3444,7 @@ function computePlan(){
       if(fd.length)fd.forEach(d=>put(r,b,d,t.section,m/fd.length,true));
     }
   }
+  const cur=new Map();
   for(const oid of order){
     const o=objective(oid),r=res.get(oid),b=r.band,pool=new Map();
     for(const t of s.tasks.filter(t=>t.objective===oid&&!t.done)){
@@ -3451,7 +3452,9 @@ function computePlan(){
       const m=minutesLeft(t);if(m>.5)pool.set(t.section,[...(pool.get(t.section)||[]),m]);
     }
     if(!pool.size)continue;
-    const st=o?.startOn&&o.startOn>from0?o.startOn:(o?.window?.pin&&o.window.start>from0?o.window.start:from0);
+    let st=o?.startOn&&o.startOn>from0?o.startOn:(o?.window?.pin&&o.window.start>from0?o.window.start:from0);
+    if(cur.get(b)&&cur.get(b)>st)st=cur.get(b); /* en orden: no empieza antes de que acabe el anterior de su banda */
+    let last='';
     const ds=daysIn(st,shift(st,400),b);let di=0;
     const sl=o?o.sections:(s.dailySections||[]),secs=['',...sl].filter(x=>pool.has(x));
     for(const k of pool.keys())if(!secs.includes(k))secs.push(k);
@@ -3461,10 +3464,11 @@ function computePlan(){
         const d=ds[di],av=free(b,d),full=bandCap(b,d)-base(b,d);
         if(av<=.5){di++;continue;}
         if(M>av+.5&&M<=full+.5&&av<full-.5){di++;continue;} /* la tarea entera no cabe: pasa al día siguiente */
-        const g=Math.min(av,M);put(r,b,d,sec,g,false);M-=g;
+        const g=Math.min(av,M);put(r,b,d,sec,g,false);last=d;M-=g;
       }
       if(M>.5)r.over+=M;
     }
+    if(last)cur.set(b,last);
   }
   return res;
 }
