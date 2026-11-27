@@ -2551,6 +2551,26 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
   .task.inb>:nth-child(4),.task.inb>:nth-child(5),.task.inb>:nth-child(6),.task.inb>:nth-child(7),.task.inb>:nth-child(8),.task.inb>:nth-child(9){grid-row:3}
   .pm{padding:8px}.pm-box{max-height:92vh}
 }
+
+/* v207 Planning unificado */
+.plan2{grid-template-columns:320px minmax(0,1fr)}
+.plan2 .plrail.prail{position:static;top:auto;max-height:none;align-self:stretch;padding:10px 8px 40px}
+.plrail.searching .agroup,.plrail.searching .newarea{display:none}
+.plph,.plo{cursor:pointer}
+.plph:hover,.plo:hover{background:var(--bg3)}
+.plph:hover>.addp,.plo:hover>.addp{opacity:.5}
+.eye.addp svg{width:14px;height:14px}
+.pjm{position:fixed;inset:0;z-index:68;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.3);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.pjm-box{width:min(1280px,100%);height:min(92vh,980px);display:flex;flex-direction:column;border-radius:22px;background:var(--bg);border:1px solid var(--line2);box-shadow:0 24px 70px rgba(0,0,0,.3);overflow:hidden}
+.pjm-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px 20px;border-bottom:1px solid var(--line);background:var(--card)}
+.pjm-k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:650}
+.pjm-body{flex:1;overflow:auto;padding:6px 22px 28px}
+.pjm .pjpage{padding:0}
+.pjm .pj-cols{align-items:start}
+.pjm .tl{max-height:none}
+.pjm .tlbar{flex-wrap:wrap;gap:6px;row-gap:6px}
+.pjg{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute);margin:12px 0 6px}
+@media (max-width:900px){.pjm{padding:0}.pjm-box{height:100dvh;border-radius:0}.pjm-body{padding:4px 12px 24px}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2587,6 +2607,8 @@ const GLYPHS={
   bolt:'<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
   flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  timeline:'<rect x="3.5" y="4.5" width="9" height="3.6" rx="1.8"/><rect x="8.5" y="10.2" width="12" height="3.6" rx="1.8"/><rect x="5.5" y="15.9" width="8" height="3.6" rx="1.8"/>',
+  pie:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l6 6"/><path d="M12 12H3.5"/>',
   play:'<rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10.3 9.5v5l4.2-2.5z"/>',
   checkbox:'<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.3l2.8 2.8L16.2 9.4"/>',
   briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M3 13h18"/>',
@@ -3149,11 +3171,17 @@ function projStats(p){
   for(const oid of oids)for(const [d,c] of wk.get(oid)??[]){per.set(d,(per.get(d)??0)+c.m);total+=c.m;}
   const today=day(),r14=Array.from({length:14},(_,i)=>shift(today,-i)).reduce((x,d)=>x+(per.get(d)??0),0);
   const dls=objs.filter(o=>o.deadline&&o.deadline>=today).map(o=>o.deadline).sort();
-  return {ids,objs,oids,ts,left:sumMin(pend,minutesLeft),total,r14,per,pct:ts.length?Math.round(100*ts.filter(t=>t.done).length/ts.length):0,next:dls[0]??''};
+  return {tm:dayTaskMap(oids),ids,objs,oids,ts,left:sumMin(pend,minutesLeft),total,r14,per,pct:ts.length?Math.round(100*ts.filter(t=>t.done).length/ts.length):0,next:dls[0]??''};
+}
+function dayTaskMap(oids){
+  const set=new Set(oids),today=day(),days=Array.from({length:30},(_,i)=>shift(today,i-29)),tm=new Map();
+  for(const e of s.entries){const tk=task(e.task);if(!tk||!set.has(tk.objective))continue;
+    for(const d of days){const m=dayMs(e,d)/60000;if(m>0){let x=tm.get(d);if(!x)tm.set(d,x=new Map());x.set(tk.id,(x.get(tk.id)??0)+m);}}}
+  return tm;
 }
 function pjChart(st){
   const today=day(),days=Array.from({length:30},(_,i)=>shift(today,i-29)),mx=Math.max(60,...days.map(d=>st.per.get(d)??0));
-  return '<div class="pjchart" role="img" aria-label="Tiempo trabajado en los últimos 30 días">'+days.map(d=>{const m=st.per.get(d)??0;return '<i class="'+(d===today?'now':'')+'" style="height:'+Math.max(m?6:2,Math.round(100*m/mx))+'%" title="'+cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(d)))+' · '+(m?dur(m):'sin trabajo')+'"></i>';}).join('')+'</div>'+
+  return '<div class="pjchart" role="img" aria-label="Tiempo trabajado en los últimos 30 días">'+days.map(d=>{const m=st.per.get(d)??0;return '<i class="'+(d===today?'now':'')+'" style="height:'+Math.max(m?6:2,Math.round(100*m/mx))+'%"'+(st.tm?' data-tip="'+tipTasks(cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d))),m?dur(m):'sin trabajo',st.tm.get(d),18,true)+'"':' title="'+cap(fmt({weekday:'short',day:'numeric',month:'short'},dateAt(d)))+' · '+(m?dur(m):'sin trabajo')+'"')+'></i>';}).join('')+'</div>'+
     '<div class="pjaxis"><span>'+fmt({day:'numeric',month:'short'},dateAt(days[0]))+'</span><span>'+fmt({day:'numeric',month:'short'},dateAt(days[14]))+'</span><span>Hoy</span></div>';
 }
 let pjFold=new Set((()=>{try{return JSON.parse(lsGet('focus.pjfold')||'[]');}catch{return [];}})());
@@ -3234,17 +3262,18 @@ function objPage(o){
       card('Trabajado en total',dur(sp.worked),'estimado '+dur(sp.est))+
       card('Tareas',sp.done+' / '+sp.ts.length,left>=1?'pendiente '+dur(left):'completadas')+
       card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
-      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per})+'</div></section></div></div></div>';
+      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per,tm:dayTaskMap([o.id])})+'</div></section></div></div></div>';
 }
 function pjSearch(q){
   const n=normQ(q).trim();if(!n)return '';
   const hit=x=>normQ(x).includes(n),out=[];
-  for(const p of s.projects)if(hit(p.name)||hit(p.description)||hit(p.notes))out.push('<button type="button" class="pj-hit" data-act="selectProject" data-id="'+esc(p.id)+'" style="--ac:'+p.color+'"><i class="pdot"></i><span><b>'+esc(p.name)+'</b><small>Proyecto · '+esc(p.area||'')+'</small></span></button>');
+  const pl=view==='Planificación';
+  for(const p of s.projects)if(hit(p.name)||hit(p.description)||hit(p.notes))out.push('<button type="button" class="pj-hit" '+(pl?'data-kind="proj" data-act="pjOpen"':'data-act="selectProject"')+' data-id="'+esc(p.id)+'" style="--ac:'+p.color+'"><i class="pdot"></i><span><b>'+esc(p.name)+'</b><small>Proyecto · '+esc(p.area||'')+'</small></span></button>');
   for(const o of s.objectives){
     const p=project(o.project),ts=s.tasks.filter(t=>t.objective===o.id);
     const t=hit(o.name)?null:ts.find(t=>hit(t.name)||hit(t.note));
     if(!(hit(o.name)||t||o.sections.some(hit)))continue;
-    out.push('<button type="button" class="pj-hit" data-act="pjGoObj" data-id="'+esc(o.id)+'" style="--ac:'+(p?.color||'#b4b4ae')+'"><i class="pdot"></i><span><b>'+esc(o.name)+(o.status==='Completado'?' ✓':'')+'</b><small>'+esc(p?.name||'')+(t?' · tarea: '+esc(t.name):'')+'</small></span></button>');
+    out.push('<button type="button" class="pj-hit" '+(pl?'data-kind="obj" data-act="pjOpen"':'data-act="pjGoObj"')+' data-id="'+esc(o.id)+'" style="--ac:'+(p?.color||'#b4b4ae')+'"><i class="pdot"></i><span><b>'+esc(o.name)+(o.status==='Completado'?' ✓':'')+'</b><small>'+esc(p?.name||'')+(t?' · tarea: '+esc(t.name):'')+'</small></span></button>');
   }
   return out.length?out.slice(0,40).join(''):'<p class="pempty">Sin resultados</p>';
 }
@@ -3788,8 +3817,8 @@ function syncDayModal(){
   if(!m){m=document.createElement('div');m.id='dvm';m.className='dvm';m.dataset.act='dayCloseBg';m.innerHTML='<div class="dvm-box" role="dialog" aria-modal="true"></div>';document.body.appendChild(m);}
   const box=m.firstChild,st=box.scrollTop;box.innerHTML=dayModalHtml(dvDay);box.scrollTop=st;
 }
-function timeline(projects,embedded=false){
-  const rg=RANGES.find(r=>r[0]===tlRange),nWin=rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
+function timeline(projects,embedded=false,opts={}){
+  const rg=RANGES.find(r=>r[0]===tlRange),nWin=opts.scoped?0:rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
   const px=ZOOM[tlZoom],showN=px>=48;
   const cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const pendOf=o=>s.tasks.filter(t=>t.objective===o.id&&!t.done);
@@ -3803,8 +3832,8 @@ function timeline(projects,embedded=false){
         for(const k of ks){const m=c.sec.get(k)??0;if(m>.5){segs.push({d,sec:k,off,m});off+=m;}}}}
     rows.push({o,p,oid,band,cells,segs,b:{start:ds[0],end:ds.at(-1)}});
   };
-  for(const o of planOrder()){const p=projects.find(x=>x.id===o.project);if(p)mkRow(o,p,bandOf(o));}
-  mkRow(null,null,restBand().id);
+  for(const o of planOrder()){const p=projects.find(x=>x.id===o.project);if(p&&(!opts.only||o.id===opts.only))mkRow(o,p,bandOf(o));}
+  if(!opts.scoped)mkRow(null,null,restBand().id);
   const totals=new Map();
   for(const oid of ['',...s.objectives.map(o=>o.id)])for(const [d,c] of cellsOf(oid))totals.set(d,(totals.get(d)??0)+c.m);
   const all=rows.flatMap(r=>[r.b.start,r.b.end]);
@@ -3904,6 +3933,7 @@ function timeline(projects,embedded=false){
   };
   let body='';
   for(const bd of bandList()){
+    if(opts.scoped&&!rows.some(r=>r.band===bd.id))continue;
     const b=bd.id,rs=rows.filter(r=>r.band===b),pendB=rs.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),endB=rs.map(r=>r.b.end).sort().at(-1);
     const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capShort(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+' el '+d+'"></span>';}).join('')+'</div>':'';
     body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bn(bd))+'</b><input class="bandin" data-band="'+b+'" value="'+capShort(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bn(bd))+'"><small>al día</small></span></div>'+
@@ -3912,11 +3942,11 @@ function timeline(projects,embedded=false){
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div>'+(opts.scoped?'':'<div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
     '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
-  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
-    '<p class="tlnote">'+note+'</p>'+(embedded?'':'</div>');
+  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="'+(opts.id||'tl')+'" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
+    (opts.scoped?'':'<p class="tlnote">'+note+'</p>')+(embedded?'':'</div>');
 }
 const plFold=new Set((()=>{try{return JSON.parse(lsGet('focus.plfold')||'[]');}catch{return [];}})());
 const plFoldSave=()=>lsSet('focus.plfold',JSON.stringify([...plFold]));
@@ -3934,24 +3964,101 @@ function viewPlan(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
   const live=o=>o.status!=='Completado';
   const cnt=id=>kidsOf(id).reduce((q,k)=>q+cnt(k.id),0)+s.objectives.filter(o=>o.project===id&&live(o)).length;
+  const PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>';
   const objRow=(o,depth)=>{const off=objHidden(o);
-    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
+    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-act="pjOpen" data-kind="obj" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye addp" data-act="plAdd" data-kind="obj" data-id="'+o.id+'" title="Nuevo objetivo debajo" aria-label="Nuevo objetivo">'+PLUS+'</button><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
     const kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&live(o)),flip=plFold.has(p.id),objsShown=plShowObj!==flip,kidsShown=!(plShowObj&&flip),objs=objsShown?allO:[],has=kids.length||allO.length,folded=plShowObj?flip:(allO.length>0&&!flip),hid=projHidden(p.id),pad=depth*16;
-    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" style="left:'+(has?pad:pad+18)+'px" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
-      '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<b class="cnt">'+cnt(p.id)+'</b>':'')+'<button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
+    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-act="pjOpen" data-kind="proj" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" style="left:'+(has?pad:pad+18)+'px" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
+      '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<b class="cnt">'+cnt(p.id)+'</b>':'')+'<button type="button" class="eye addp" data-act="plAdd" data-kind="proj" data-id="'+p.id+'" title="Añadir subproyecto u objetivo" aria-label="Añadir">'+PLUS+'</button><button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
       (kidsShown?kids.map(k=>item(k,depth+1)).join(''):'')+objs.map(o=>objRow(o,depth+1)).join('')+'</div>';
   };
   const tree=areas.map(ar=>{
-    const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id)&&cnt(p.id)>0);
-    if(!roots.length)return '';
-    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" style="--ac:'+areaTone(ar)+'"><i class="rgrip" aria-hidden="true"></i><span class="ahd">'+esc(ar)+'</span></div>'+roots.map(p=>item(p,0)).join('')+'</div>';
+    const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id));
+    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="lines" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área"></span><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
+      (roots.length?roots.map(p=>item(p,0)).join(''):'<p class="pempty">Sin proyectos</p>')+'</div>';
   }).join('');
-  const nObj=s.objectives.filter(live).length,nOn=s.objectives.filter(o=>live(o)&&!objHidden(o)).length;
-  return '<div class="plan2"><aside class="wrail plrail"><div class="plsec"><span>Proyectos</span><b class="cnt">'+nOn+' / '+nObj+'</b></div>'+lvlSeg('plLevel',plShowObj)+(nObj?'':'<p class="pzhint">Aún no hay proyectos con objetivos.</p>')+tree+'</aside>'+
+  return '<div class="plan2"><aside class="wrail plrail prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+lvlSeg('plLevel',plShowObj)+'</div>'+tree+'<button class="addrow newarea" data-act="addArea">＋ Nueva área</button></aside>'+
     '<div class="plmain">'+timeline(s.projects,true)+'</div></div>';
 }
 
+/* ---------- ventana de proyecto, subproyecto u objetivo (Planning) ---------- */
+let pjm=null,pjmFocus=null;
+const tlScoped=(projects,only)=>timeline(projects,true,{scoped:true,id:'tlq',only}).replace(/ draggable="true"/g,'').replace(/ data-drag="[^"]*"/g,'');
+function openPjm(kind,id){
+  closePjm();closePop();pjm={kind,id,px:0};
+  const m=document.createElement('div');m.id='pjm';m.className='pjm';
+  m.innerHTML='<div class="pjm-box" role="dialog" aria-modal="true"><div class="pjm-top"><span class="pjm-k"></span><button type="button" class="pmx pjmx" aria-label="Cerrar" title="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pjm-body"></div></div>';
+  document.body.appendChild(m);pjmRender();
+}
+function closePjm(){document.getElementById('pjm')?.remove();pjm=null;}
+function pjmDone(o,rootId){
+  const p=project(o.project),sp=objSpan(o);
+  return '<button type="button" class="pj-dcard" style="--ac:'+(p?.color||'#b4b4ae')+'" data-act="pjOpen" data-kind="obj" data-id="'+esc(o.id)+'"><span class="gl sm dk">'+ICON.check+'</span><span class="dt"><b>'+esc(o.name)+'</b><small>'+sp.ts.length+(sp.ts.length===1?' tarea':' tareas')+' · '+dur(sp.worked)+' trabajadas'+(sp.doneAt?' · '+fmt({day:'numeric',month:'short',year:'numeric'},sp.doneAt).replace('.',''):'')+'</small></span></button>';
+}
+function pjmProj(p){
+  const st=projStats(p),par=p.parent?project(p.parent):null;
+  const tls=descIds(p.id).map(id=>project(id)).filter(Boolean);
+  const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
+  const hasN=!!p.notion;
+  const chain=(()=>{const c=[];let x=p,n=0;while(x&&n++<10){c.unshift(x);x=x.parent&&x.parent!==x.id?project(x.parent):null;}return c;})();
+  const head='<header class="pj-head"><div class="pj-line">'+editable('proj.name',p.id,p.name,'','ptitle','Proyecto sin nombre')+
+   '<div class="pj-props"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'"><i class="adot" style="background:'+areaTone(p.area)+'"></i>'+esc(p.area)+'</button>'+
+   (hasN?'<a class="nbox" data-pnotion-edit="'+p.id+'" href="'+esc(p.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="pNotionEdit" data-id="'+p.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>')+
+   '<button class="iconbtn pjmore" data-act="menu" data-kind="pjmore" data-id="'+p.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button></div></div>'+
+   (par?'<nav class="pj-crumb" aria-label="Ruta">'+chain.map((c,i)=>i<chain.length-1?'<button type="button" data-act="pjOpen" data-kind="proj" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><i>›</i>':'<span>'+esc(c.name)+'</span>').join('')+'</nav>':'')+
+   editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</header>';
+  const dn=st.objs.filter(o=>o.status==='Completado').sort((a,b)=>objSpan(b).doneAt-objSpan(a).doneAt);
+  let done='';
+  if(dn.length){
+    const groups=descIds(p.id).map(id=>project(id)).filter(Boolean).map(q=>[q,dn.filter(o=>o.project===q.id)]).filter(g=>g[1].length);
+    done='<section class="pj-sec"><h2>Objetivos completados · '+dn.length+'</h2>'+groups.map(([q,L])=>(kidsOf(p.id).length?'<h3 class="pjg"><i class="adot" style="background:'+esc(q.color)+'"></i>'+esc(q.name)+'</h3>':'')+'<div class="pj-dlist">'+L.map(o=>pjmDone(o,p.id)).join('')+'</div>').join('')+'</section>';
+  }
+  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section></div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+    card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
+    '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div></section>'+done+'</div></div></div>';
+}
+function pjmObj(o){
+  const p=project(o.project),sp=objSpan(o),pc=p?.color||'#b4b4ae';
+  const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
+  const fm=x=>fmt({day:'numeric',month:'short',year:'numeric'},x).replace('.','');
+  const per=new Map();for(const [d,c] of workedMap().get(o.id)??[])per.set(d,c.m);
+  const left=sumMin(sp.ts.filter(x=>!x.done),minutesLeft);
+  return '<div class="pjpage objpage" style="--pc:'+pc+';--ac:'+pc+'"><header class="pj-head">'+(p?'<button type="button" class="pjback" data-act="pjOpen" data-kind="proj" data-id="'+esc(p.id)+'" title="Ir al proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'+esc(p.name)+'</button>':'')+'</header>'+
+    '<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Objetivo</h2><div class="pj-obj" data-fold="'+esc(o.id)+'">'+bubble(o,false,true)+'</div></section>'+
+    '<section class="pj-sec"><h2>Línea de tiempo</h2>'+(p?tlScoped([p],o.id):'')+'</section></div>'+
+    '<div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+      card('Estado',esc(o.status||''),sp.doneAt&&o.status==='Completado'?'completado el '+fm(sp.doneAt):'')+
+      card('Trabajado en total',dur(sp.worked),'estimado '+dur(sp.est))+
+      card('Tareas',sp.done+' / '+sp.ts.length,left>=1?'pendiente '+dur(left):'completadas')+
+      card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
+      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per,tm:dayTaskMap([o.id])})+'</div></section></div></div></div>';
+}
+function pjmRender(){
+  const m=document.getElementById('pjm');if(!m||!pjm)return;
+  const p=pjm.kind==='proj'?project(pjm.id):null,o=pjm.kind==='obj'?objective(pjm.id):null;
+  if(!p&&!o)return closePjm();
+  const body=m.querySelector('.pjm-body'),sy=body.scrollTop,old=body.querySelector('#tlq'),ox=old?old.scrollLeft:null,oy=old?old.scrollTop:0;
+  if(!(typeof pm!=='undefined'&&pm))anTips=new Map();
+  m.querySelector('.pjm-k').textContent=p?(p.parent?'Subproyecto':'Proyecto'):'Objetivo';
+  body.innerHTML=p?pjmProj(p):pjmObj(o);
+  body.scrollTop=sy;
+  const tl=body.querySelector('#tlq');
+  if(tl){const px=+tl.dataset.px;if(ox==null||pjm.px!==px){tl.scrollLeft=Math.max(0,diffDays(tl.dataset.first,day())*px-120);}else{tl.scrollLeft=ox;tl.scrollTop=oy;}pjm.px=px;}
+  if(pjmFocus){const f=pjmFocus;pjmFocus=null;focusEdit(f.kind,f.id,f.select,f.attr);}
+}
+document.addEventListener('click',e=>{if(pjm&&(e.target.id==='pjm'||e.target.closest?.('.pjmx')))closePjm();});
+document.addEventListener('keydown',e=>{if(pjm&&e.key==='Escape'&&!(typeof pm!=='undefined'&&pm)&&!e.target.isContentEditable&&!document.getElementById('pop')?.classList.contains('open'))closePjm();},true);
+function plNewObj(pid,afterId){
+  const o={id:uid(),project:pid,name:'Nuevo objetivo',icon:'🎯',status:'Más adelante',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
+  s.objectives.push(o);if(afterId){const ref=objective(afterId);if(ref)mv(s.objectives,o,ref,true);}
+  pjm={kind:'obj',id:o.id,px:0};if(!document.getElementById('pjm'))openPjm('obj',o.id);pjmFocus={kind:'obj.name',id:o.id,select:true};save();
+}
+function plNewSub(parId){
+  const par=project(parId);if(!par)return;
+  const q={id:uid(),name:'Nuevo subproyecto',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};
+  s.projects.push(q);pjmFocus={kind:'proj.name',id:q.id,select:true};openPjm('proj',q.id);save();
+}
 /* ---------- analítica ---------- */
 let anTips=new Map(),tipEl=null;
 const tipHtml=(head,sub,rows,more=0)=>{const id=String(anTips.size);
@@ -4121,7 +4228,7 @@ function runbar(t){
 }
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
-  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'play',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Acción':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Acción',Proyectos:'Proyectos','Planificación':'Plan','Analítica':'Analítica',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
+  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'play',Proyectos:'flag','Planificación':'timeline','Analítica':'pie',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Acción':v==='Planificación'?'Planning':v==='Analítica'?'Progreso':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Acción',Proyectos:'Proyectos','Planificación':'Planning','Analítica':'Progreso',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
     '<button class="btn" data-act="float" title="Ventana flotante del temporizador">Ventana flotante ↗</button>'+
     (typeof cloudBadge==='function'?cloudBadge():'')+'<button class="iconbtn" data-act="theme" id="themebtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">'+(document.documentElement.dataset.theme==='dark'?ICON.sun:ICON.moon)+'</button>'+
     '<button class="iconbtn" data-act="settings" aria-label="Ajustes" title="Ajustes">'+ICON.gear+'</button>';
@@ -4141,12 +4248,12 @@ function captureEdit(){
   if(!el||!el.isContentEditable)return null;
   let off=null;
   try{const g=getSelection();if(g.rangeCount&&el.contains(g.anchorNode)){const r=document.createRange();r.selectNodeContents(el);r.setEnd(g.anchorNode,g.anchorOffset);off=r.toString().length;}}catch{}
-  return {kind:el.dataset.edit,id:el.dataset.id,sec:el.dataset.sec,text:el.textContent,orig:el._orig,off,inPm:!!el.closest('#pm')};
+  return {kind:el.dataset.edit,id:el.dataset.id,sec:el.dataset.sec,text:el.textContent,orig:el._orig,off,inPm:!!el.closest('#pm,#pjm')};
 }
 function restoreEdit(k){
   if(!k)return;
   const cur=document.activeElement;if(cur&&cur.closest?.('[data-edit]'))return;
-  const el=[...document.querySelectorAll('[data-edit="'+k.kind+'"]')].find(x=>x.dataset.id===k.id&&(!k.sec||x.dataset.sec===k.sec)&&!!x.closest('#pm')===!!k.inPm);
+  const el=[...document.querySelectorAll('[data-edit="'+k.kind+'"]')].find(x=>x.dataset.id===k.id&&(!k.sec||x.dataset.sec===k.sec)&&!!x.closest('#pm,#pjm')===!!k.inPm);
   if(!el)return;
   if(el.textContent!==k.text)el.textContent=k.text;
   try{el.focus({preventScroll:true});}catch{el.focus();}
@@ -4159,7 +4266,7 @@ const NAV_VIEWS=['Trabajo','Hoy','Proyectos','Planificación','Analítica','Inbo
 function navSave(){lsSet('focus.nav',JSON.stringify({view,openArea,openProj,openObj,projTab,pjObj}));}
 function render(){
   const keep=captureEdit();rendering=true;
-  try{render0();if(typeof pm!=='undefined'&&pm)pmRender();}finally{rendering=false;}
+  try{render0();if(typeof pjm!=='undefined'&&pjm)pjmRender();if(typeof pm!=='undefined'&&pm)pmRender();}finally{rendering=false;}
   navSave();
   restoreEdit(keep);
   try{applyHL();}catch(e){}
@@ -4428,6 +4535,7 @@ function menuFor(kind,id,anchor){
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
+  if(kind==='pladd')return openPop(anchor,pi('Subproyecto','plNewSub','data-id="'+esc(id)+'"')+pi('Objetivo','plNewObj','data-id="'+esc(id)+'"'));
   if(kind==='inbdest'){
     const row=(lvl,html,kd,val)=>'<button class="pi" data-act="inbGo" data-id="'+esc(id)+'" data-kind="'+kd+'" data-val="'+esc(val)+'" style="padding-left:'+(10+lvl*14)+'px">'+html+'</button>';
     const proj=(q,lvl)=>{let h=row(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>','proj',q.id);
@@ -4628,7 +4736,7 @@ function onClick(e){
     case 'addProject':{
       const area=s.areas.includes(id)?id:s.areas[0];
       const p={id:uid(),name:'Nuevo proyecto',area,color:areaTone(area),icon:'📁',notes:'',notesHtml:'',description:'',notion:'',parent:''};
-      s.projects.push(p);openArea=area;openProj=p.id;openObj='';projTab='Nota maestra';focusAfter={kind:'proj.name',id:p.id,select:true};save();break;
+      s.projects.push(p);openArea=area;openProj=p.id;openObj='';projTab='Nota maestra';if(view==='Planificación'){pjmFocus={kind:'proj.name',id:p.id,select:true};openPjm('proj',p.id);save();break;}focusAfter={kind:'proj.name',id:p.id,select:true};save();break;
     }
     case 'addObjAt':{
       const o={id:uid(),project:'',name:'Nuevo objetivo',icon:'🎯',status:'Más adelante',priority:'Normal',hours:2,phase:'',deadline:'',sections:[],sched:false};
@@ -4645,7 +4753,7 @@ function onClick(e){
     case 'toggleDoneBox':doneOpen.has(id)?doneOpen.delete(id):doneOpen.add(id);if(doneOpen.has(id))leaveHoy(id);render();break;
     case 'pickIcon':openPop(b,'<div class="emojis">'+EMOJIS.map(x=>'<button data-act="setIcon" data-val="'+x+'">'+x+'</button>').join('')+'</div>',{kind:b.dataset.kind,id});break;
     case 'setIcon':{const c=popCtx;closePop();if(!c)break;const item=c.kind==='obj'?objective(c.id):project(c.id);if(item){item.icon=b.dataset.val;save();}break;}
-    case 'menu':menuFor(b.dataset.kind,id,b);break;
+    case 'menu':if(pop.classList.contains('open')&&lastAnchor===b){closePop();break;}menuFor(b.dataset.kind,id,b);break;
     case 'taskMenu':if(isMob()){if(gripSel!==id){gripSel=id;pick(id);}else openPop(b,pi('Eliminar tarea','delTaskNow','data-id="'+esc(id)+'"'));}break;
     case 'delTaskNow':gripSel='';closePop();removeTask(id);break;
     case 'objDate':{const o=objective(id);if(o&&!o.deadline){o.deadline=day();save();}else menuFor('deadline',id,b);break;}
@@ -4735,12 +4843,16 @@ function onClick(e){
     case 'projEye':{const i=s.hideP.indexOf(id);if(i<0)s.hideP.push(id);else s.hideP.splice(i,1);save();break;}
     case 'plLevel':plShowObj=id==='obj';lsSet('focus.plshowobj',plShowObj?'1':'0');plFold.clear();plFoldSave();render();break;
     case 'pjLevel':pjShowObj=id==='obj';lsSet('focus.pjshowobj',pjShowObj?'1':'0');pjFold.clear();pjFoldSave();render();break;
-    case 'tlToday':{const tl=$('#tl');if(tl)tl.scrollTo({left:Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160),behavior:'smooth'});break;}
+    case 'tlToday':{const tl=b.closest('#pjm')?$('#tlq'):$('#tl');if(tl)tl.scrollTo({left:Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160),behavior:'smooth'});break;}
     case 'clearWindow':{const o=objective(id);closePop();if(o){delete o.window;save();}break;}
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
     case 'qcOpen':openQuick();break;
     case 'inbPick':menuFor('inbdest',id,b);break;
+    case 'pjOpen':openPjm(b.dataset.kind,id);break;
+    case 'plAdd':{if(b.dataset.kind==='obj'){const o=objective(id);if(o)plNewObj(o.project,o.id);}else menuFor('pladd',id,b);break;}
+    case 'plNewSub':closePop();plNewSub(id);break;
+    case 'plNewObj':closePop();plNewObj(id);break;
     case 'inbGo':closePop();openPlace(id,b.dataset.kind,b.dataset.val);break;
     case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
     case 'qcMic':toggleMicQ();break;
