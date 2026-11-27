@@ -2571,6 +2571,25 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .pjm .tlbar{flex-wrap:wrap;gap:6px;row-gap:6px}
 .pjg{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute);margin:12px 0 6px}
 @media (max-width:900px){.pjm{padding:0}.pjm-box{height:100dvh;border-radius:0}.pjm-body{padding:4px 12px 24px}}
+
+/* v208 */
+.keybub{background:color-mix(in srgb,var(--red) 6%,var(--card));border-color:color-mix(in srgb,var(--red) 30%,transparent)}
+:root[data-theme="dark"] .keybub .ktsec{color:#fff}
+.plph>.tb-ar.sbi{position:absolute;margin:0;width:14px;height:14px;top:50%;margin-top:-7px;color:var(--faint);pointer-events:none}
+.tl.isdone .tb-g,.tl.isdone .tl-pbox{filter:grayscale(1);opacity:.9}
+.pjs-kid{border:1px solid var(--line);border-radius:16px;background:var(--card);margin:0 0 10px;overflow:hidden}
+.pjs-hd{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer}
+.pjs-hd:hover{background:var(--bg3)}
+.pjs-hd .chv{width:15px;height:15px;color:var(--faint);transition:transform .15s;flex:none}
+.pjs-kid.open .chv{transform:rotate(90deg)}
+.pjs-hd .pdot{width:9px;height:9px;border-radius:50%;background:var(--ac);flex:none}
+.pjs-hd .t{flex:1;min-width:0}.pjs-hd .t b{display:block;font-size:15px}
+.pjs-hd .t small{display:block;color:var(--faint);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pjs-m{color:var(--faint);font-size:12px;white-space:nowrap}
+.pjs-body{padding:10px 12px 6px;border-top:1px solid var(--line);background:var(--bg)}
+.pjs-empty{color:var(--faint);font-size:13px;margin:4px 6px 10px}
+.pjm-adds{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+@media (max-width:700px){.pjm-adds{grid-template-columns:1fr}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2608,7 +2627,7 @@ const GLYPHS={
   flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
   timeline:'<rect x="3.5" y="4.5" width="9" height="3.6" rx="1.8"/><rect x="8.5" y="10.2" width="12" height="3.6" rx="1.8"/><rect x="5.5" y="15.9" width="8" height="3.6" rx="1.8"/>',
-  pie:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l6 6"/><path d="M12 12H3.5"/>',
+  pie:'<path d="M12 3.2a8.8 8.8 0 1 0 8.8 8.8H12z"/><path d="M15.2 2.9a8.9 8.9 0 0 1 5.9 5.9h-5.9z"/>',
   play:'<rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10.3 9.5v5l4.2-2.5z"/>',
   checkbox:'<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.3l2.8 2.8L16.2 9.4"/>',
   briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M3 13h18"/>',
@@ -3487,7 +3506,7 @@ function keyBlock(){
         const sec=t.section&&t.section!==RECUR?t.section:(daily&&t.section===RECUR?RECUR:'');
         const sh=sec&&sec!==last?'<div class="ktctx ktsecrow"><span class="ktsec">'+esc(sec)+'</span></div>':'';
         last=sec||last;
-        return sh+taskRow(t).replace(' draggable="true" data-drag="task"','');
+        return sh+taskRow(t).replace(' draggable="true" data-drag="task"','').replace(/\bisimp\b/,'');
       }).join('');
       return '<div class="kt ktg">'+head+body+'</div>';
     }).join('');
@@ -3819,7 +3838,7 @@ function syncDayModal(){
 }
 function timeline(projects,embedded=false,opts={}){
   const rg=RANGES.find(r=>r[0]===tlRange),nWin=opts.scoped?0:rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
-  const px=ZOOM[tlZoom],showN=px>=48;
+  const zoom=opts.scoped?'Días':tlZoom,px=ZOOM[zoom],showN=px>=48;
   const cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const pendOf=o=>s.tasks.filter(t=>t.objective===o.id&&!t.done);
   let rows=[];
@@ -3839,7 +3858,7 @@ function timeline(projects,embedded=false,opts={}){
   const all=rows.flatMap(r=>[r.b.start,r.b.end]);
   const lo=[today,...all].sort()[0];
   const first=shift(lo,-7)<shift(today,-14)?shift(lo,-7):shift(today,-14);
-  const last=[shift(today,tlZoom==='Meses'?240:tlZoom==='Semanas'?120:60),...all.map(d=>shift(d,21))].sort().at(-1);
+  const last=[shift(today,zoom==='Meses'?240:zoom==='Semanas'?120:60),...all.map(d=>shift(d,21))].sort().at(-1);
   if(nWin){const we=shift(today,nWin-1);rows=rows.filter(r=>r.b.start<=we);}
   const n=diffDays(first,last)+1,W=n*px;
   const dates=Array.from({length:n},(_,i)=>shift(first,i));
@@ -3943,9 +3962,9 @@ function timeline(projects,embedded=false,opts={}){
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>'';
   const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div>'+(opts.scoped?'':'<div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
-    '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
+    (opts.scoped?'':'<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>')+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
-  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="'+(opts.id||'tl')+'" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
+  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl'+(done?' isdone':'')+'" id="'+(opts.id||'tl')+'" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
     (opts.scoped?'':'<p class="tlnote">'+note+'</p>')+(embedded?'':'</div>');
 }
 const plFold=new Set((()=>{try{return JSON.parse(lsGet('focus.plfold')||'[]');}catch{return [];}})());
@@ -3965,11 +3984,12 @@ function viewPlan(){
   const live=o=>o.status!=='Completado';
   const cnt=id=>kidsOf(id).reduce((q,k)=>q+cnt(k.id),0)+s.objectives.filter(o=>o.project===id&&live(o)).length;
   const PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>';
+  const SUBI=ARR.replace('class="tb-ar"','class="tb-ar sbi"'),OBJI=LVL_ICO.obj.replace('class="bi"','class="tb-ar"');
   const objRow=(o,depth)=>{const off=objHidden(o);
-    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-act="pjOpen" data-kind="obj" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye addp" data-act="plAdd" data-kind="obj" data-id="'+o.id+'" title="Nuevo objetivo debajo" aria-label="Nuevo objetivo">'+PLUS+'</button><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
+    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-act="pjOpen" data-kind="obj" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+OBJI+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye addp" data-act="plAdd" data-kind="obj" data-id="'+o.id+'" title="Nuevo objetivo debajo" aria-label="Nuevo objetivo">'+PLUS+'</button><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
     const kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&live(o)),flip=plFold.has(p.id),objsShown=plShowObj!==flip,kidsShown=!(plShowObj&&flip),objs=objsShown?allO:[],has=kids.length||allO.length,folded=plShowObj?flip:(allO.length>0&&!flip),hid=projHidden(p.id),pad=depth*16;
-    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-act="pjOpen" data-kind="proj" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" style="left:'+(has?pad:pad+18)+'px" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
+    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-act="pjOpen" data-kind="proj" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(depth?pad+46:30+pad)+'px"><i class="rgrip" style="left:'+(depth?pad:(has?pad:pad+18))+'px" aria-hidden="true"></i>'+(depth?SUBI.replace('<svg ','<svg style="left:'+(pad+12)+'px" '):'')+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(depth?pad+28:pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
       '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<b class="cnt">'+cnt(p.id)+'</b>':'')+'<button type="button" class="eye addp" data-act="plAdd" data-kind="proj" data-id="'+p.id+'" title="Añadir subproyecto u objetivo" aria-label="Añadir">'+PLUS+'</button><button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
       (kidsShown?kids.map(k=>item(k,depth+1)).join(''):'')+objs.map(o=>objRow(o,depth+1)).join('')+'</div>';
   };
@@ -3996,6 +4016,8 @@ function pjmDone(o,rootId){
   const p=project(o.project),sp=objSpan(o);
   return '<button type="button" class="pj-dcard" style="--ac:'+(p?.color||'#b4b4ae')+'" data-act="pjOpen" data-kind="obj" data-id="'+esc(o.id)+'"><span class="gl sm dk">'+ICON.check+'</span><span class="dt"><b>'+esc(o.name)+'</b><small>'+sp.ts.length+(sp.ts.length===1?' tarea':' tareas')+' · '+dur(sp.worked)+' trabajadas'+(sp.doneAt?' · '+fmt({day:'numeric',month:'short',year:'numeric'},sp.doneAt).replace('.',''):'')+'</small></span></button>';
 }
+const pjmKidOrder=q=>[...kidsOf(q.id).flatMap(pjmKidOrder),...s.objectives.filter(o=>o.project===q.id&&o.status!=='Completado')];
+const pjmObjCard=o=>{const op=pjOpenObj.has(o.id);return '<div class="pj-obj'+(op?'':' folded')+'" data-fold="'+esc(o.id)+'">'+noBack(bubble(o,false,false,!op,false,'objOpen',op))+'</div>';};
 function pjmProj(p){
   const st=projStats(p),par=p.parent?project(p.parent):null;
   const tls=descIds(p.id).map(id=>project(id)).filter(Boolean);
@@ -4014,10 +4036,20 @@ function pjmProj(p){
     const groups=descIds(p.id).map(id=>project(id)).filter(Boolean).map(q=>[q,dn.filter(o=>o.project===q.id)]).filter(g=>g[1].length);
     done='<section class="pj-sec"><h2>Objetivos completados · '+dn.length+'</h2>'+groups.map(([q,L])=>(kidsOf(p.id).length?'<h3 class="pjg"><i class="adot" style="background:'+esc(q.color)+'"></i>'+esc(q.name)+'</h3>':'')+'<div class="pj-dlist">'+L.map(o=>pjmDone(o,p.id)).join('')+'</div>').join('')+'</section>';
   }
-  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section></div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+  const liveObjs=q=>descIds(q.id).some(id=>s.objectives.some(o=>o.project===id&&o.status!=='Completado'));
+  const allObjs=q=>descIds(q.id).some(id=>s.objectives.some(o=>o.project===id));
+  const kids=kidsOf(p.id).filter(k=>liveObjs(k)||!allObjs(k));
+  const direct=s.objectives.filter(o=>o.project===p.id&&o.status!=='Completado');
+  const kidCard=k=>{const open=pjm.kids?.has(k.id),L=pjmKidOrder(k),ks=projStats(k);
+    return '<div class="pjs-kid'+(open?' open':'')+'" style="--ac:'+esc(k.color)+'"><button type="button" class="pjs-hd" data-act="pjmKid" data-id="'+esc(k.id)+'" aria-expanded="'+!!open+'"><svg class="chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><i class="pdot"></i><span class="t"><b>'+esc(k.name)+'</b><small>'+esc(k.description||(L.length+(L.length===1?' objetivo':' objetivos')+(ks.left?' · '+dur(ks.left)+' pendientes':'')))+'</small></span><span class="pjs-m">'+L.length+(L.length===1?' objetivo':' objetivos')+'</span></button>'+(open?'<div class="pjs-body">'+(L.map(pjmObjCard).join('')||'<p class="pjs-empty">Sin objetivos abiertos.</p>')+'</div>':'')+'</div>';};
+  const lists=(kids.length?'<section class="pj-sec"><h2>Subproyectos · '+kids.length+'</h2>'+kids.map(kidCard).join('')+'</section>':'')+
+    (direct.length?'<section class="pj-sec"><h2>Objetivos · '+direct.length+'</h2>'+direct.map(pjmObjCard).join('')+'</section>':'');
+  const adds='<div class="pjm-adds"><button type="button" class="firstobj subp" data-act="plNewSub" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(kids.length?'Añade otro subproyecto':'Crea un subproyecto')+'</b><small>fase o etapa dentro de '+esc(p.name)+'</small></span></button><button type="button" class="firstobj subp" data-act="plNewObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(direct.length?'Crea otro objetivo':'Crea un objetivo')+'</b><small>en '+esc(p.name)+'</small></span></button></div>';
+  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section>'+lists+adds+'</div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
     card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
     '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div></section>'+done+'</div></div></div>';
 }
+const noBack=h=>h.replace(/<button class="viewall"[^>]*>[\s\S]*?<\/button>/,'');
 function pjmObj(o){
   const p=project(o.project),sp=objSpan(o),pc=p?.color||'#b4b4ae';
   const card=(l,v,sub)=>'<div class="pst"><small>'+l+'</small><b>'+v+'</b>'+(sub?'<em>'+sub+'</em>':'')+'</div>';
@@ -4025,7 +4057,7 @@ function pjmObj(o){
   const per=new Map();for(const [d,c] of workedMap().get(o.id)??[])per.set(d,c.m);
   const left=sumMin(sp.ts.filter(x=>!x.done),minutesLeft);
   return '<div class="pjpage objpage" style="--pc:'+pc+';--ac:'+pc+'"><header class="pj-head">'+(p?'<button type="button" class="pjback" data-act="pjOpen" data-kind="proj" data-id="'+esc(p.id)+'" title="Ir al proyecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'+esc(p.name)+'</button>':'')+'</header>'+
-    '<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Objetivo</h2><div class="pj-obj" data-fold="'+esc(o.id)+'">'+bubble(o,false,true)+'</div></section>'+
+    '<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Objetivo</h2><div class="pj-obj" data-fold="'+esc(o.id)+'">'+noBack(bubble(o,false,true))+'</div></section>'+
     '<section class="pj-sec"><h2>Línea de tiempo</h2>'+(p?tlScoped([p],o.id):'')+'</section></div>'+
     '<div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
       card('Estado',esc(o.status||''),sp.doneAt&&o.status==='Completado'?'completado el '+fm(sp.doneAt):'')+
@@ -4041,10 +4073,16 @@ function pjmRender(){
   const body=m.querySelector('.pjm-body'),sy=body.scrollTop,old=body.querySelector('#tlq'),ox=old?old.scrollLeft:null,oy=old?old.scrollTop:0;
   if(!(typeof pm!=='undefined'&&pm))anTips=new Map();
   m.querySelector('.pjm-k').textContent=p?(p.parent?'Subproyecto':'Proyecto'):'Objetivo';
-  body.innerHTML=p?pjmProj(p):pjmObj(o);
+  const fin=p?(()=>{const ids=descIds(p.id);const os=s.objectives.filter(x=>ids.includes(x.project));return os.length>0&&os.every(x=>x.status==='Completado');})():o.status==='Completado';
+  const mode=pjm.mode||(fin?'done':'pend'),saved=tlMode;tlMode=mode;
+  try{body.innerHTML=p?pjmProj(p):pjmObj(o);}finally{tlMode=saved;}
   body.scrollTop=sy;
   const tl=body.querySelector('#tlq');
-  if(tl){const px=+tl.dataset.px;if(ox==null||pjm.px!==px){tl.scrollLeft=Math.max(0,diffDays(tl.dataset.first,day())*px-120);}else{tl.scrollLeft=ox;tl.scrollTop=oy;}pjm.px=px;}
+  if(tl){const px=+tl.dataset.px;
+    if(pjm.anim){pjm.anim=false;tlAnim(tl,mode==='done');}
+    else if(ox==null||pjm.px!==px)tl.scrollLeft=tlTarget(tl,mode==='done');
+    else{tl.scrollLeft=ox;tl.scrollTop=oy;}
+    pjm.px=px;}
   if(pjmFocus){const f=pjmFocus;pjmFocus=null;focusEdit(f.kind,f.id,f.select,f.attr);}
 }
 document.addEventListener('click',e=>{if(pjm&&(e.target.id==='pjm'||e.target.closest?.('.pjmx')))closePjm();});
@@ -4287,7 +4325,8 @@ function render0(){
   $$('[data-scroll]').forEach((c,i)=>{if(colScroll[i])c.scrollTop=colScroll[i];});
   const tl=$('#tl');
   if(tl){
-    if(tlScroll==='today'||!tlpos){tl.scrollLeft=Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160);tlScroll=null;}
+    if(tlScroll==='anim'){tlAnim(tl,tlMode==='done');tlScroll=null;}
+    else if(tlScroll==='today'||!tlpos){tl.scrollLeft=tlTarget(tl,tlMode==='done');tlScroll=null;}
     else{tl.scrollLeft=tlpos[0];tl.scrollTop=tlpos[1];}
   }
   window.scrollTo(0,pageScroll);
@@ -4295,6 +4334,13 @@ function render0(){
   $$('textarea.notes').forEach(autoGrow);
   if(focusAfter){const f=focusAfter;focusAfter=null;focusEdit(f.kind,f.id,f.select,f.attr);}
   updateFloat();
+}
+function tlTarget(tl,done){const px=+tl.dataset.px,x=diffDays(tl.dataset.first,day())*px;return Math.max(0,done?x-tl.clientWidth+px*2+40:x-160);}
+function tlAnim(tl,done){
+  const a=tlTarget(tl,!done),b=tlTarget(tl,done);tl.scrollLeft=a;
+  if(a===b||matchMedia('(prefers-reduced-motion:reduce)').matches){tl.scrollLeft=b;return;}
+  const t0=performance.now(),D=950,ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const id=tl.id,step=n=>{const k=Math.min(1,(n-t0)/D),el=document.getElementById(id);if(!el)return;el.scrollLeft=a+(b-a)*ease(k);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);
 }
 function autoGrow(el){el.style.height='auto';el.style.height=Math.max(320,el.scrollHeight)+'px';}
 function focusEdit(kind,id,select=false,attr=''){
@@ -4535,7 +4581,7 @@ function menuFor(kind,id,anchor){
   if(kind==='color')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setColor" data-id="'+id+'" data-val="'+c+'" aria-pressed="'+(p.color===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='areacolor')return openPop(anchor,'<div class="swatches">'+PALETTE.map(c=>'<button style="--pc:'+c+'" data-act="setAreaColor" data-id="'+esc(id)+'" data-val="'+c+'" aria-pressed="'+(areaTone(id)===c)+'" aria-label="Color"></button>').join('')+'</div>');
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
-  if(kind==='pladd')return openPop(anchor,pi('Subproyecto','plNewSub','data-id="'+esc(id)+'"')+pi('Objetivo','plNewObj','data-id="'+esc(id)+'"'));
+  if(kind==='pladd')return openPop(anchor,pi(LVL_ICO.sub+'Subproyecto','plNewSub','data-id="'+esc(id)+'"')+pi(LVL_ICO.obj+'Objetivo','plNewObj','data-id="'+esc(id)+'"'));
   if(kind==='inbdest'){
     const row=(lvl,html,kd,val)=>'<button class="pi" data-act="inbGo" data-id="'+esc(id)+'" data-kind="'+kd+'" data-val="'+esc(val)+'" style="padding-left:'+(10+lvl*14)+'px">'+html+'</button>';
     const proj=(q,lvl)=>{let h=row(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>','proj',q.id);
@@ -4671,7 +4717,7 @@ function onClick(e){
     case 'plFold':plFold.has(id)?plFold.delete(id):plFold.add(id);plFoldSave();render();break;
     case 'clearStart':{const o=objective(id);if(o){delete o.startOn;save();}break;}
     case 'tlToggle':tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render();break;
-    case 'tlView':tlMode=id;tlScroll='today';render();break;
+    case 'tlView':if(b.closest('#pjm')&&pjm){pjm.mode=id;pjm.anim=true;}else{tlMode=id;tlScroll='anim';}render();break;
     case 'tlExpandAll':{const ids=s.objectives.map(o=>o.id);if(ids.length&&ids.every(x=>tlOpen.has(x)))tlOpen.clear();else ids.forEach(x=>tlOpen.add(x));render();break;}
     case 'insTask':if(b.dataset.done==='1'){doneOpen.delete(b.dataset.obj||DAILY.id);}leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'',b.dataset.after??'',b.dataset.today==='1'||inFeed(),b.dataset.before??'');break;
     case 'insSection':{leaveHoy(id,1);
@@ -4843,13 +4889,14 @@ function onClick(e){
     case 'projEye':{const i=s.hideP.indexOf(id);if(i<0)s.hideP.push(id);else s.hideP.splice(i,1);save();break;}
     case 'plLevel':plShowObj=id==='obj';lsSet('focus.plshowobj',plShowObj?'1':'0');plFold.clear();plFoldSave();render();break;
     case 'pjLevel':pjShowObj=id==='obj';lsSet('focus.pjshowobj',pjShowObj?'1':'0');pjFold.clear();pjFoldSave();render();break;
-    case 'tlToday':{const tl=b.closest('#pjm')?$('#tlq'):$('#tl');if(tl)tl.scrollTo({left:Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160),behavior:'smooth'});break;}
+    case 'tlToday':{const tl=b.closest('#pjm')?$('#tlq'):$('#tl');if(tl)tl.scrollTo({left:tlTarget(tl,tl.classList.contains('isdone')),behavior:'smooth'});break;}
     case 'clearWindow':{const o=objective(id);closePop();if(o){delete o.window;save();}break;}
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
     case 'qcOpen':openQuick();break;
     case 'inbPick':menuFor('inbdest',id,b);break;
     case 'pjOpen':openPjm(b.dataset.kind,id);break;
+    case 'pjmKid':{if(!pjm)break;(pjm.kids??=new Set());pjm.kids.has(id)?pjm.kids.delete(id):pjm.kids.add(id);pjmRender();break;}
     case 'plAdd':{if(b.dataset.kind==='obj'){const o=objective(id);if(o)plNewObj(o.project,o.id);}else menuFor('pladd',id,b);break;}
     case 'plNewSub':closePop();plNewSub(id);break;
     case 'plNewObj':closePop();plNewObj(id);break;
@@ -4988,7 +5035,7 @@ function pmRender(){
   const crumb=q=>{const a=[];for(let x=q,n=0;x&&n<6;x=x.parent&&x.parent!==x.id?project(x.parent):null,n++)a.unshift(x.name);return a.join(' › ');};
   let h='';
   for(const {o,proj} of sc){
-    h+='<div class="pmo" data-pmo="'+esc(o.id===DAILY.id?'':o.id)+'">'+(proj&&pm.kind==='proj'?'<div class="pmcr"><i class="adot" style="background:'+esc(proj.color||'#b4b4ae')+'"></i>'+esc(crumb(proj))+'</div>':'')+bubble(o,false,true)+'<div class="pmtail" data-obj="'+esc(o.id===DAILY.id?'':o.id)+'"><span>＋ Nueva sección al final</span></div></div>';
+    h+='<div class="pmo" data-pmo="'+esc(o.id===DAILY.id?'':o.id)+'">'+(proj&&pm.kind==='proj'?'<div class="pmcr"><i class="adot" style="background:'+esc(proj.color||'#b4b4ae')+'"></i>'+esc(crumb(proj))+'</div>':'')+noBack(bubble(o,false,true))+'<div class="pmtail" data-obj="'+esc(o.id===DAILY.id?'':o.id)+'"><span>＋ Nueva sección al final</span></div></div>';
   }
   m.querySelector('.pm-t b').textContent=tk.name;
   body.classList.toggle('placing',pm.placing);
@@ -5303,7 +5350,7 @@ function flipTl(fn){
 function clearDrop(){document.getElementById('tlguide')?.remove();$$('.drop-before,.drop-after,.drop-in,.drop-cal,.sec-target,.dropping').forEach(n=>{n.classList.remove('drop-before','drop-after','drop-in','drop-cal','sec-target','dropping');delete n.dataset.dir;});lastDrop=null;}
 document.addEventListener('dragstart',e=>{
   const h=e.target.closest?.('[data-drag]');if(!h)return;
-  drag={kind:h.dataset.drag,id:h.dataset.id,obj:h.dataset.obj,x0:e.clientX,st:h.dataset.st,mem:h.dataset.mem,mk:h.dataset.mk};
+  drag={src:h.closest('.tl-group,.plo,.plph,.pobj,.prow,.ritem,.agroup,.bubble')||h,kind:h.dataset.drag,id:h.dataset.id,obj:h.dataset.obj,x0:e.clientX,st:h.dataset.st,mem:h.dataset.mem,mk:h.dataset.mk};
   e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',drag.id);
   const row=h.closest('.task,.sec,.fhead,.fgwrap,.bubble,.plph,.plo,.prow,.pitem,.block,.ritem,.tlcard,.tb-title')||h;
   try{e.dataTransfer.setDragImage(row,12,12);}catch{}
@@ -5311,7 +5358,7 @@ document.addEventListener('dragstart',e=>{
 });
 function dropInfo(e){
   const el=e.target.closest?.('*');if(!el||!drag)return null;
-  const k=drag.kind,half=(n)=>{const r=n.getBoundingClientRect();return e.clientY>r.top+r.height/2;};
+  const k=drag.kind,half=(n)=>{const r=n.getBoundingClientRect();if(k!=='task'&&k!=='block'&&drag.src&&drag.src.isConnected&&drag.src!==n){const a=drag.src.getBoundingClientRect();return a.top+a.height/2<r.top+r.height/2;}return e.clientY>r.top+r.height/2;};
   if(k==='task'||k==='block'){const cal=el.closest('.daycol');if(cal)return {type:'cal',el:cal,cls:'drop-cal'};}
   if(k==='task'){
     const row=el.closest('.task');
