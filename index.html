@@ -2510,8 +2510,8 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 
 /* v203 Acción, Inbox y colocar tareas */
 .inbub{margin:0 0 22px}
-.task.inb{grid-template-columns:24px 16px minmax(0,1fr) auto 64px 50px 68px 26px}
-.task.inb .idest{grid-column:4;grid-row:1;display:inline-flex;align-items:center;gap:4px;margin:0 8px 0 6px;padding:3px 8px;border:1px solid var(--line2);border-radius:999px;background:transparent;color:var(--mute);font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
+.task.inb{grid-template-columns:24px 16px auto minmax(0,1fr) 64px 50px 68px 26px}
+.task.inb .idest{grid-column:3;grid-row:1;display:inline-flex;align-items:center;gap:4px;margin:0 10px 0 4px;padding:3px 8px;border:1px solid var(--line2);border-radius:999px;background:transparent;color:var(--mute);font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
 .task.inb .idest:hover{color:var(--ink);border-color:var(--ink)}
 .task.inb .idest svg{width:11px;height:11px}
 .inbl{max-height:min(60vh,460px);overflow:auto;min-width:260px}
@@ -2539,8 +2539,8 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .pmghost.gs{pointer-events:none}.pmghost.gs .pmsec{color:var(--ink)}
 .pmghost.gs .pmsec .pmname{pointer-events:auto}
 .pmname{width:100%;box-sizing:border-box;font:inherit;font-size:13px;padding:4px 8px;border:1.5px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink);outline:none;text-transform:none;letter-spacing:0;font-weight:500}
-@keyframes pmin{from{opacity:0;max-height:0}to{opacity:1;max-height:80px}}
-.pm-body.ghosting .pmt.me{display:none}
+@keyframes pmin{from{opacity:0}to{opacity:1}}
+.pm-body.ghosting .pmt.me{opacity:.3}
 .pmt.me{background:color-mix(in srgb,var(--accent,#4a8) 14%,transparent)}
 .pmt.me.flash{animation:pmfl 1.2s ease-out}
 @keyframes pmfl{from{background:color-mix(in srgb,var(--accent,#4a8) 45%,transparent)}}
@@ -2551,8 +2551,11 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .pm-empty{color:var(--faint);padding:20px;text-align:center}
 @media (hover:none){.pmbr{height:26px;border:1px dashed var(--line2)}.pmbr .pmbl{opacity:1}}
 @media (max-width:760px){
-  .task.inb{grid-template-rows:auto auto auto}
-  .task.inb .idest{grid-column:3/9;grid-row:3;justify-self:start;margin:2px 0 0}
+  .task.inb{grid-template-columns:12px 16px auto auto minmax(0,1fr) 34px 34px 34px;grid-template-rows:auto auto auto}
+  .task.inb .idest{grid-column:3/9;grid-row:1;justify-self:start;margin:0 0 2px}
+  .task.inb>:nth-child(1),.task.inb>:nth-child(2){grid-row:1}
+  .task.inb>:nth-child(3){grid-row:2}
+  .task.inb>:nth-child(4),.task.inb>:nth-child(5),.task.inb>:nth-child(6),.task.inb>:nth-child(7),.task.inb>:nth-child(8),.task.inb>:nth-child(9){grid-row:3}
   .pm{padding:8px}.pm-box{max-height:92vh}
 }
 </style></head>
@@ -4895,26 +4898,38 @@ function pmRender(){
   m.querySelector('.pm-t b').textContent=tk.name;
   m.querySelector('.pm-hint').textContent=pm.placed?'Colocada. Haz clic en otro sitio para moverla, o cierra con ✕ o fuera de la ventana.':(matchMedia('(hover:none)').matches?'Toca una tarea para ponerla debajo, o una línea «＋ Nueva sección».':'Pasa el ratón para ver dónde caería. Entre dos secciones se crea una nueva.');
   m.querySelector('.pm-body').innerHTML=h||'<p class="pm-empty">No hay objetivos abiertos aquí.</p>';
-  pm.tg=null;pm.key='';
+  pm.tg=null;pm.key='';pm.ghostEl=null;pmSnap();
+}
+function pmSnap(){
+  const m=document.getElementById('pm');if(!m||!pm)return;const b=m.querySelector('.pm-body'),bt=b.getBoundingClientRect().top;
+  pm.snap=[...b.querySelectorAll('.pmt,.pmsec,.pmbr,.pmempty')].map(el=>{const r=el.getBoundingClientRect();return {el,top:r.top-bt+b.scrollTop,bot:r.bottom-bt+b.scrollTop};});
 }
 function pmTarget(e){
-  const el=document.elementFromPoint(e.clientX,e.clientY);if(!el||!el.closest('.pm-body'))return null;
-  const tc=el.closest('.pmt');if(tc){const r=tc.getBoundingClientRect();return {k:'task',el:tc,obj:tc.dataset.obj,sec:tc.dataset.sec,ref:tc.dataset.id,after:matchMedia('(hover:none)').matches||e.clientY>r.top+r.height/2};}
-  const hd=el.closest('.pmsec');if(hd)return {k:'head',el:hd,obj:hd.dataset.obj,sec:hd.dataset.sec};
-  const br=el.closest('.pmbr');if(br)return {k:'new',el:br,obj:br.dataset.obj,before:br.dataset.before};
-  const em=el.closest('.pmempty');if(em)return {k:'empty',el:em,obj:em.dataset.obj,sec:''};
-  return null;
+  const b=document.querySelector('#pm .pm-body');if(!b||!pm)return null;const r=b.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)return null;
+  let y=e.clientY-r.top+b.scrollTop;
+  const g=pm.ghostEl;
+  if(g&&g.isConnected){const gr=g.getBoundingClientRect(),gt=gr.top-r.top+b.scrollTop,gh=gr.height,og=pm.ghostOrig||0;
+    if(y>=gt+gh)y-=gh-og;else if(y>gt)y=gt+Math.min(og/2,y-gt);}
+  let it=pm.snap.find(x=>y>=x.top&&y<x.bot);
+  if(!it){let d=9;for(const x of pm.snap){const dd=y<x.top?x.top-y:y-x.bot;if(dd<d){d=dd;it=x;}}if(!it)return null;}
+  const el=it.el,touch=matchMedia('(hover:none)').matches;
+  if(el.classList.contains('pmt'))return {k:'task',el,obj:el.dataset.obj,sec:el.dataset.sec,ref:el.dataset.id,after:touch||y>(it.top+it.bot)/2};
+  if(el.classList.contains('pmsec'))return {k:'head',el,obj:el.dataset.obj,sec:el.dataset.sec};
+  if(el.classList.contains('pmbr'))return {k:'new',el,obj:el.dataset.obj,before:el.dataset.before,og:it.bot-it.top};
+  return {k:'empty',el,obj:el.dataset.obj,sec:''};
 }
 function pmGhost(tg){
   const m=document.getElementById('pm');if(!m||!pm)return;const list=m.querySelector('.pm-body');
   m.querySelectorAll('.pmghost').forEach(g=>g.remove());m.querySelectorAll('.pmbr.open').forEach(b=>b.classList.remove('open'));
-  list.classList.toggle('ghosting',!!tg);if(!tg)return;
+  list.classList.toggle('ghosting',!!tg);pm.ghostEl=null;pm.ghostOrig=0;if(!tg)return;
   const tk=task(pm.tid),g=document.createElement('div');g.className='pmghost';
   g.innerHTML='<i class="pmck"></i><span class="pmn">'+esc(tk.name)+'</span><span class="pmm num">'+dur(tk.minutes)+'</span>';
   if(tg.k==='task')tg.after?tg.el.after(g):tg.el.before(g);
   else if(tg.k==='head')tg.el.after(g);
   else if(tg.k==='empty')tg.el.after(g);
-  else{tg.el.classList.add('open');const w=document.createElement('div');w.className='pmghost gs';w.innerHTML='<div class="pmsec">Nueva sección</div>';w.appendChild(g);tg.el.appendChild(w);}
+  if(tg.k!=='new')pm.ghostEl=g;
+  else{tg.el.classList.add('open');const w=document.createElement('div');w.className='pmghost gs';w.innerHTML='<div class="pmsec">Nueva sección</div>';w.appendChild(g);tg.el.appendChild(w);pm.ghostEl=w;pm.ghostOrig=tg.og||0;}
 }
 function pmPlace(tg,newName){
   const tk=task(pm?.tid);if(!tk)return;
