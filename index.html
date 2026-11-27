@@ -2489,6 +2489,20 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .plrail .agroup:hover>.rhead>.rgrip,.plrail .agroup .rhead:hover>.rgrip{opacity:.5}
 .plrail .agroup.drop-before,.plrail .agroup.drop-after{border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px var(--accent)}
 .plrail .agroup.drop-before:before,.plrail .agroup.drop-after:after{display:none}
+/* v200 aviso de tiempo al completar */
+.tq{position:fixed;inset:0;z-index:97;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.tq-box{width:min(420px,100%);border-radius:20px;padding:22px 22px 16px;background:var(--ink);color:var(--bg);box-shadow:0 24px 70px rgba(0,0,0,.4)}
+.tq-t{display:block;font-size:17px;letter-spacing:-.2px;margin-bottom:6px}
+.tq-box p{margin:0 0 14px;font-size:14px;line-height:1.45;opacity:.78}
+.tq-box p.tq-n{margin:12px 0 16px;font-size:13px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tq-row{display:flex;align-items:center;gap:10px}
+.tq-row input{width:110px;font:inherit;font-size:22px;font-weight:650;text-align:center;padding:8px 10px;border-radius:12px;border:1px solid color-mix(in srgb,var(--bg) 35%,transparent);background:color-mix(in srgb,var(--bg) 12%,transparent);color:var(--bg);outline:none}
+.tq-row input:focus{border-color:var(--bg)}
+.tq-row span{opacity:.7;font-size:14px}
+.tq-act{display:flex;align-items:center;justify-content:flex-end;gap:14px}
+.tq-b{border:0;border-radius:999px;padding:9px 20px;font:inherit;font-size:14px;font-weight:650;background:var(--bg);color:var(--ink);cursor:pointer}
+.tq-l{border:0;background:none;color:var(--bg);opacity:.7;font:inherit;font-size:14px;cursor:pointer}
+.tq-l:hover{opacity:1}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2833,8 +2847,26 @@ function stopTask(id){
   if(s.running?.id===id)closeTimer();
   s.pauseId='';s.paused=s.paused.filter(x=>x!==id);selected=id;suggestion='';save();
 }
-function finish(id){
+function askTime(id){
+  const t=task(id);if(!t||document.getElementById('tq'))return;
+  const m=document.createElement('div');m.id='tq';m.className='tq';m.dataset.act='tqBg';m.dataset.id=id;
+  m.innerHTML='<div class="tq-box" role="dialog" aria-modal="true" aria-label="Tiempo de la tarea"><b class="tq-t">Esta tarea no tiene tiempo registrado</b><p>¿Cuántos minutos has usado para completarla? Por defecto pongo el tiempo estimado.</p><div class="tq-row"><input id="tqm" type="number" min="0" step="5" inputmode="numeric" value="'+Math.round(+t.minutes||0)+'" aria-label="Minutos usados"><span>min</span></div><p class="tq-n">'+esc(t.name)+'</p><div class="tq-act"><button type="button" class="tq-b" data-act="tqOk" data-id="'+esc(id)+'">Completar</button><button type="button" class="tq-l" data-act="tqCancel">Cancelar</button></div></div>';
+  document.body.appendChild(m);const i=document.getElementById('tqm');i.focus();i.select();
+}
+function closeAsk(){document.getElementById('tq')?.remove();}
+function tqConfirm(id){
+  const v=Math.max(0,Math.round(+document.getElementById('tqm')?.value||0)),t=task(id);closeAsk();if(!t)return;
+  if(v>0){const now=Date.now();s.entries.push({id:uid(),task:id,start:now-v*60000,end:now,adj:true});}
+  finish(id,true);
+}
+document.addEventListener('keydown',e=>{
+  const q=document.getElementById('tq');if(!q)return;
+  if(e.key==='Escape'){e.preventDefault();closeAsk();}
+  else if(e.key==='Enter'&&!e.isComposing){e.preventDefault();tqConfirm(q.dataset.id);}
+});
+function finish(id,skip=false){
   const t=task(id);if(!t||t.done)return;
+  if(!skip&&s.running?.id!==id&&(isRecur(t)?workedMin(t):elapsed(id)/60000)<0.01){askTime(id);return;}
   if(s.running?.id===id)closeTimer();
   {const rp=s.reopen?.[t.objective||DAILY.id];if(rp&&!s.tasks.some(x=>x!==t&&!x.done&&x.objective===t.objective&&x.section===t.section))s.reopen[t.objective||DAILY.id]=rp.filter(x=>x!==t.section);}
   t.done=Date.now();s.pauseId='';s.paused=s.paused.filter(x=>x!==id);
@@ -4489,6 +4521,9 @@ function onClick(e){
     case 'play':start(id);break;
     case 'pause':pause();break;
     case 'finish':finish(id);break;
+    case 'tqOk':tqConfirm(id);break;
+    case 'tqCancel':closeAsk();break;
+    case 'tqBg':if(e.target===b)closeAsk();break;
     case 'stopTask':stopTask(id);break;
     case 'dismiss':suggestion='';render();break;
     case 'addTask':leaveHoy(b.dataset.obj??'');addTask(b.dataset.obj??'',b.dataset.sec??'','',b.dataset.today==='1'||inFeed());break;
