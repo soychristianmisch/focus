@@ -2491,18 +2491,18 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .plrail .agroup.drop-before:before,.plrail .agroup.drop-after:after{display:none}
 /* v200 aviso de tiempo al completar */
 .tq{position:fixed;inset:0;z-index:97;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
-.tq-box{width:min(420px,100%);border-radius:20px;padding:22px 22px 16px;background:var(--ink);color:var(--bg);box-shadow:0 24px 70px rgba(0,0,0,.4)}
-.tq-t{display:block;font-size:17px;letter-spacing:-.2px;margin-bottom:6px}
-.tq-box p{margin:0 0 14px;font-size:14px;line-height:1.45;opacity:.78}
-.tq-box p.tq-n{margin:12px 0 16px;font-size:13px;opacity:.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tq-row{display:flex;align-items:center;gap:10px}
-.tq-row input{width:110px;font:inherit;font-size:22px;font-weight:650;text-align:center;padding:8px 10px;border-radius:12px;border:1px solid color-mix(in srgb,var(--bg) 35%,transparent);background:color-mix(in srgb,var(--bg) 12%,transparent);color:var(--bg);outline:none}
-.tq-row input:focus{border-color:var(--bg)}
-.tq-row span{opacity:.7;font-size:14px}
-.tq-act{display:flex;align-items:center;justify-content:flex-end;gap:14px}
-.tq-b{border:0;border-radius:999px;padding:9px 20px;font:inherit;font-size:14px;font-weight:650;background:var(--bg);color:var(--ink);cursor:pointer}
-.tq-l{border:0;background:none;color:var(--bg);opacity:.7;font:inherit;font-size:14px;cursor:pointer}
-.tq-l:hover{opacity:1}
+.tq-box{width:min(460px,100%);border-radius:22px;padding:16px 16px 10px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(255,255,255,.6);box-shadow:0 24px 70px rgba(0,0,0,.28);color:var(--ink)}
+:root[data-theme="dark"] .tq-box{background:rgba(24,24,27,.86);border-color:rgba(255,255,255,.1)}
+.tq-t{display:block;font-size:14.5px;font-weight:600;margin:0 2px 2px}
+.tq-box p{margin:0 2px 10px;font-size:13px;line-height:1.4;color:var(--mute)}
+.tq-row{display:flex;align-items:center;gap:8px}
+.tq-row input{width:64px;font:inherit;font-size:15px;font-weight:600;text-align:center;padding:6px 8px;border-radius:10px;border:1px solid var(--line2);background:color-mix(in srgb,var(--card) 70%,transparent);color:var(--ink);outline:none}
+.tq-row input:focus{border-color:var(--ink)}
+.tq-row span{color:var(--mute);font-size:13px}
+.tq-row .grow{flex:1}
+.tq-l{border:0;background:none;color:var(--mute);font:inherit;font-size:13px;cursor:pointer;padding:6px 8px}
+.tq-l:hover{color:var(--ink)}
+.tq-box p.tq-n{margin:8px 2px 0;font-size:12px;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2850,7 +2850,7 @@ function stopTask(id){
 function askTime(id){
   const t=task(id);if(!t||document.getElementById('tq'))return;
   const m=document.createElement('div');m.id='tq';m.className='tq';m.dataset.act='tqBg';m.dataset.id=id;
-  m.innerHTML='<div class="tq-box" role="dialog" aria-modal="true" aria-label="Tiempo de la tarea"><b class="tq-t">Esta tarea no tiene tiempo registrado</b><p>¿Cuántos minutos has usado para completarla? Por defecto pongo el tiempo estimado.</p><div class="tq-row"><input id="tqm" type="number" min="0" step="5" inputmode="numeric" value="'+Math.round(+t.minutes||0)+'" aria-label="Minutos usados"><span>min</span></div><p class="tq-n">'+esc(t.name)+'</p><div class="tq-act"><button type="button" class="tq-b" data-act="tqOk" data-id="'+esc(id)+'">Completar</button><button type="button" class="tq-l" data-act="tqCancel">Cancelar</button></div></div>';
+  m.innerHTML='<div class="tq-box" role="dialog" aria-modal="true" aria-label="Tiempo de la tarea"><b class="tq-t">Esta tarea no tiene tiempo registrado</b><p>¿Cuánto has usado para completarla? Pongo el tiempo estimado por defecto.</p><div class="tq-row"><input id="tqm" type="number" min="0" step="5" inputmode="numeric" value="'+Math.round(+t.minutes||0)+'" aria-label="Minutos usados"><span>min</span><span class="grow"></span><button type="button" class="tq-l" data-act="tqCancel">Cancelar</button><button type="button" class="btn solid" data-act="tqOk" data-id="'+esc(id)+'">Completar</button></div><p class="tq-n">'+esc(t.name)+'</p></div>';
   document.body.appendChild(m);const i=document.getElementById('tqm');i.focus();i.select();
 }
 function closeAsk(){document.getElementById('tq')?.remove();}
