@@ -2454,6 +2454,13 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .plo.drop-before:before,.plo.drop-after:after,.pobj.drop-before:before,.pobj.drop-after:after{display:none}
 .pobj.drop-before,.pobj.drop-after,.prow.drop-in{background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:9px;box-shadow:inset 0 0 0 1.5px var(--accent)}
 .plph.dragging,.prow.dragging,.plo.dragging{opacity:.45}
+/* v194 subproyectos en la timeline */
+.tl-pbox{position:relative;width:var(--w);margin:14px 0 16px}
+.tl-pbox .tl-pbox{margin:8px 0 10px}
+.tl-pshade{position:absolute;top:-4px;bottom:-6px;border-radius:16px;background:color-mix(in srgb,var(--pc) 5.5%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pc) 9%,transparent);pointer-events:none;z-index:0}
+.tb-pbar{margin-bottom:0}
+.tb-g.thin{padding-bottom:0}
+.tl-pbox .tb-g:not(.thin){margin-top:6px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3045,9 +3052,9 @@ function projItem(p,depth){
   const folded=hasC&&pjFold.has(p.id)&&!isDesc(openProj,p.id);
   const nd=n=>kidsOf(n).reduce((q,k)=>q+1+nd(k.id),0)+(pjShowObj?s.objectives.filter(o=>o.project===n&&o.status!=='Completado').length:0);
   const pad=PJ_PAD+depth*18;
-  return '<div class="pnode" data-proj="'+p.id+'"><div class="prow'+(hasC?' hask':'')+'" draggable="true" data-drag="pproj" data-id="'+p.id+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><i class="rgrip" aria-hidden="true"></i>'+(hasC?'<button class="pchev'+(folded?' shut':'')+'" style="left:'+Math.max(0,pad-18)+'px" data-act="pjFold" data-id="'+p.id+'" aria-label="'+(folded?'Desplegar':'Plegar')+'" title="'+(folded?'Desplegar':'Plegar')+'">'+CHV_SVG+'</button>':'')+
+  return '<div class="pnode" data-proj="'+p.id+'"><div class="prow'+(hasC?' hask':'')+'" draggable="true" data-drag="pproj" data-id="'+p.id+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><i class="rgrip" style="left:'+Math.max(1,pad-25)+'px" aria-hidden="true"></i>'+(hasC?'<button class="pchev'+(folded?' shut':'')+'" style="left:'+Math.max(0,pad-18)+'px" data-act="pjFold" data-id="'+p.id+'" aria-label="'+(folded?'Desplegar':'Plegar')+'" title="'+(folded?'Desplegar':'Plegar')+'">'+CHV_SVG+'</button>':'')+
     '<button class="pitem'+(sel?' sel':'')+'" style="padding-left:'+pad+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<span class="pcnt">'+nd(p.id)+'</span>':'')+'</button></div>'+
-    (folded?'':kids.map(k=>projItem(k,depth+1)).join('')+objs.map(o=>'<div class="prow pobj" draggable="true" data-drag="robj" data-id="'+o.id+'" style="--ac:'+p.color+'"><i class="rgrip" aria-hidden="true"></i><button class="pitem'+(openObj===o.id||pjOpenObj.has(o.id)&&sel?' sel':'')+'" style="padding-left:'+(PJ_PAD+(depth+1)*18)+'px" data-act="pjGoObj" data-id="'+o.id+'">'+ARR+'<span class="pn">'+esc(o.name)+'</span></button></div>').join(''))+'</div>';
+    (folded?'':kids.map(k=>projItem(k,depth+1)).join('')+objs.map(o=>'<div class="prow pobj" draggable="true" data-drag="robj" data-id="'+o.id+'" style="--ac:'+p.color+'"><i class="rgrip" style="left:'+(PJ_PAD+(depth+1)*18-25)+'px" aria-hidden="true"></i><button class="pitem'+(openObj===o.id||pjOpenObj.has(o.id)&&sel?' sel':'')+'" style="padding-left:'+(PJ_PAD+(depth+1)*18)+'px" data-act="pjGoObj" data-id="'+o.id+'">'+ARR+'<span class="pn">'+esc(o.name)+'</span></button></div>').join(''))+'</div>';
 }
 const PJ_PAD=28;
 let pjShowObj=lsGet('focus.pjshowobj')!=='0';
@@ -3505,7 +3512,14 @@ function spanBar(o,plan){
 /* prioridad: fijados primero, luego por fecha límite, luego por el orden de la lista */
 const projHidden=pid=>{let x=project(pid),n=0;while(x&&n++<12){if(s.hideP.includes(x.id))return true;x=x.parent&&x.parent!==x.id?project(x.parent):null;}return false;};
 const objHidden=o=>!o.sched||projHidden(o.project);
-function planOrder(){return s.objectives.filter(o=>!objHidden(o));}
+function railRank(){
+  const rk=new Map();let n=0;
+  const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
+  const visit=(p,d=0)=>{if(d>12)return;for(const k of kidsOf(p.id))visit(k,d+1);for(const o of s.objectives)if(o.project===p.id&&!rk.has(o.id))rk.set(o.id,n++);};
+  for(const ar of areas)for(const p of s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id)))visit(p);
+  return rk;
+}
+function planOrder(){const rk=railRank();return s.objectives.filter(o=>!objHidden(o)).sort((a,b)=>(rk.get(a.id)??1e9)-(rk.get(b.id)??1e9));}
 const bandList=()=>BL();
 const restBand=()=>BL().find(x=>x.rest)||BL().at(-1);
 const bandById=id=>BL().find(x=>x.id===id)||restBand();
@@ -3567,7 +3581,7 @@ function computePlan(){
       }
       if(M>.5)r.over+=M;
     }
-    if(last)cur.set(b,last);
+    if(last&&o)cur.set(b,last); /* Día a día va aparte */
   }
   return res;
 }
@@ -3737,7 +3751,7 @@ function timeline(projects,embedded=false){
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
       return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(tx?'<b'+(w>=34?'':' class="ov"')+'>'+tx+'</b>':'')+'</i>';}).join('');
     if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
-      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+(BL+6)+'px;width:'+BW+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+'</span></div></div>';}
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+BL+'px;width:'+(BW+27)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+'</span></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
@@ -3758,6 +3772,8 @@ function timeline(projects,embedded=false){
         if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))its.push([pIdx.get(r.oid)??1e9,()=>group(r,d2)]);
         its.sort((a,b)=>a[0]-b[0]);h+=its.map(x=>x[1]()).join('');
       }
+      if(open&&!skip){const ds=rsub.flatMap(r=>[r.b.start,r.b.end]).sort(),a=xOf(ds[0])-18-7,w=(diffDays(ds[0],ds.at(-1))+1)*px+39+14,ac=p.color||areaTone(p.area);
+        h='<div class="tl-pbox" style="--pc:'+ac+'"><i class="tl-pshade" style="left:'+a+'px;width:'+w+'px"></i>'+h+'</div>';}
       return h;
     };
     const roots=s.projects.filter(p=>pset.has(p.id)&&!(p.parent&&p.parent!==p.id&&pset.has(p.parent))).sort((a,b)=>key(sub(a.id))-key(sub(b.id)));
@@ -3796,10 +3812,10 @@ function viewPlan(){
   const live=o=>o.status!=='Completado';
   const cnt=id=>kidsOf(id).reduce((q,k)=>q+cnt(k.id),0)+s.objectives.filter(o=>o.project===id&&live(o)).length;
   const objRow=(o,depth)=>{const off=objHidden(o);
-    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
+    return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+3)+'px" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
     const kids=kidsOf(p.id),objs=s.objectives.filter(o=>o.project===p.id&&live(o)),has=kids.length||objs.length,folded=plFold.has(p.id),hid=projHidden(p.id),pad=depth*16;
-    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
+    return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" style="left:'+(pad+3)+'px" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
       '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<b class="cnt">'+cnt(p.id)+'</b>':'')+'<button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
       (folded?'':kids.map(k=>item(k,depth+1)).join('')+objs.map(o=>objRow(o,depth+1)).join(''))+'</div>';
   };
