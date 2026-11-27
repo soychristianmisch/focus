@@ -2386,6 +2386,8 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .dvm-top{position:sticky;top:-14px;z-index:5;display:flex;justify-content:flex-end;gap:6px;padding:6px 0;background:var(--bg)}
 .dvm .dayview{max-width:none}
 .seg.lvl button{display:inline-flex;align-items:center;gap:5px}.seg.lvl svg{width:15px;height:15px;flex:none}
+.tl-dim{position:absolute;top:0;bottom:0;right:0;background:color-mix(in srgb,var(--faint) 13%,transparent);pointer-events:none;z-index:6}
+.tb-pbar .pp{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--mute);margin:0 2px 0 3px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3532,10 +3534,7 @@ let dvDay='';
 function dayModalHtml(d){
   const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const order=[];
-  for(const bd of bandList()){
-    const visit=pid=>{for(const k of kidsOf(pid))visit(k.id);for(const o of planOrder())if(o.project===pid&&bandOf(o)===bd.id)order.push(o);};
-    rootProjects().forEach(p=>visit(p.id));
-  }
+  for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
   const objs=[...order,null].filter(o=>cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -3576,9 +3575,9 @@ function timeline(projects,embedded=false){
   for(const oid of ['',...s.objectives.map(o=>o.id)])for(const [d,c] of cellsOf(oid))totals.set(d,(totals.get(d)??0)+c.m);
   const all=rows.flatMap(r=>[r.b.start,r.b.end]);
   const lo=[today,...all].sort()[0];
-  const first=nWin?tlStart:(shift(lo,-7)<shift(today,-14)?shift(lo,-7):shift(today,-14));
-  const last=nWin?shift(tlStart,nWin-1):[shift(today,tlZoom==='Meses'?240:tlZoom==='Semanas'?120:60),...all.map(d=>shift(d,21))].sort().at(-1);
-  if(nWin)rows=rows.filter(r=>r.b.end>=first&&r.b.start<=last);
+  const first=shift(lo,-7)<shift(today,-14)?shift(lo,-7):shift(today,-14);
+  const last=[shift(today,tlZoom==='Meses'?240:tlZoom==='Semanas'?120:60),...all.map(d=>shift(d,21))].sort().at(-1);
+  if(nWin){const we=shift(today,nWin-1);rows=rows.filter(r=>r.b.start<=we);}
   const n=diffDays(first,last)+1,W=n*px;
   const dates=Array.from({length:n},(_,i)=>shift(first,i));
   const xOf=d=>diffDays(first,d)*px;
@@ -3633,7 +3632,7 @@ function timeline(projects,embedded=false){
       '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
     return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+'"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px"><div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
-  const pgroup=(p,rsub,depth,open,thin=false)=>{
+  const pgroup=(p,rsub,depth,open,thin=false,tag='')=>{
     const band=rsub[0].band,segs=rsub.flatMap(r=>r.segs),ds=rsub.flatMap(r=>[r.b.start,r.b.end]).sort(),st=ds[0],en=ds.at(-1);
     const ac=p.color||areaTone(p.area),x0=xOf(st),BL=x0-6,BW=(diffDays(st,en)+1)*px+12,rel=x=>x-x0;
     const byDay=new Map();
@@ -3641,7 +3640,7 @@ function timeline(projects,embedded=false){
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
       return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(tx?'<b'+(w>=34?'':' class="ov"')+'>'+tx+'</b>':'')+'</i>';}).join('');
     if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
-      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+(BL+6)+'px;width:'+(BW-12)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+'"><span>'+(depth?ARR:'')+esc(p.name)+(kidsT?chv(open):'')+'</span></div></div>';}
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+(BL+6)+'px;width:'+(BW-12)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+'"><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+'</span></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
@@ -3651,17 +3650,20 @@ function timeline(projects,embedded=false){
   const renderBand=(rs,bd)=>{
     const byP=byProj(),rootId=byP&&bd.project?bd.project:null,pset=new Set();
     for(const r of rs)if(r.p){let x=r.p,n=0;while(x&&n++<12&&projects.some(q=>q.id===x.id)){pset.add(x.id);x=x.parent&&x.parent!==x.id?project(x.parent):null;}}
-    const sub=pid=>rs.filter(r=>r.p&&(r.p.id===pid||isDesc(r.p.id,pid)));
+    const sub=pid=>rs.filter(r=>r.p&&(r.p.id===pid||isDesc(r.p.id,pid))),pIdx=new Map(planOrder().map((o,i)=>[o.id,i])),key=rr=>Math.min(1e9,...rr.map(r=>pIdx.get(r.oid)??1e9));
     const node=(pid,depth)=>{
       const p=project(pid),rsub=sub(pid);if(!p||!rsub.length)return '';
-      const skip=pid===rootId,open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true);
+      const hasSub=kidsOf(pid).some(k=>pset.has(k.id)),rootHide=depth===0&&!p.parent&&!(tlLevel==='proj'||(tlLevel==='sub'&&!hasSub)),skip=pid===rootId||rootHide;
+      const open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true,byP&&rootProject(p)?.id===rootId?'':(p.parent?(rootProject(p)||{}).name:''));
       if(open){const d2=skip?depth:depth+1;
-        for(const k of kidsOf(pid))if(pset.has(k.id))h+=node(k.id,d2);
-        if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))h+=group(r,d2);
+        const its=[];
+        for(const k of kidsOf(pid))if(pset.has(k.id))its.push([key(sub(k.id)),()=>node(k.id,d2)]);
+        if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))its.push([pIdx.get(r.oid)??1e9,()=>group(r,d2)]);
+        its.sort((a,b)=>a[0]-b[0]);h+=its.map(x=>x[1]()).join('');
       }
       return h;
     };
-    const roots=s.projects.filter(p=>pset.has(p.id)&&!(p.parent&&p.parent!==p.id&&pset.has(p.parent)));
+    const roots=s.projects.filter(p=>pset.has(p.id)&&!(p.parent&&p.parent!==p.id&&pset.has(p.parent))).sort((a,b)=>key(sub(a.id))-key(sub(b.id)));
     return roots.map(p=>node(p.id,0)).join('')+(tlLevel==='proj'||tlLevel==='sub'?'':rs.filter(r=>!r.p).map(r=>group(r,0)).join(''));
   };
   let body='';
@@ -3673,11 +3675,11 @@ function timeline(projects,embedded=false){
       (rs.length?renderBand(rs,bd):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
   }
   const real=rows.filter(r=>r.o);
-  const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>nWin?'<div class="tlnav"><button class="btn line ic" data-act="tlNav" data-id="-1" aria-label="Anterior">‹</button><span>'+lblD(tlStart)+' – '+lblD(shift(tlStart,nWin-1))+'</span><button class="btn line ic" data-act="tlNav" data-id="1" aria-label="Siguiente">›</button></div>':'';
+  const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>'';
   const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
     '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
-  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
+  return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
     '<p class="tlnote">'+note+'</p>'+(embedded?'':'</div>');
 }
 const plFold=new Set((()=>{try{return JSON.parse(lsGet('focus.plfold')||'[]');}catch{return [];}})());
@@ -4472,7 +4474,7 @@ function onClick(e){
       save();const l=$('#poplist');if(l)l.innerHTML=addDayHtml(pop.querySelector('.psearch')?.value??'');break;
     }
     case 'tlZoom':tlZoom=id;tlScroll='today';render();break;
-    case 'tlRange':tlRange=id;lsSet('focus.tlrange',id);tlScroll='today';if(id!=='all'&&tlStart<day())tlStart=day();render();break;
+    case 'tlRange':tlRange=id;lsSet('focus.tlrange',id);render();break;
     case 'dayOpen':dvDay=id;syncDayModal();break;
     case 'dayCloseBg':if(b.id==='dvm'&&e.target!==b)break;dvDay='';syncDayModal();break;
     case 'dayNav':dvDay=shift(dvDay,+id);syncDayModal();break;
@@ -4483,7 +4485,7 @@ function onClick(e){
     case 'objEye':{const o=objective(id);if(o){o.sched=!o.sched;save();}break;}
     case 'projEye':{const i=s.hideP.indexOf(id);if(i<0)s.hideP.push(id);else s.hideP.splice(i,1);save();break;}
     case 'pjLevel':pjShowObj=id==='obj';lsSet('focus.pjshowobj',pjShowObj?'1':'0');pjFold.clear();pjFoldSave();render();break;
-    case 'tlToday':{if(tlRange!=='all'){tlStart=day();render();break;}const tl=$('#tl');if(tl)tl.scrollTo({left:Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160),behavior:'smooth'});break;}
+    case 'tlToday':{const tl=$('#tl');if(tl)tl.scrollTo({left:Math.max(0,diffDays(tl.dataset.first,day())*+tl.dataset.px-160),behavior:'smooth'});break;}
     case 'clearWindow':{const o=objective(id);closePop();if(o){delete o.window;save();}break;}
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
