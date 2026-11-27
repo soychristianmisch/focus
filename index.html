@@ -2482,6 +2482,13 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .plrail .rhead .lines{position:absolute;left:-17px;top:50%;margin-top:-7px}
 .plrail .agroup:hover>.rhead .lines{opacity:.85}
 .plrail .newarea{margin:14px 4px 0 12px;padding-left:8px;font-size:12px}
+/* v199 */
+.dayview .viewall.pgo{display:flex}
+.plrail .agroup .rhead{margin-left:12px;cursor:grab}
+.plrail .rhead .rgrip{left:-12px}
+.plrail .agroup:hover>.rhead>.rgrip,.plrail .agroup .rhead:hover>.rgrip{opacity:.5}
+.plrail .agroup.drop-before,.plrail .agroup.drop-after{border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.plrail .agroup.drop-before:before,.plrail .agroup.drop-after:after{display:none}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2983,6 +2990,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
+  if(dvIds&&today&&!daily&&!cp)body+='<button class="viewall pgo" data-act="goObjProj" data-id="'+o.id+'">Ver este objetivo en proyectos <span>›</span></button>';
   if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="'+(today?'hoyOpen':'fViewAll')+'" data-id="'+o.id+'">Ver todas las tareas <span>⌄</span></button>';
   if(closeBtn)body+='<button class="viewall" data-act="objToggle" data-id="'+o.id+'">Clic para cerrar el objetivo <span>⌃</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
@@ -3069,13 +3077,14 @@ let pjFold=new Set((()=>{try{return JSON.parse(lsGet('focus.pjfold')||'[]');}cat
 const pjFoldSave=()=>lsSet('focus.pjfold',JSON.stringify([...pjFold]));
 const isDesc=(id,anc)=>{let x=project(id),n=0;while(x&&x.parent&&n++<12){if(x.parent===anc)return true;x=project(x.parent);}return false;};
 function projItem(p,depth){
-  const sel=p.id===openProj,kids=kidsOf(p.id),objs=pjShowObj?s.objectives.filter(o=>o.project===p.id&&o.status!=='Completado'):[],hasC=kids.length>0||objs.length>0;
-  const folded=hasC&&pjFold.has(p.id)&&!isDesc(openProj,p.id);
-  const nd=n=>kidsOf(n).reduce((q,k)=>q+1+nd(k.id),0)+(pjShowObj?s.objectives.filter(o=>o.project===n&&o.status!=='Completado').length:0);
+  const sel=p.id===openProj,kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&o.status!=='Completado'),hasC=kids.length>0||allO.length>0;
+  const flip=pjFold.has(p.id)&&!isDesc(openProj,p.id),objsShown=pjShowObj!==flip,kidsShown=!(pjShowObj&&flip),objs=objsShown?allO:[];
+  const folded=hasC&&(pjShowObj?flip:(allO.length>0&&!flip));
+  const nd=n=>kidsOf(n).reduce((q,k)=>q+1+nd(k.id),0)+s.objectives.filter(o=>o.project===n&&o.status!=='Completado').length;
   const pad=PJ_PAD+depth*18;
   return '<div class="pnode" data-proj="'+p.id+'"><div class="prow'+(hasC?' hask':'')+'" draggable="true" data-drag="pproj" data-id="'+p.id+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><i class="rgrip" style="left:'+(hasC?pad-30:pad-12)+'px" aria-hidden="true"></i>'+(hasC?'<button class="pchev'+(folded?' shut':'')+'" style="left:'+Math.max(0,pad-18)+'px" data-act="pjFold" data-id="'+p.id+'" aria-label="'+(folded?'Desplegar':'Plegar')+'" title="'+(folded?'Desplegar':'Plegar')+'">'+CHV_SVG+'</button>':'')+
     '<button class="pitem'+(sel?' sel':'')+'" style="padding-left:'+pad+'px" data-act="selectProject" data-id="'+p.id+'" aria-current="'+sel+'"><i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<span class="pcnt">'+nd(p.id)+'</span>':'')+'</button></div>'+
-    (folded?'':kids.map(k=>projItem(k,depth+1)).join('')+objs.map(o=>'<div class="prow pobj" draggable="true" data-drag="robj" data-id="'+o.id+'" style="--ac:'+p.color+'"><i class="rgrip" style="left:'+(PJ_PAD+(depth+1)*18-12)+'px" aria-hidden="true"></i><button class="pitem'+(openObj===o.id||pjOpenObj.has(o.id)&&sel?' sel':'')+'" style="padding-left:'+(PJ_PAD+(depth+1)*18)+'px" data-act="pjGoObj" data-id="'+o.id+'">'+ARR+'<span class="pn">'+esc(o.name)+'</span></button></div>').join(''))+'</div>';
+    (kidsShown?kids.map(k=>projItem(k,depth+1)).join(''):'')+(objs.map(o=>'<div class="prow pobj" draggable="true" data-drag="robj" data-id="'+o.id+'" style="--ac:'+p.color+'"><i class="rgrip" style="left:'+(PJ_PAD+(depth+1)*18-12)+'px" aria-hidden="true"></i><button class="pitem'+(openObj===o.id||pjOpenObj.has(o.id)&&sel?' sel':'')+'" style="padding-left:'+(PJ_PAD+(depth+1)*18)+'px" data-act="pjGoObj" data-id="'+o.id+'">'+ARR+'<span class="pn">'+esc(o.name)+'</span></button></div>').join(''))+'</div>';
 }
 const PJ_PAD=32;
 let pjShowObj=lsGet('focus.pjshowobj')!=='0';
@@ -3181,12 +3190,17 @@ function viewProyectos(){
 }
 
 /* ---------- Trabajo: proyectos y hoy en una sola vista ---------- */
+function tlRankMap(){
+  const m=new Map(),po=planOrder();let n=0;
+  for(const bd of bandList())for(const o of po)if(bandOf(o)===bd.id)m.set(o.id,n++);
+  return m;
+}
 function dayOrder(){
   const order=[];
   for(const t of queue(selectedDate)){if(t.done)continue;const k=t.objective||'';if(!order.includes(k))order.push(k);}
   for(const t of s.tasks){if(!t.nuevo||t.done)continue;const k=t.objective||'';if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   for(const k0 of hoyOpen){const k=k0===DAILY.id?'':k0;if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
-  const ix=k=>k===''?-1:s.objectives.findIndex(o=>o.id===k);
+  const rk=tlRankMap(),ix=k=>k===''?1e9:(rk.get(k)??1e8);
   return order.sort((x,y)=>ix(x)-ix(y));
 }
 const dlInfo=d=>{const t=day();return d===t?{txt:'Hoy',cls:' dl-hoy'}:d===shift(t,1)?{txt:'Mañana',cls:' dl-man'}:{txt:fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),cls:''};};
@@ -3247,7 +3261,7 @@ function withSecs(ids,fn,kind){
 }
 function hoySecs(ids,fn,kind){
   const cls=kind==='rail'?'rsec':'csec',hd=t=>'<div class="'+cls+'">'+t+'</div>',pj=ids.filter(k=>k!==''),dd=ids.includes('');
-  return (dd?hd('Día a día')+fn(''):'')+(pj.length?hd('Focus hoy')+pj.map(fn).join(''):'');
+  return (pj.length?hd('Focus hoy')+pj.map(fn).join(''):'')+(dd?hd('Día a día')+fn(''):'');
 }
 const EXPBTN_OLD=id=>'<button class="rexp" data-act="wExpand" data-id="'+id+'" title="Abrir el objetivo expandido (clic otra vez para salir)" aria-label="Abrir expandido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9l4-4 4 4"/><path d="M8 15l4 4 4-4"/></svg></button>';
 const EXPBTN=()=>'';
@@ -3381,16 +3395,16 @@ function mobFeedHoy(){
 }
 function workCenter(ids){
   if(isMob()&&wSolo===null&&!wProj){
-    const hd=dateHead()+noteBlock()+keyBlock();
+    const hd=dateHead()+keyBlock();
     if(wHoy)return '<div class="wc-in feedc mfeed">'+hd+(hoyFeed?mobFeedHoy():'')+'</div>';
     if(wStat==='Focus')return '<div class="wc-in focusc mfeed">'+hd+focusStack(true)+'</div>';
     return '<div class="wc-in mfeed">'+hd+focusStack('all')+'</div>';
   }
-  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+noteBlock()+keyBlock()+(fHoy?focusStack():'')+'</div>';
+  if(focusOn()&&wSolo===null)return '<div class="wc-in focusc">'+dateHead()+keyBlock()+(fHoy?focusStack():'')+'</div>';
   if(wSolo!==null&&ids.includes(wSolo)){const ko=wSolo===''?DAILY.id:wSolo,op=wHoy&&hoyOpen.has(ko);const fd=focusOn()&&fHoy;return '<div class="wc-in solo'+(fd?' fsolo':'')+'">'+dateHead()+'<div class="bubbles one">'+bubble(wSolo===''?DAILY:objective(wSolo),wHoy&&!op,op,false,fd)+'</div></div>';}
   if(wProj&&project(wProj))return '<div class="wc-in"><button class="btn" data-act="wProjBack">‹ Volver a los proyectos</button>'+projectPage(project(wProj))+'</div>';
-  if(wHoy)return '<div class="wc-in feedc">'+dateHead()+noteBlock()+keyBlock()+(hoyFeed?mobFeedHoy():'')+'</div>';
-  return '<div class="wc-in empty-pick">'+dateHead()+noteBlock()+keyBlock()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un objetivo de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
+  if(wHoy)return '<div class="wc-in feedc">'+dateHead()+keyBlock()+(hoyFeed?mobFeedHoy():'')+'</div>';
+  return '<div class="wc-in empty-pick">'+dateHead()+keyBlock()+'<p class="empty pick">'+(ids.filter(k=>k!=='').length||ids.includes('')?'Elige un objetivo de la izquierda para abrirlo.':'Nada que mostrar con este filtro.')+'</p></div>';
 }
 const DAILYPILL=()=>'<button class="fpill daily" style="--ac:'+DAILY_TONE+'" data-act="wArea" data-id="__daily" aria-pressed="'+(!wHoy&&wArea==='__daily')+'">Día a día<b class="cnt">'+s.tasks.filter(t=>!t.objective&&!t.done).length+'</b></button>';
 function viewTrabajo(){
@@ -3812,7 +3826,7 @@ function timeline(projects,embedded=false){
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div><div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div><div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
     '<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>'+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
   return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl" id="tl" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
@@ -3837,15 +3851,16 @@ function viewPlan(){
   const objRow=(o,depth)=>{const off=objHidden(o);
     return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+ARR+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
-    const kids=kidsOf(p.id),objs=plShowObj?s.objectives.filter(o=>o.project===p.id&&live(o)):[],has=kids.length||objs.length,folded=plFold.has(p.id),hid=projHidden(p.id),pad=depth*16;
+    const kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&live(o)),flip=plFold.has(p.id),objsShown=plShowObj!==flip,kidsShown=!(plShowObj&&flip),objs=objsShown?allO:[],has=kids.length||allO.length,folded=plShowObj?flip:(allO.length>0&&!flip),hid=projHidden(p.id),pad=depth*16;
     return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(30+pad)+'px"><i class="rgrip" style="left:'+(has?pad:pad+18)+'px" aria-hidden="true"></i>'+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
       '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+(folded?'<b class="cnt">'+cnt(p.id)+'</b>':'')+'<button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
-      (folded?'':kids.map(k=>item(k,depth+1)).join('')+objs.map(o=>objRow(o,depth+1)).join(''))+'</div>';
+      (kidsShown?kids.map(k=>item(k,depth+1)).join(''):'')+objs.map(o=>objRow(o,depth+1)).join('')+'</div>';
   };
   const tree=areas.map(ar=>{
     const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id)&&cnt(p.id)>0);
-    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="lines" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área"></span><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+roots.map(p=>item(p,0)).join('')+'</div>';
-  }).join('')+'<button class="addrow newarea" data-act="addArea">＋ Nueva área</button>';
+    if(!roots.length)return '';
+    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" style="--ac:'+areaTone(ar)+'"><i class="rgrip" aria-hidden="true"></i><span class="ahd">'+esc(ar)+'</span></div>'+roots.map(p=>item(p,0)).join('')+'</div>';
+  }).join('');
   const nObj=s.objectives.filter(live).length,nOn=s.objectives.filter(o=>live(o)&&!objHidden(o)).length;
   return '<div class="plan2"><aside class="wrail plrail"><div class="plsec"><span>Proyectos</span><b class="cnt">'+nOn+' / '+nObj+'</b></div>'+lvlSeg('plLevel',plShowObj)+(nObj?'':'<p class="pzhint">Aún no hay proyectos con objetivos.</p>')+tree+'</aside>'+
     '<div class="plmain">'+timeline(s.projects,true)+'</div></div>';
@@ -4388,6 +4403,7 @@ function onClick(e){
     case 'objToggle':{pjOpenObj.has(id)?pjOpenObj.delete(id):pjOpenObj.add(id);pjOpenSave();render();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
+    case 'goObjProj':dvDay='';syncDayModal();view='Proyectos';
     case 'pjGoObj':{const o=objective(id);if(!o)break;pjOpenObj.add(id);pjOpenSave();openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
       {const nq=normQ(pjQ).trim();if(nq&&s.tasks.some(t=>t.objective===o.id&&t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))doneOpen.add(o.id);}
       render();pjHLScroll();
