@@ -2388,6 +2388,41 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .seg.lvl button{display:inline-flex;align-items:center;gap:5px}.seg.lvl svg{width:15px;height:15px;flex:none}
 .tl-dim{position:absolute;top:0;bottom:0;right:0;background:color-mix(in srgb,var(--faint) 13%,transparent);pointer-events:none;z-index:6}
 .tb-pbar .pp{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--mute);margin:0 2px 0 3px}
+/* v188 Nuevo, importantes y botón + */
+.fab{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:60;width:54px;height:54px;border-radius:17px;border:0;background:var(--play);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 24px color-mix(in srgb,var(--play) 40%,transparent),0 2px 6px rgba(0,0,0,.18);transition:transform .12s,background .12s}
+.fab:hover{background:var(--play-hi);transform:translateY(-1px)}.fab:active{transform:scale(.95)}
+.fab svg{width:26px;height:26px}
+body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+@media (max-width:760px){.fab{right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}body.hasrb .fab{bottom:calc(140px + env(safe-area-inset-bottom,0px))}}
+.qc{position:fixed;inset:0;z-index:96;display:grid;place-items:end center;padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));background:rgba(0,0,0,.28);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.qc-box{width:min(620px,100%);border-radius:22px;padding:16px 16px 10px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(255,255,255,.6);box-shadow:0 24px 70px rgba(0,0,0,.28);color:var(--ink)}
+:root[data-theme="dark"] .qc-box{background:rgba(24,24,27,.66);border-color:rgba(255,255,255,.1)}
+.qc-box textarea{width:100%;box-sizing:border-box;resize:none;border:0;background:transparent;color:inherit;font:inherit;font-size:17px;line-height:1.45;outline:none;min-height:96px}
+.qc-box textarea::placeholder{color:var(--faint)}
+.qc-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.qc-row select{min-width:0;max-width:52%;border:1px solid var(--line2);background:color-mix(in srgb,var(--bg) 60%,transparent);color:var(--ink);border-radius:10px;padding:7px 8px;font-size:13px}
+.qc-row .mic.on{background:var(--red);color:#fff}
+.qc-h{margin:8px 2px 2px;font-size:11.5px;color:var(--faint)}
+.keybub{padding:12px 14px 14px;border-radius:18px;background:color-mix(in srgb,var(--red) 9%,var(--card));border:1px solid color-mix(in srgb,var(--red) 38%,transparent)}
+.keybub>header,.newbub>header{display:flex;align-items:center;gap:8px;margin:0 2px 10px}
+.keybub>header b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--red)}
+.keybub>header .stn{background:var(--red);color:#fff}
+.newbub{margin:0 0 22px;padding:12px 14px 8px;border-radius:18px;background:color-mix(in srgb,var(--faint) 13%,var(--bg));border:1px solid var(--line)}
+:root[data-theme="dark"] .newbub{background:color-mix(in srgb,#fff 6%,var(--bg))}
+.newbub>header b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.newbub>header span{font-size:12px;color:var(--faint)}
+.nitem{padding:9px 4px;border-top:1px solid var(--line)}.nitem:first-of-type{border-top:0}
+.nitem .tx{display:block;font-size:14.5px;line-height:1.45;outline:none;word-break:break-word}
+.nact{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-top:6px}
+.nchip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--ac) 16%,transparent);color:var(--ink)}
+.nchip i{width:7px;height:7px;border-radius:50%;background:var(--ac)}
+.nchip.none{background:transparent;border:1px dashed var(--line2);color:var(--mute)}
+.nlink{all:unset;cursor:pointer;font-size:12px;color:var(--faint)}.nlink:hover{color:var(--ink)}
+.nlink.main{color:var(--play);font-weight:650}
+.nact .x{margin-left:auto}
+.nlink:not(.main){display:none}.nitem:hover .nlink,.nitem:focus-within .nlink{display:inline}
+@media (max-width:760px){.nlink{display:inline!important}}
+.keybub header .stn{background:none;color:var(--red);font-style:normal;font-weight:600;margin-left:8px;padding:0}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2906,7 +2941,7 @@ function projectPage(p){
   const objs=s.objectives.filter(o=>o.project===p.id);
   const content=projTab==='Cronología'?timeline([p],true):
     '<textarea class="notes" data-note="'+p.id+'" placeholder="Nota maestra del proyecto: estrategia, decisiones, enlaces, información. Se guarda sola.">'+esc(p.notes)+'</textarea>';
-  return '<div class="ppage" style="--pc:'+p.color+'"><div class="phead"><div class="ptxt">'+editable('proj.name',p.id,p.name,'','ptitle','Proyecto sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div></div>'+
+  return '<div class="ppage" style="--pc:'+p.color+'"><div class="phead"><div class="ptxt">'+editable('proj.name',p.id,p.name,'','ptitle','Proyecto sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div></div>'+newBlock(p.id)+
     '<div class="pprops"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'">'+esc(p.area)+'</button>'+
     '<button class="p" data-act="menu" data-kind="color" data-id="'+p.id+'"><span class="swatch"></span>Color</button>'+
     '<span class="faint num">'+objs.length+' objetivos</span>'+
@@ -3226,22 +3261,39 @@ function focusStack(mob){
 }
 /* tareas importantes: réplicas fijas arriba del todo, con su contexto */
 function keyBlock(){
-  const L=s.tasks.filter(t=>t.imp&&!t.done);if(!L.length)return '';
-  const groups=[];
-  for(const t of L){const k=t.objective||'';let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(t);}
-  const rows=groups.map(g=>{
-    const o=objective(g.k),t0=g.items[0],p=projectOf(t0),daily=!g.k,ac=daily?DAILY_TONE:(p&&p.id?areaTone(p.area||''):'#b4b4ae');
-    const head='<div class="ktctx"><span class="atag" style="--ac:'+ac+'">'+esc(daily?'Día a día':(p?p.name:'Sin proyecto'))+'</span>'+(o?'<span class="ktobj">'+esc(o.name)+'</span>':'')+'</div>';
-    let last=null;
-    const body=g.items.map(t=>{
-      const sec=t.section&&t.section!==RECUR?t.section:(daily&&t.section===RECUR?RECUR:'');
-      const sh=sec&&sec!==last?'<div class="ktctx ktsecrow"><span class="ktsec">'+esc(sec)+'</span></div>':'';
-      last=sec||last;
-      return sh+taskRow(t).replace(' draggable="true" data-drag="task"','');
+  const L=s.tasks.filter(t=>t.imp&&!t.done);
+  let red='';
+  if(L.length){
+    const groups=[];
+    for(const t of L){const k=t.objective||'';let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(t);}
+    const rows=groups.map(g=>{
+      const o=objective(g.k),t0=g.items[0],p=projectOf(t0),daily=!g.k,ac=daily?DAILY_TONE:(p&&p.id?areaTone(p.area||''):'#b4b4ae');
+      const head='<div class="ktctx"><span class="atag" style="--ac:'+ac+'">'+esc(daily?'Día a día':(p?p.name:'Sin proyecto'))+'</span>'+(o?'<span class="ktobj">'+esc(o.name)+'</span>':'')+'</div>';
+      let last=null;
+      const body=g.items.map(t=>{
+        const sec=t.section&&t.section!==RECUR?t.section:(daily&&t.section===RECUR?RECUR:'');
+        const sh=sec&&sec!==last?'<div class="ktctx ktsecrow"><span class="ktsec">'+esc(sec)+'</span></div>':'';
+        last=sec||last;
+        return sh+taskRow(t).replace(' draggable="true" data-drag="task"','');
+      }).join('');
+      return '<div class="kt ktg">'+head+body+'</div>';
     }).join('');
-    return '<div class="kt ktg">'+head+body+'</div>';
-  }).join('');
-  return '<section class="keyblock" aria-label="Tareas importantes">'+rows+'</section>';
+    red='<section class="keyblock keybub" aria-label="Tareas importantes"><header><b>Importantes</b><i class="stn">'+L.length+'</i></header>'+rows+'</section>';
+  }
+  return red+newBlock();
+}
+/* Nuevo: ideas por procesar. Se quedan visibles hasta moverlas a un objetivo o borrarlas */
+const newItems=pid=>pid?s.inbox.filter(i=>i.project&&(i.project===pid||isDesc(i.project,pid))):s.inbox;
+function newBlock(pid=''){
+  const L=newItems(pid);if(!L.length)return '';
+  return '<section class="newbub" aria-label="Nuevo"><header><b>Nuevo</b><i class="stn">'+L.length+'</i><span>por procesar</span></header>'+L.map(i=>{
+    const p=i.project?project(i.project):null;
+    const chip=pid?'':(p?'<button class="nchip" style="--ac:'+p.color+'" data-act="newGoProj" data-id="'+p.id+'" title="Abrir el proyecto"><i></i>'+esc(p.name)+'</button>':'<button class="nchip none" data-act="newProj" data-id="'+i.id+'">Proyecto ▾</button>');
+    return '<div class="nitem"><span class="tx" contenteditable="plaintext-only" spellcheck="false" data-edit="inbox.text" data-id="'+i.id+'">'+esc(i.text)+'</span><div class="nact">'+chip+
+      '<button class="nlink main" data-act="inboxArea" data-id="'+i.id+'" title="Elegir objetivo y crear la tarea">Mover a objetivo ▾</button>'+
+      '<button class="nlink" data-act="inboxSynth" data-id="'+i.id+'" title="Quita relleno y deja la idea clave">Sintetizar</button><button class="nlink" data-act="inboxSimp" data-id="'+i.id+'" title="Limpia muletillas">Simplificar</button><button class="nlink" data-act="inboxSplit" data-id="'+i.id+'" title="Separa varias ideas">Dividir</button>'+
+      (i.orig?'<button class="nlink" data-act="inboxUndo" data-id="'+i.id+'">Deshacer</button>':'')+
+      '<button class="iconbtn x" data-act="delInbox" data-id="'+i.id+'" aria-label="Borrar" title="Borrar">✕</button></div></div>';}).join('')+'</section>';
 }
 /* reflexión del día: editor enriquecido por fecha */
 function noteBlock(){
@@ -3885,7 +3937,7 @@ function runbar(t){
 }
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
-  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica','Inbox'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'checkbox',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Objetivos & Tareas':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Objetivos',Proyectos:'Proyectos','Planificación':'Plan','Analítica':'Analítica',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
+  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'checkbox',Proyectos:'flag','Planificación':'calendar','Analítica':'chart',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Objetivos & Tareas':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Objetivos',Proyectos:'Proyectos','Planificación':'Plan','Analítica':'Analítica',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
     '<button class="btn" data-act="float" title="Ventana flotante del temporizador">Ventana flotante ↗</button>'+
     (typeof cloudBadge==='function'?cloudBadge():'')+'<button class="iconbtn" data-act="theme" id="themebtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">'+(document.documentElement.dataset.theme==='dark'?ICON.sun:ICON.moon)+'</button>'+
     '<button class="iconbtn" data-act="settings" aria-label="Ajustes" title="Ajustes">'+ICON.gear+'</button>';
@@ -3948,7 +4000,7 @@ function render0(){
     else{tl.scrollLeft=tlpos[0];tl.scrollTop=tlpos[1];}
   }
   window.scrollTo(0,pageScroll);
-  syncDayModal();
+  ensureFab();syncDayModal();
   $$('textarea.notes').forEach(autoGrow);
   if(focusAfter){const f=focusAfter;focusAfter=null;focusEdit(f.kind,f.id,f.select,f.attr);}
   updateFloat();
@@ -4489,6 +4541,13 @@ function onClick(e){
     case 'clearWindow':{const o=objective(id);closePop();if(o){delete o.window;save();}break;}
     case 'anRange':anRange=+id;render();break;
     case 'capture':addInbox();break;
+    case 'qcOpen':openQuick();break;
+    case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
+    case 'qcMic':toggleMicQ();break;
+    case 'qcSave':saveQuick();break;
+    case 'newGoProj':{const pj=project(id);if(!pj)break;view='Proyectos';openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();window.scrollTo(0,0);break;}
+    case 'newProj':{const list=s.projects.slice().sort((x,y)=>projPath(x).localeCompare(projPath(y))).map(pj=>pi('<i class="adot" style="background:'+pj.color+'"></i><span class="ptx">'+esc(projPath(pj))+'</span>','newSetProj','data-id="'+id+'" data-pj="'+pj.id+'"')).join('');openPop(b,'<div class="poplist inbl">'+list+'</div>',{});break;}
+    case 'newSetProj':{const i=s.inbox.find(x=>x.id===id);closePop();if(i){i.project=b.dataset.pj;save();}break;}
     case 'mic':toggleMic();break;
     case 'inboxArea':{
       const ORD=['Ministerio','Iglesia','Negocios','Personal','Familia & casa'];
@@ -4595,6 +4654,46 @@ function splitIdeas(t){
 function growCap(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,360)+'px';}
 document.addEventListener('input',e=>{if(e.target.id==='capin')growCap(e.target);
   if(e.target.id==='pjsearch'){pjQ=e.target.value;const r=$('#pjres');if(r)r.innerHTML=pjSearch(pjQ);$('.prail')?.classList.toggle('searching',!!pjQ.trim());applyHL();}});
+function ensureFab(){
+  if(document.getElementById('fab'))return;
+  const b=document.createElement('button');b.id='fab';b.type='button';b.className='fab';b.dataset.act='qcOpen';b.setAttribute('aria-label','Nuevo: apuntar una idea o tarea');b.title='Nuevo';
+  b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+  document.body.appendChild(b);
+}
+function openQuick(){
+  if(document.getElementById('qc')){document.getElementById('qcin')?.focus();return;}
+  const cur=view==='Proyectos'&&openProj&&project(openProj)?openProj:'';
+  const opts='<option value="">Sin proyecto todavía</option>'+s.projects.slice().sort((x,y)=>projPath(x).localeCompare(projPath(y))).map(pj=>'<option value="'+pj.id+'"'+(pj.id===cur?' selected':'')+'>'+esc(projPath(pj))+'</option>').join('');
+  const m=document.createElement('div');m.id='qc';m.className='qc';m.dataset.act='qcBg';
+  m.innerHTML='<div class="qc-box" role="dialog" aria-modal="true" aria-label="Nuevo"><textarea id="qcin" rows="4" placeholder="Escribe o dicta lo que quieras apuntar…" aria-label="Nueva idea"></textarea>'+
+    '<div class="qc-row"><button class="iconbtn mic" id="qmic" type="button" data-act="qcMic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><select id="qcproj" aria-label="Proyecto">'+opts+'</select><span class="grow"></span><button class="btn solid" type="button" data-act="qcSave">Guardar</button></div>'+
+    '<p class="qc-h">Enter guarda · Mayús+Enter añade una línea · Esc cierra</p></div>';
+  document.body.appendChild(m);
+  const ta=document.getElementById('qcin');ta.focus();
+}
+function closeQuick(){try{qrec?.stop();}catch(e){}qrec=null;document.getElementById('qc')?.remove();}
+function saveQuick(){
+  const ta=document.getElementById('qcin'),v=ta?.value.trim();if(!v){ta?.focus();return;}
+  const pj=document.getElementById('qcproj')?.value||'';
+  s.inbox.unshift({id:uid(),text:v,project:pj});save();closeQuick();render();notify('Guardado en Nuevo'+(pj?' · '+project(pj)?.name:''));
+}
+let qrec=null;
+function toggleMicQ(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){notify('Este navegador no permite dictar. Prueba en Chrome.');return;}
+  if(qrec){qrec.stop();return;}
+  const r=new SR();qrec=r;r.lang='es-ES';r.interimResults=true;r.continuous=true;
+  const ta=document.getElementById('qcin'),base=ta.value?ta.value+' ':'';
+  r.onresult=ev=>{ta.value=base+[...ev.results].map(x=>x[0].transcript).join(' ');};
+  r.onend=()=>{qrec=null;document.getElementById('qmic')?.classList.remove('on');};
+  r.onerror=()=>{notify('No se pudo usar el micrófono.');};
+  r.start();document.getElementById('qmic').classList.add('on');
+}
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('qc'))return;
+  if(e.key==='Escape'){e.preventDefault();closeQuick();}
+  else if(e.key==='Enter'&&!e.shiftKey&&e.target.id==='qcin'&&!e.isComposing){e.preventDefault();saveQuick();}
+});
 let rec=null;
 function toggleMic(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
