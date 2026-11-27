@@ -2394,9 +2394,9 @@ svg.hmap .mdiv{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;s
 .fab svg{width:26px;height:26px}
 body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 @media (max-width:760px){.fab{right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}body.hasrb .fab{bottom:calc(140px + env(safe-area-inset-bottom,0px))}}
-.qc{position:fixed;inset:0;z-index:96;display:grid;place-items:end center;padding:0 16px calc(96px + env(safe-area-inset-bottom,0px));background:rgba(0,0,0,.28);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
-.qc-box{width:min(620px,100%);border-radius:22px;padding:16px 16px 10px;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(255,255,255,.6);box-shadow:0 24px 70px rgba(0,0,0,.28);color:var(--ink)}
-:root[data-theme="dark"] .qc-box{background:rgba(24,24,27,.66);border-color:rgba(255,255,255,.1)}
+.qc{position:fixed;inset:0;z-index:96;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.qc-box{width:min(620px,100%);border-radius:22px;padding:16px 16px 10px;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(255,255,255,.6);box-shadow:0 24px 70px rgba(0,0,0,.28);color:var(--ink)}
+:root[data-theme="dark"] .qc-box{background:rgba(24,24,27,.86);border-color:rgba(255,255,255,.1)}
 .qc-box textarea{width:100%;box-sizing:border-box;resize:none;border:0;background:transparent;color:inherit;font:inherit;font-size:17px;line-height:1.45;outline:none;min-height:96px}
 .qc-box textarea::placeholder{color:var(--faint)}
 .qc-row{display:flex;align-items:center;gap:8px;margin-top:6px}
@@ -2423,6 +2423,19 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .nlink:not(.main){display:none}.nitem:hover .nlink,.nitem:focus-within .nlink{display:inline}
 @media (max-width:760px){.nlink{display:inline!important}}
 .keybub header .stn{background:none;color:var(--red);font-style:normal;font-weight:600;margin-left:8px;padding:0}
+/* v189 destino jerárquico y burbuja Nuevas */
+.qc-box{position:relative}
+.qct{display:inline-flex;align-items:center;gap:7px;max-width:62%;border:1px solid var(--line2);background:color-mix(in srgb,var(--card) 70%,transparent);color:var(--ink);border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+.qct span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qct small{color:var(--faint);white-space:nowrap}.qct svg{width:14px;height:14px;flex:none;color:var(--mute)}
+.qcl-list{position:absolute;left:16px;right:16px;bottom:56px;max-height:min(320px,48vh);overflow:auto;border-radius:14px;background:var(--card);border:1px solid var(--line2);box-shadow:0 14px 40px rgba(0,0,0,.28);padding:6px}
+.qcl{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;color:var(--ink);font:inherit;font-size:13.5px;padding:6px 8px 6px calc(8px + var(--l,0)*16px);border-radius:8px;cursor:pointer}
+.qcl:not(.hd):hover,.qcl.on{background:var(--bg3)}.qcl.hd{cursor:default;font-weight:600}.qcl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qcl .odot{width:5px;height:5px;border-radius:50%;background:var(--faint);flex:none;margin:0 2px}
+.qca{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);padding:10px 8px 3px}
+.newcard{--ink:#161616;--mute:#6b6b66;--faint:#9a9a94;--line:#e4e4df;--line2:#d4d4ce;--card:#fff;--bg:#fff;--bg3:#f1f1ee;background:#fff;color:#161616;border:1px solid #e4e4df;border-radius:16px;padding:10px 12px 8px;margin:6px 0 16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.newhd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#161616;margin:2px 0 4px}
+.newhd i{font-style:normal;font-weight:600;color:#9a9a94}
+@media (max-width:760px){.newcard{padding:6px 4px 8px}.newhd{padding-left:8px}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2610,6 +2623,7 @@ function migrate(d){
   for(const k of ['projects','objectives','tasks'])d[k]??=[];applyPacks(d);
   d.version=1;d.areas=d.areas?.length?d.areas:[...MAIN_AREAS];d.focusOrder=Array.isArray(d.focusOrder)?d.focusOrder:[];d.focusCollapsed=Array.isArray(d.focusCollapsed)?d.focusCollapsed:[];d.dayNotes=d.dayNotes&&typeof d.dayNotes==='object'&&!Array.isArray(d.dayNotes)?d.dayNotes:{};
   for(const k of ['projects','objectives','tasks','entries','plans','notes','inbox','paused'])d[k]??=[];
+  if(d.inbox.length){for(const i of d.inbox.slice().reverse())d.tasks.push({...mkTask(i.text,10,'',''),nuevo:true});d.inbox=[];}
   d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
   d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(t.section===DDS)t.section='';}});
   d.dailySections??=[];d.dailySections=d.dailySections.map(x=>x==='Tareas diarias'?RECUR:x);d.dailySections=[RECUR,...d.dailySections.filter(x=>x!==RECUR)];
@@ -2837,7 +2851,7 @@ function taskRow(t){
 const insTask=(obj,sec,after,before,today)=>'<button class="ins" tabindex="-1" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'"'+(today?' data-today="1"':'')+' aria-label="Insertar tarea aquí"><i></i></button>';
 const insSection=(oid,before)=>'<button class="ins secins" tabindex="-1" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(before)+'" aria-label="Insertar sección aquí"><i></i></button>';
 const insMid=(obj,sec,after,next,today,oid)=>'<div class="insm"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before=""'+(today?' data-today="1"':'')+' aria-label="Nueva tarea aquí"><i></i></button><button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="'+esc(sec)+'" data-from="'+esc(next)+'" aria-label="Nueva sección aquí"><i></i></button></div>';
-const insLead=(obj,sec,first,today,top,oid)=>'<div class="insm lead"><button class="ez t" data-act="insTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="" data-before="'+esc(first)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea arriba"><i></i></button>'+(top?(sec===''?'<button class="ez s" data-act="splitSection" data-id="'+esc(oid)+'" data-sec="" data-from="'+esc(first)+'" aria-label="Nueva sección arriba"><i></i></button>':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(sec)+'" aria-label="Nueva sección arriba"><i></i></button>'):'')+'</div>';
+const insLead=()=>'';
 const insDone=(obj,sec,after,before,lead)=>'<div class="insm'+(lead?' lead':'')+'"><button class="ez t" data-act="insTask" data-done="1" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'" data-after="'+esc(after)+'" data-before="'+esc(before)+'" aria-label="Nueva tarea aquí"><i></i></button></div>';
 const endZ=(obj,sec,nextSec,oid,onlyTask,today)=>'<div class="endz"><button class="ez t" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(today?' data-today="1"':'')+' aria-label="Nueva tarea"><i></i></button>'+(onlyTask?'':'<button class="ez s" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'" aria-label="Nueva sección"><i></i></button>')+'</div>'+
   '<div class="addtxt"><button type="button" data-act="addTask" data-obj="'+esc(obj)+'" data-sec="'+esc(sec)+'"'+(today?' data-today="1"':'')+'>+ tarea</button>'+(onlyTask?'':'<button type="button" data-act="insSection" data-id="'+esc(oid)+'" data-before="'+esc(nextSec)+'">+ sección</button>')+'</div>';
@@ -2856,7 +2870,9 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const all=s.tasks.filter(t=>t.objective===oid);
   const inDay=(dvIds?s.tasks.filter(t=>dvIds.has(t.id)):queue(selectedDate)).filter(t=>t.objective===oid);
   const dayIds=new Set(inDay.map(t=>t.id)),mine=(today||dayOnly)?all.filter(t=>dayIds.has(t.id)):all;
-  const open=mine.filter(t=>!t.done),done=mine.filter(t=>t.done);
+  const open=mine.filter(t=>!t.done&&!t.nuevo),done=mine.filter(t=>t.done);
+  const nw=cp?[]:all.filter(t=>t.nuevo&&!t.done);
+  const newCard=nw.length?'<div class="newcard" data-obj="'+esc(o.id)+'"><div class="newhd"><span>Nuevas</span><i class="num">'+nw.length+'</i></div><div class="tasks" data-mode="new">'+nw.map(taskRow).join('')+'</div></div>':'';
   const sections=o.sections,key=o.id;
   const openAll=all.filter(t=>!t.done);
   const totalMin=sumMin(all);
@@ -2887,9 +2903,10 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
       endZ(oid,sec,daily?(sec===RECUR?'':sec===''?(sections.filter(x=>x!==RECUR)[0]||''):(sections.filter(x=>x!==RECUR)[sections.filter(x=>x!==RECUR).indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
-    if(sec===RECUR&&daily)return '<div class="recurcard">'+inner+'</div>';
+    if(sec===RECUR&&daily)return '<div class="recurcard">'+inner+'</div>'+newCard;
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
+  if(!daily)body=newCard+body;
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
   if(!today&&!embed&&!cp&&!open.length&&!rendered)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
   if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,'',...sections.filter(x=>x!==RECUR)]:['',...sections]).map(sec=>{
@@ -2941,7 +2958,7 @@ function projectPage(p){
   const objs=s.objectives.filter(o=>o.project===p.id);
   const content=projTab==='Cronología'?timeline([p],true):
     '<textarea class="notes" data-note="'+p.id+'" placeholder="Nota maestra del proyecto: estrategia, decisiones, enlaces, información. Se guarda sola.">'+esc(p.notes)+'</textarea>';
-  return '<div class="ppage" style="--pc:'+p.color+'"><div class="phead"><div class="ptxt">'+editable('proj.name',p.id,p.name,'','ptitle','Proyecto sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div></div>'+newBlock(p.id)+
+  return '<div class="ppage" style="--pc:'+p.color+'"><div class="phead"><div class="ptxt">'+editable('proj.name',p.id,p.name,'','ptitle','Proyecto sin nombre')+editable('proj.desc',p.id,p.description,'','pdesc','Añade una descripción breve')+'</div></div>'+
     '<div class="pprops"><button class="p" data-act="menu" data-kind="area" data-id="'+p.id+'">'+esc(p.area)+'</button>'+
     '<button class="p" data-act="menu" data-kind="color" data-id="'+p.id+'"><span class="swatch"></span>Color</button>'+
     '<span class="faint num">'+objs.length+' objetivos</span>'+
@@ -3097,6 +3114,7 @@ function viewProyectos(){
 function dayOrder(){
   const order=[];
   for(const t of queue(selectedDate)){if(t.done)continue;const k=t.objective||'';if(!order.includes(k))order.push(k);}
+  for(const t of s.tasks){if(!t.nuevo||t.done)continue;const k=t.objective||'';if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   for(const k0 of hoyOpen){const k=k0===DAILY.id?'':k0;if(!order.includes(k)&&(k===''||objective(k)))order.push(k);}
   const ix=k=>k===''?-1:s.objectives.findIndex(o=>o.id===k);
   return order.sort((x,y)=>ix(x)-ix(y));
@@ -3280,20 +3298,7 @@ function keyBlock(){
     }).join('');
     red='<section class="keyblock keybub" aria-label="Tareas importantes"><header><b>Importantes</b><i class="stn">'+L.length+'</i></header>'+rows+'</section>';
   }
-  return red+newBlock();
-}
-/* Nuevo: ideas por procesar. Se quedan visibles hasta moverlas a un objetivo o borrarlas */
-const newItems=pid=>pid?s.inbox.filter(i=>i.project&&(i.project===pid||isDesc(i.project,pid))):s.inbox;
-function newBlock(pid=''){
-  const L=newItems(pid);if(!L.length)return '';
-  return '<section class="newbub" aria-label="Nuevo"><header><b>Nuevo</b><i class="stn">'+L.length+'</i><span>por procesar</span></header>'+L.map(i=>{
-    const p=i.project?project(i.project):null;
-    const chip=pid?'':(p?'<button class="nchip" style="--ac:'+p.color+'" data-act="newGoProj" data-id="'+p.id+'" title="Abrir el proyecto"><i></i>'+esc(p.name)+'</button>':'<button class="nchip none" data-act="newProj" data-id="'+i.id+'">Proyecto ▾</button>');
-    return '<div class="nitem"><span class="tx" contenteditable="plaintext-only" spellcheck="false" data-edit="inbox.text" data-id="'+i.id+'">'+esc(i.text)+'</span><div class="nact">'+chip+
-      '<button class="nlink main" data-act="inboxArea" data-id="'+i.id+'" title="Elegir objetivo y crear la tarea">Mover a objetivo ▾</button>'+
-      '<button class="nlink" data-act="inboxSynth" data-id="'+i.id+'" title="Quita relleno y deja la idea clave">Sintetizar</button><button class="nlink" data-act="inboxSimp" data-id="'+i.id+'" title="Limpia muletillas">Simplificar</button><button class="nlink" data-act="inboxSplit" data-id="'+i.id+'" title="Separa varias ideas">Dividir</button>'+
-      (i.orig?'<button class="nlink" data-act="inboxUndo" data-id="'+i.id+'">Deshacer</button>':'')+
-      '<button class="iconbtn x" data-act="delInbox" data-id="'+i.id+'" aria-label="Borrar" title="Borrar">✕</button></div></div>';}).join('')+'</section>';
+  return red;
 }
 /* reflexión del día: editor enriquecido por fecha */
 function noteBlock(){
@@ -4545,9 +4550,8 @@ function onClick(e){
     case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
     case 'qcMic':toggleMicQ();break;
     case 'qcSave':saveQuick();break;
-    case 'newGoProj':{const pj=project(id);if(!pj)break;view='Proyectos';openProj=id;openObj='';pjObj='';projTab='Nota maestra';render();window.scrollTo(0,0);break;}
-    case 'newProj':{const list=s.projects.slice().sort((x,y)=>projPath(x).localeCompare(projPath(y))).map(pj=>pi('<i class="adot" style="background:'+pj.color+'"></i><span class="ptx">'+esc(projPath(pj))+'</span>','newSetProj','data-id="'+id+'" data-pj="'+pj.id+'"')).join('');openPop(b,'<div class="poplist inbl">'+list+'</div>',{});break;}
-    case 'newSetProj':{const i=s.inbox.find(x=>x.id===id);closePop();if(i){i.project=b.dataset.pj;save();}break;}
+    case 'qcTgt':{const l=document.getElementById('qcl');if(!l)break;if(l.hidden){l.innerHTML=qcListHtml();l.hidden=false;l.querySelector('.on')?.scrollIntoView({block:'nearest'});}else l.hidden=true;break;}
+    case 'qcPick':{qcTarget=b.dataset.obj||'';const l=document.getElementById('qcl');if(l)l.hidden=true;const bt=document.getElementById('qct');if(bt)bt.innerHTML=qcLabel();document.getElementById('qcin')?.focus();break;}
     case 'mic':toggleMic();break;
     case 'inboxArea':{
       const ORD=['Ministerio','Iglesia','Negocios','Personal','Familia & casa'];
@@ -4660,13 +4664,30 @@ function ensureFab(){
   b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
   document.body.appendChild(b);
 }
+let qcTarget='';
+function qcLabel(){const o=qcTarget?objective(qcTarget):null,p=o?project(o.project):null;return '<i class="adot" style="background:'+(o?(p?.color||'#b4b4ae'):DAILY.color)+'"></i><span>'+esc(o?o.name:'Día a día')+'</span>'+(o&&p?'<small>'+esc(p.name)+'</small>':'')+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';}
+function qcListHtml(){
+  const row=(lvl,html,obj)=>'<button type="button" class="qcl'+(obj===undefined?' hd':'')+(obj===qcTarget?' on':'')+'" style="--l:'+lvl+'"'+(obj===undefined?' tabindex="-1"':' data-act="qcPick" data-obj="'+esc(obj)+'"')+'>'+html+'</button>';
+  const proj=(p,lvl)=>{
+    let h=row(lvl,'<i class="adot" style="background:'+p.color+'"></i><span>'+esc(p.name)+'</span>');
+    for(const o of s.objectives)if(o.project===p.id&&o.status!=='Completado')h+=row(lvl+1,'<i class="odot"></i><span>'+esc(o.name)+'</span>',o.id);
+    for(const c of s.projects)if(c.parent===p.id&&c.id!==p.id)h+=proj(c,lvl+1);
+    return h;
+  };
+  let h=row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><span>Día a día</span>','');
+  for(const a of s.areas){
+    const rs=rootProjects().filter(p=>p.area===a);if(!rs.length)continue;
+    h+='<div class="qca">'+esc(a)+'</div>'+rs.map(p=>proj(p,0)).join('');
+  }
+  return h;
+}
 function openQuick(){
   if(document.getElementById('qc')){document.getElementById('qcin')?.focus();return;}
-  const cur=view==='Proyectos'&&openProj&&project(openProj)?openProj:'';
-  const opts='<option value="">Sin proyecto todavía</option>'+s.projects.slice().sort((x,y)=>projPath(x).localeCompare(projPath(y))).map(pj=>'<option value="'+pj.id+'"'+(pj.id===cur?' selected':'')+'>'+esc(projPath(pj))+'</option>').join('');
+  qcTarget='';
   const m=document.createElement('div');m.id='qc';m.className='qc';m.dataset.act='qcBg';
   m.innerHTML='<div class="qc-box" role="dialog" aria-modal="true" aria-label="Nuevo"><textarea id="qcin" rows="4" placeholder="Escribe o dicta lo que quieras apuntar…" aria-label="Nueva idea"></textarea>'+
-    '<div class="qc-row"><button class="iconbtn mic" id="qmic" type="button" data-act="qcMic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><select id="qcproj" aria-label="Proyecto">'+opts+'</select><span class="grow"></span><button class="btn solid" type="button" data-act="qcSave">Guardar</button></div>'+
+    '<div class="qc-row"><button class="iconbtn mic" id="qmic" type="button" data-act="qcMic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><button type="button" class="qct" id="qct" data-act="qcTgt" aria-label="Destino">'+qcLabel()+'</button><span class="grow"></span><button class="btn solid" type="button" data-act="qcSave">Guardar</button></div>'+
+    '<div class="qcl-list" id="qcl" hidden></div>'+
     '<p class="qc-h">Enter guarda · Mayús+Enter añade una línea · Esc cierra</p></div>';
   document.body.appendChild(m);
   const ta=document.getElementById('qcin');ta.focus();
@@ -4674,8 +4695,8 @@ function openQuick(){
 function closeQuick(){try{qrec?.stop();}catch(e){}qrec=null;document.getElementById('qc')?.remove();}
 function saveQuick(){
   const ta=document.getElementById('qcin'),v=ta?.value.trim();if(!v){ta?.focus();return;}
-  const pj=document.getElementById('qcproj')?.value||'';
-  s.inbox.unshift({id:uid(),text:v,project:pj});save();closeQuick();render();notify('Guardado en Nuevo'+(pj?' · '+project(pj)?.name:''));
+  const oid=qcTarget&&objective(qcTarget)?qcTarget:'';
+  s.tasks.push({...mkTask(v,10,oid,''),nuevo:true});save();closeQuick();render();notify('Guardado en Nuevas · '+(oid?objective(oid).name:'Día a día'));
 }
 let qrec=null;
 function toggleMicQ(){
@@ -4978,6 +4999,10 @@ document.addEventListener('drop',e=>{
     p.area=ref.area;mv(s.projects,p,ref,i.after);save();
   }
 });
+document.addEventListener('drop',e=>{
+  if(!drag||drag.kind!=='task')return;const i=lastDrop||dropInfo(e);if(!i||(i.type!=='task'&&i.type!=='sec'))return;
+  const tk=task(drag.id);if(tk?.nuevo&&!i.el.closest('.newcard'))delete tk.nuevo;
+},true);
 /* animación de despliegue/pliegue: cada pieza se desliza desde donde estaba */
 function flipRender(fn){
   const sel='.bubble[data-obj],.bubble .task[data-task],.bubble .sec';
