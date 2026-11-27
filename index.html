@@ -3739,7 +3739,7 @@ function timeline(projects,embedded=false){
   const dayCap=(b,d)=>bandCap(b,d)||600;
   const chv=open=>'<svg class="plchev'+(open?'':' shut')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   const group=(r,depth=0)=>{
-    const {o,p,oid,band,cells,segs,b}=r,pl=plan.get(oid),open=!!o&&(tlLevel==='sec'||tlOpen.has(oid));
+    const {o,p,oid,band,cells,segs,b}=r,pl=plan.get(oid),open=!!o&&((tlLevel==='sec')!==tlOpen.has(oid));
     const ac=o?areaTone(rootProject(p)?.area||p.area):DAILY_TONE,x0=xOf(b.start),BL=x0-18,BW=(diffDays(b.start,b.end)+1)*px+12,rel=x=>x-x0;
     const X=g=>xOf(g.d)+Math.min(g.off,dayCap(band,g.d))/dayCap(band,g.d)*px,Wd=g=>Math.max(2,Math.min(g.m/dayCap(band,g.d)*px,xOf(g.d)+px-X(g)));
     const byDay=new Map();
@@ -3787,20 +3787,20 @@ function timeline(projects,embedded=false){
     const sub=pid=>rs.filter(r=>r.p&&(r.p.id===pid||isDesc(r.p.id,pid))),pIdx=new Map(planOrder().map((o,i)=>[o.id,i])),key=rr=>Math.min(1e9,...rr.map(r=>pIdx.get(r.oid)??1e9));
     const node=(pid,depth)=>{
       const p=project(pid),rsub=sub(pid);if(!p||!rsub.length)return '';
-      const hasSub=kidsOf(pid).some(k=>pset.has(k.id)),rootHide=depth===0&&!p.parent&&!(tlLevel==='proj'||(tlLevel==='sub'&&!hasSub)),skip=pid===rootId||rootHide;
-      const open=tlLevel!=='proj'&&(skip||!tlPFold.has(pid));let h=skip?'':pgroup(p,rsub,depth,open,true,p.parent?(rootProject(p)||{}).name:'');
+      const hasSub=kidsOf(pid).some(k=>pset.has(k.id)),rootHide=depth===0&&!p.parent&&!(tlLevel==='sub'&&!hasSub),skip=pid===rootId||rootHide;
+      const def=tlLevel!=='sub',shown=skip?def:(def!==tlPFold.has(pid)),open=skip||shown;let h=skip?'':pgroup(p,rsub,depth,open,true,p.parent?(rootProject(p)||{}).name:'');
       if(open){const d2=skip?depth:depth+1;
         const its=[];
         for(const k of kidsOf(pid))if(pset.has(k.id))its.push([key(sub(k.id)),()=>node(k.id,d2)]);
-        if(tlLevel!=='sub')for(const r of rs.filter(r=>r.p&&r.p.id===pid))its.push([pIdx.get(r.oid)??1e9,()=>group(r,d2)]);
+        if(shown)for(const r of rs.filter(r=>r.p&&r.p.id===pid))its.push([pIdx.get(r.oid)??1e9,()=>group(r,d2)]);
         its.sort((a,b)=>a[0]-b[0]);h+=its.map(x=>x[1]()).join('');
       }
-      if(open&&!skip){const ds=rsub.flatMap(r=>[r.b.start,r.b.end]).sort(),a=xOf(ds[0])-18-7,w=(diffDays(ds[0],ds.at(-1))+1)*px+39+14,ac=p.color||areaTone(p.area);
-        h='<div class="tl-pbox" style="--pc:'+ac+'"><i class="tl-pshade" style="left:'+a+'px;width:'+w+'px"></i>'+h+'</div>';}
+      if(!skip){const ds=rsub.flatMap(r=>[r.b.start,r.b.end]).sort(),a=xOf(ds[0])-18-7,w=(diffDays(ds[0],ds.at(-1))+1)*px+39+14,ac=p.color||areaTone(p.area);
+        h='<div class="tl-pbox" style="--pc:'+ac+'">'+(open?'<i class="tl-pshade" style="left:'+a+'px;width:'+w+'px"></i>':'')+h+'</div>';}
       return h;
     };
     const roots=s.projects.filter(p=>pset.has(p.id)&&!(p.parent&&p.parent!==p.id&&pset.has(p.parent))).sort((a,b)=>key(sub(a.id))-key(sub(b.id)));
-    return roots.map(p=>node(p.id,0)).join('')+(tlLevel==='proj'||tlLevel==='sub'?'':rs.filter(r=>!r.p).map(r=>group(r,0)).join(''));
+    return roots.map(p=>node(p.id,0)).join('')+(tlLevel==='sub'?'':rs.filter(r=>!r.p).map(r=>group(r,0)).join(''));
   };
   let body='';
   for(const bd of bandList()){
@@ -4615,7 +4615,7 @@ function onClick(e){
     case 'dayNav':dvDay=shift(dvDay,+id);syncDayModal();break;
     case 'tlNav':{const n=RANGES.find(r=>r[0]===tlRange)[2];tlStart=shift(tlStart,+id*(n||1));render();break;}
     case 'tlLevelMenu':openPop(b,LEVELS.map(([k,l])=>pi(l+(k===tlLevel?' ✓':''),'tlLevel','data-id="'+k+'"')).join(''),{});break;
-    case 'tlLevel':tlLevel=id;lsSet('focus.tllevel',id);tlPFold.clear();if(id!=='sec')tlOpen.clear();closePop();render();break;
+    case 'tlLevel':tlLevel=id;lsSet('focus.tllevel',id);tlPFold.clear();tlOpen.clear();closePop();render();break;
     case 'tlPFold':{if(e.target.closest('input,button:not(.tb-title)'))break;tlPFold.has(id)?tlPFold.delete(id):tlPFold.add(id);render();break;}
     case 'objEye':{const o=objective(id);if(o){o.sched=!o.sched;save();}break;}
     case 'projEye':{const i=s.hideP.indexOf(id);if(i<0)s.hideP.push(id);else s.hideP.splice(i,1);save();break;}
