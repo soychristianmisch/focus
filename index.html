@@ -2443,6 +2443,7 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .tb-bub:hover .tb-grip,.tb-pbar:hover .tb-grip{opacity:.6}
 .tb-pbar>span{padding-left:21px}
 .tb-bub[draggable=true]{-webkit-user-select:none;user-select:none}
+.smd{color:var(--mute);font-weight:500}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -2666,12 +2667,30 @@ function load(){
 }
 let s=load();
 if(PACK_NEW){PACK_NEW=false;try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}}
+let syncTm=0,syncBusy=false;
+function schedSync(ms=900){clearTimeout(syncTm);syncTm=setTimeout(()=>{if(typing()){schedSync(1500);return;}syncPlanDays();},ms);}
+function syncPlanDays(){
+  if(syncBusy)return;syncBusy=true;
+  try{
+    const plan=computePlan();let ch=false;
+    for(const t of s.tasks){
+      if(t.done||isRecur(t)||t.nuevo)continue;
+      if(!(isAuto(t)||!t.days.length))continue;
+      const a=plan.get(t.objective||'')?.asg?.get(t.id),days=a?[...a.keys()].sort():[],pl={};
+      for(const d of days)pl[d]=Math.round(a.get(d)*100)/100;
+      if(JSON.stringify(days)===JSON.stringify(t.days)&&JSON.stringify(pl)===JSON.stringify(t.plan||{})&&(!days.length||isAuto(t)))continue;
+      t.days=days;if(days.length){t.autoDays=[...days];t.plan=pl;}else{delete t.autoDays;delete t.plan;}ch=true;
+    }
+    if(ch)save();
+  }finally{syncBusy=false;}
+}
 function save(refresh=true){
   normalizeSections(s);
   try{localStorage.setItem(KEY,JSON.stringify(s));persist=true;}
   catch{persist=false;notify('El navegador no pudo guardar. Exporta una copia desde Ajustes.');}
   if(typeof cloudSaved==='function')cloudSaved();
   if(refresh)render();
+  if(!syncBusy)schedSync();
 }
 
 /* ---------- estado de interfaz ---------- */
@@ -2691,6 +2710,10 @@ const objective=id=>id===DAILY.id?DAILY:s.objectives.find(o=>o.id===id);
 const task=id=>s.tasks.find(t=>t.id===id);
 const projectOf=t=>t?.objective?project(objective(t.objective)?.project):DAILY;
 const onDay=(t,d)=>t.days.includes(d);
+/* fechas automáticas: la timeline las escribe en cada tarea; si el usuario las toca, la tarea pasa a manual (fija) */
+const isAuto=t=>!!t.autoDays&&JSON.stringify(t.days)===JSON.stringify(t.autoDays);
+const dayMin=(t,d)=>{const ml=minutesLeft(t);if(isAuto(t)&&t.plan&&t.plan[d]!=null)return Math.min(t.plan[d],ml);const fd=t.days.filter(x=>x>=day());return fd.includes(d)?ml/Math.max(1,fd.length):ml;};
+const secTimeDay=(allL,list,d)=>{const tot=sumMin(allL,minutesLeft);if(tot<1)return '';const dm=list.reduce((a,t)=>a+dayMin(t,d),0);return hrs(tot)+(dm>=1&&dm<tot-1?' <span class="smd">('+hrs(dm)+')</span>':'');};
 const queue=d=>{
   const ids=s.order[d]??[];
   const rank=t=>ids.includes(t.id)?ids.indexOf(t.id):ids.length;
@@ -2901,7 +2924,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     lastSec=sec;const isFirst=rendered++===0;
     let head='';
     if(sec===RECUR&&daily)head='<div class="sec recur'+(today?' ro':'')+'" data-sec="'+esc(sec)+'" data-obj="'+o.id+'"'+(today?'':' data-secdrop="1"')+'><span class="sname">'+RECUR+'</span>'+REPEAT_SVG+'</div>';
-    else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span></div>';
+    else if(sec&&today)head='<div class="sec ro"><span class="sname">'+esc(sec)+'</span><span class="smeta num">'+secTimeDay(all.filter(x=>x.section===sec&&!x.nuevo),list,dvIds?dvDay:selectedDate)+'</span></div>';
     else if(sec)head='<div class="sec" data-sec="'+esc(sec)+'" data-obj="'+o.id+'" data-secdrop="1"><span class="lines" draggable="true" data-drag="section" data-id="'+esc(sec)+'" data-obj="'+o.id+'" title="Mover sección"></span>'+
       editable('sec.name',o.id,sec,'data-sec="'+esc(sec)+'" data-obj="'+o.id+'"','sname')+'<span class="smeta num">'+secTime(all.filter(x=>x.section===sec))+'</span>'+
       '<button class="secall" data-act="secAll" data-obj="'+o.id+'" data-sec="'+esc(sec)+'" title="Clic: todas las tareas de la sección a hoy · otro clic: elegir fecha para todas">Hoy</button>'+
@@ -3507,15 +3530,15 @@ function computePlan(){
     const o=objective(oid),b=o?bandOf(o):restBand().id,r=mk(b);res.set(oid,r);
     for(const t of s.tasks.filter(t=>t.objective===oid&&!t.done)){
       const m=minutesLeft(t),fd=t.days.filter(d=>d>=today);
-      if(fd.length)fd.forEach(d=>put(r,b,d,t.section,m/fd.length,true));
+      if(fd.length&&!isAuto(t))fd.forEach(d=>put(r,b,d,t.section,m/fd.length,true));
     }
   }
   const cur=new Map();
   for(const oid of order){
     const o=objective(oid),r=res.get(oid),b=r.band,pool=new Map();
     for(const t of s.tasks.filter(t=>t.objective===oid&&!t.done)){
-      if(t.days.some(d=>d>=today))continue;
-      const m=minutesLeft(t);if(m>.5)pool.set(t.section,[...(pool.get(t.section)||[]),m]);
+      if(t.days.some(d=>d>=today)&&!isAuto(t))continue;
+      const m=minutesLeft(t);if(m>.5)pool.set(t.section,[...(pool.get(t.section)||[]),{m,t}]);
     }
     if(!pool.size)continue;
     let st=o?.startOn&&o.startOn>from0?o.startOn:(o?.window?.pin&&o.window.start>from0?o.window.start:from0);
@@ -3524,13 +3547,13 @@ function computePlan(){
     const ds=daysIn(st,shift(st,400),b);let di=0;
     const sl=o?o.sections:(s.dailySections||[]),secs=['',...sl].filter(x=>pool.has(x));
     for(const k of pool.keys())if(!secs.includes(k))secs.push(k);
-    for(const sec of secs)for(const m0 of pool.get(sec)){
+    for(const sec of secs)for(const {m:m0,t:tk} of pool.get(sec)){
       let M=m0;
       while(M>.5&&di<ds.length){
         const d=ds[di],av=free(b,d),full=bandCap(b,d)-base(b,d);
         if(av<=.5){di++;continue;}
         if(M>av+.5&&M<=full+.5&&av<full-.5){di++;continue;} /* la tarea entera no cabe: pasa al día siguiente */
-        const g=Math.min(av,M);put(r,b,d,sec,g,false);last=d;M-=g;
+        const g=Math.min(av,M);put(r,b,d,sec,g,false);last=d;M-=g;{const a=(r.asg??=new Map()),q=a.get(tk.id)??a.set(tk.id,new Map()).get(tk.id);q.set(d,(q.get(d)??0)+g);}
       }
       if(M>.5)r.over+=M;
     }
@@ -3586,12 +3609,12 @@ const tlPFold=new Set();
 const LVL_ICO={proj:glyph('flag'),sub:_s('<path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/>'),obj:_s(STI['Más adelante']),sec:_s('<path d="M4 7h16M4 12h16M4 17h10"/>')};
 const ARR='<svg class="tb-ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v9a3 3 0 0 0 3 3h10M15 12l4 4-4 4"/></svg>';
 function dayTasks(oid,sec,d,plan,today){
-  const ts=s.tasks.filter(t=>t.objective===oid&&!t.done&&(t.section||'')===sec),pinN=t=>Math.max(1,t.days.filter(x=>x>=today).length),pinOn=dd=>ts.filter(t=>t.days.includes(dd)&&dd>=today).reduce((a,t)=>a+minutesLeft(t)/pinN(t),0);
+  const ts=s.tasks.filter(t=>t.objective===oid&&!t.done&&(t.section||'')===sec),man=ts.filter(t=>!isAuto(t)),pinN=t=>Math.max(1,t.days.filter(x=>x>=today).length),pinOn=dd=>man.filter(t=>t.days.includes(dd)&&dd>=today).reduce((a,t)=>a+minutesLeft(t)/pinN(t),0);
   const r=plan.get(oid),out=[];if(!r)return out;
-  for(const t of ts)if(t.days.includes(d)&&d>=today)out.push([t,minutesLeft(t)/pinN(t)]);
+  for(const t of man)if(t.days.includes(d)&&d>=today)out.push([t,minutesLeft(t)/pinN(t)]);
   let before=0;for(const [dd,c] of r.days)if(dd<d)before+=Math.max(0,(c.sec.get(sec)??0)-pinOn(dd));
   const here=Math.max(0,(r.days.get(d)?.sec.get(sec)??0)-pinOn(d));let cum=0;
-  for(const t of ts.filter(t=>!t.days.some(x=>x>=today))){const m=minutesLeft(t),a=Math.max(cum,before),z=Math.min(cum+m,before+here);if(z-a>.5)out.push([t,z-a]);cum+=m;}
+  for(const t of ts.filter(t=>isAuto(t)||!t.days.some(x=>x>=today))){const m=minutesLeft(t),a=Math.max(cum,before),z=Math.min(cum+m,before+here);if(z-a>.5)out.push([t,z-a]);cum+=m;}
   return out;
 }
 let dvDay='';
@@ -5565,4 +5588,6 @@ async function cloudInit(){
 }
 addEventListener('storage',e=>{if(e.key===SES_KEY&&e.newValue&&!cloud.session){try{startSession(JSON.parse(e.newValue));}catch{}}});
 cloudInit();
+setTimeout(schedSync,1200);setInterval(()=>{if(document.visibilityState==='visible')schedSync(300);},600000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')schedSync(500);});
 </script></body></html>
