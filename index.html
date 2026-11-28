@@ -2830,6 +2830,22 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .cd-row .tplay{opacity:1;width:28px;height:28px;justify-self:end;background:color-mix(in srgb,var(--play) 18%,var(--card));color:var(--play)}
 .cd-row .tplay svg{width:12px;height:12px}
 .cd-row .tplay:not(.on):hover{background:var(--play);color:#fff}
+
+/* v245: tareas empezadas sin terminar, pausada que parpadea, contador y estadísticas */
+.task.touched{background:color-mix(in srgb,var(--tc,#8a8a85) 9%,transparent);box-shadow:inset 3px 0 0 color-mix(in srgb,var(--tc,#8a8a85) 40%,transparent)}
+.task.touched:hover{background:color-mix(in srgb,var(--tc,#8a8a85) 14%,transparent)}
+@keyframes pzt{0%,49.9%{color:#f5c542}50%,100%{color:#fff}}
+.task.paused{animation:pz 1s linear infinite}
+.task.paused .tplay,.task.paused .tplay:hover{background:#161614;color:#f5c542;animation:pzt 1s linear infinite;opacity:1}
+.rb.paused{animation:pz 1s linear infinite}
+.rb.paused .rbb:not(.ok){animation:pzt 1s linear infinite}
+.flcard.paused .fl-b:not(.ok){animation:pzt 1s linear infinite}
+@media(prefers-reduced-motion:reduce){.task.paused,.rb.paused,.task.paused .tplay,.rb.paused .rbb,.flcard.paused .fl-b{animation:none}}
+.h3r .xtask .xclock,.dvm-r .xtask .xclock{font-size:clamp(36px,3.1vw,50px);letter-spacing:-2.5px}
+.h3r .xtask .xline,.dvm-r .xtask .xline{gap:6px}
+.h3r .xtask.flcard,.dvm-r .xtask.flcard{padding-left:18px;padding-right:18px}
+.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(13.5px,1.12vw,17px)}
+.h3r .bigstats small,.dvm-r .bigstats small{font-size:10px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3278,7 +3294,7 @@ function taskRow(t){
   const inb=t.nuevo&&!t.done;
   const inbD=inb&&!t.objective;
   const mvBtn=inbD?'<button type="button" class="mvb" data-act="inbPick" data-id="'+esc(t.id)+'" aria-label="Mover a un objetivo" title="Mover a un proyecto u objetivo">'+MOVE_SVG+'</button>':'';
-  return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+(!running&&s.pauseId===t.id&&!t.done?' paused':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
+  return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+(!running&&s.pauseId===t.id&&!t.done?' paused':'')+(!running&&s.pauseId!==t.id&&!t.done&&workedMin(t)>0.05?' touched':'')+'"'+(!running&&!t.done&&workedMin(t)>0.05?' style="--tc:'+(t.imp?'#d44c47':(projectOf(t)?.color||DAILY.color))+'"':'')+' data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip"'+(mob?'':' draggable="true"')+' data-act="taskMenu" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
