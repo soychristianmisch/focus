@@ -2610,6 +2610,15 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .task.isimp:not(.running):hover{background:color-mix(in srgb,var(--red) 10%,var(--card))}
 /* al escribir, el icono se desplaza bajo el cursor: no reaccionar al hover */
 .task:has([data-edit]:focus) .impb:not(.on){pointer-events:none;color:var(--faint);opacity:.35}
+
+/* v215 ventana flotante = tarea actual + tiempo del día fijos, y el día de Planning con scroll */
+.fltop{flex:none;max-height:62vh;overflow-y:auto;padding:10px 12px 8px;gap:10px;background:var(--bg)}
+.fltop .xcard{margin:0;padding:14px 18px}
+.fltop .xtask.flcard{padding:14px 20px}
+.fltop .xtask .xclock{font-size:36px}
+.flbody{flex:1;min-height:0;overflow-y:auto;padding:6px 12px 24px}
+.flbody .dayview{max-width:none}
+.flbody .dayview .colhead h2{font-size:20px;letter-spacing:-.3px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3644,6 +3653,7 @@ function execPanel(onlyStats=false){
   }).join(''):'<p class="empty" style="padding:6px 0">Aún no hay tareas para este día.</p>')+'</section>';
   const extra=(byProj.size||paused.length)?'<section class="xcard">'+(byProj.size?'<h3>Tiempo trabajado por proyecto</h3>'+[...byProj].sort((a,b)=>b[1]-a[1]).map(([pr,m])=>'<div class="brk" style="--pc:'+pr.color+';--w:'+Math.max(4,m/maxP*100)+'%"><span class="nm">'+esc(pr.name)+'</span><span class="num muted">'+dur(m)+'</span></div>').join(''):'')+
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
+  if(onlyStats==='float')return main+stats;
   if(onlyStats)return '<div class="hoyright solo" data-scroll>'+stats+'</div>';
   return '<div class="hoyright" data-scroll>'+main+stats+compl+objc+extra+'</div>';
 }
@@ -5698,43 +5708,29 @@ async function openFloat(){
   if(floating&&!floating.closed){floating.focus();return;}
   if(!window.documentPictureInPicture){notify('Abre Focus en Chrome para usar la ventana flotante.');return;}
   try{
-    floating=await window.documentPictureInPicture.requestWindow({width:440,height:820});
+    floating=await window.documentPictureInPicture.requestWindow({width:560,height:900});
     floating.document.title='Focus · Ejecución';
     floating.document.documentElement.dataset.theme=document.documentElement.dataset.theme;
     const st=floating.document.createElement('style');
-    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--card);display:flex;flex-direction:column;height:100vh} :root{padding:0}';
+    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;height:100vh} :root{padding:0}';
     floating.document.head.append(st);
     floating.document.addEventListener('click',onClick);
     floating.addEventListener('pagehide',()=>floating=null,{once:true});
     updateFloat();
   }catch{notify('Chrome no pudo abrir la ventana flotante en este contexto.');}
 }
-function floatList(){
-  const d=selectedDate,run=s.running?.id,q=queue(d),ks=dayOrder();
-  const row=t=>{const r=run===t.id;return '<div class="fl-r'+(t.done?' dn':'')+(r?' on':'')+'"'+(t.done||r?'':' data-act="play" data-id="'+esc(t.id)+'" title="Empezar esta tarea"')+'>'+
-    (t.done?'<i class="fl-ck">'+ICON.check+'</i>':'<i class="fl-dot"></i>')+'<span class="fl-n">'+esc(t.name)+'</span><span class="fl-m">'+Math.round(t.minutes)+'′</span>'+
-    (t.done?'':'<button type="button" class="fl-pb" data-act="'+(r?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(r?'Pausar':'Empezar')+'">'+(r?ICON.pause:ICON.play)+'</button>')+'</div>';};
-  const out=[];
-  for(const k of ks){
-    const o=k===''?null:objective(k),p=o?project(o.project):DAILY,ts=q.filter(t=>(t.objective||'')===k);if(!ts.length)continue;
-    const secs=k===''?[RECUR,'',...[...new Set(ts.map(t=>t.section||''))].filter(x=>x&&x!==RECUR)]:['',...(o.sections||[])];
-    const body=secs.map(sec=>{const st=ts.filter(t=>(t.section||'')===sec).sort((a,b)=>(a.done?1:0)-(b.done?1:0));if(!st.length)return '';
-      return (sec?'<div class="fl-s">'+esc(sec)+'</div>':'')+st.map(row).join('');}).join('');
-    out.push('<section class="fl-o" style="--pc:'+(p?.color||'var(--mute)')+'"><h4>'+esc(o?o.name:'Día a día')+(o&&p?'<small>'+esc(p.name)+'</small>':'')+'</h4>'+body+'</section>');
-  }
-  return '<div class="fllist">'+(out.join('')||'<p class="fl-e">Nada planificado para este día.</p>')+'</div>';
+function floatDay(){
+  const d=selectedDate,od=dvDay,om=tlMode;let r='';
+  dvDay=d;tlMode='plan';
+  try{r=dayModalHtml(d).replace(/<div class="dvm-top">[\s\S]*?<\/div><div class="dayview">/,'<div class="dayview">');}finally{dvDay=od;tlMode=om;}
+  return r;
 }
 function updateFloat(){
   if(!floating||floating.closed)return;
-  const prevScroll=floating.document.querySelector('.fllist')?.scrollTop||0;
-  const t=current(),running=!!t&&s.running?.id===t.id;
-  const r=t?timerReading(t):null;
-  const p=t?projectOf(t):null,o=t?objective(t.objective):null;
-  const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.remove('paused');
-  floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>'+
-    (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
-  floating.document.body.insertAdjacentHTML('beforeend',floatList());
-  {const l=floating.document.querySelector('.fllist');if(l)l.scrollTop=prevScroll;}
+  const fd=floating.document,sc=q=>fd.querySelector(q)?.scrollTop||0,a=sc('.fltop'),b=sc('.flbody');
+  fd.body.className='';
+  fd.body.innerHTML='<div class="hoyright fltop">'+execPanel('float')+'</div><div class="flbody">'+floatDay()+'</div>';
+  {const x=fd.querySelector('.fltop'),y=fd.querySelector('.flbody');if(x)x.scrollTop=a;if(y)y.scrollTop=b;}
 }
 
 /* ---------- reloj ---------- */
