@@ -3843,7 +3843,7 @@ function syncDayModal(){
   const box=m.firstChild,st=box.scrollTop;box.innerHTML=dayModalHtml(dvDay);box.scrollTop=st;
 }
 function timeline(projects,embedded=false,opts={}){
-  const rg=RANGES.find(r=>r[0]===tlRange),nWin=opts.scoped?0:rg[2],today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
+  const rg=RANGES.find(r=>r[0]===tlRange),nWin=0,today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
   const zoom=opts.scoped?'Días':tlZoom,px=ZOOM[zoom],showN=px>=48;
   const cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const pendOf=o=>s.tasks.filter(t=>t.objective===o.id&&!t.done);
@@ -3967,7 +3967,7 @@ function timeline(projects,embedded=false,opts={}){
   }
   const real=rows.filter(r=>r.o);
   const lblD=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.',''),mkNav=()=>'';
-  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div>'+(opts.scoped?'':'<div class="seg">'+RANGES.map(r=>'<button data-act="tlRange" data-id="'+r[0]+'" aria-pressed="'+(r[0]===tlRange)+'">'+r[1]+'</button>').join('')+'</div>')+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
+  const bar2='<div class="tlbar">'+(embedded?'':'<h2>Planificación</h2>')+'<span class="grow"></span><div class="seg lvl">'+LEVELS.map(([k,l])=>'<button data-act="tlLevel" data-id="'+k+'" aria-pressed="'+(k===tlLevel)+'" title="Ver hasta '+l.toLowerCase()+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div>'+'<div class="seg"><button data-act="tlView" data-id="pend" aria-pressed="'+!done+'">'+ICO.pend+'Pendiente</button><button data-act="tlView" data-id="done" aria-pressed="'+done+'">'+ICO.done+'Completado</button></div>'+
     (opts.scoped?'':'<div class="seg">'+Object.keys(ZOOM).map(z=>'<button data-act="tlZoom" data-id="'+z+'" aria-pressed="'+(z===tlZoom)+'">'+z+'</button>').join('')+'</div>')+mkNav()+'<button class="btn solid" data-act="tlToday">Hoy</button></div>';
   const note=done?'Aquí ves lo que ya has trabajado: cada día con horas aparece marcado y los días sin trabajo quedan en blanco.':'Cada banda tiene sus horas al día (editables). Las secciones se colocan una detrás de otra y lo que no cabe pasa al día siguiente, a partir del '+fmt({weekday:'long',day:'numeric',month:'long'},dateAt(s.planStart&&s.planStart>day()?s.planStart:day()))+'. Arrastra un objetivo por su título: arriba o abajo cambia su turno; a otro día fija cuándo empieza. Desde Proyectos puedes soltarlo directamente sobre el día.';
   return (embedded?'':'<div class="an tlpage">')+bar2+'<div class="tl'+(done?' isdone':'')+'" id="'+(opts.id||'tl')+'" data-first="'+first+'" data-px="'+px+'"><div class="tl-in" style="--left:'+LEFT+'px;--w:'+W+'px">'+shades.join('')+(nWin?'<i class="tl-dim" style="left:'+(LEFT+xOf(shift(today,nWin)))+'px"></i>':'')+tcol+head+(body+(rows.length?'':'<div class="empty" style="padding:24px">'+(done?'Aún no hay horas trabajadas.':'No queda trabajo pendiente.')+'</div>'))+'</div></div>'+
