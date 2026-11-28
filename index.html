@@ -3239,16 +3239,17 @@ function taskRow(t){
   const impBtn='<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button>';
   const noteBtn='<button type="button" class="noteb'+(t.note?' has':'')+'" data-act="taskNote" data-id="'+esc(t.id)+'" aria-label="Notas" title="'+(t.note?'Ver notas de la tarea':'Añadir notas a la tarea')+'">'+NOTE_SVG+'</button>';
   const inb=t.nuevo&&!t.done;
-  const mvBtn=inb?'<button type="button" class="mvb" data-act="inbPick" data-id="'+esc(t.id)+'" aria-label="Mover a un objetivo" title="Mover a un proyecto u objetivo">'+MOVE_SVG+'</button>':'';
+  const inbD=inb&&!t.objective;
+  const mvBtn=inbD?'<button type="button" class="mvb" data-act="inbPick" data-id="'+esc(t.id)+'" aria-label="Mover a un objetivo" title="Mover a un proyecto u objetivo">'+MOVE_SVG+'</button>':'';
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+(!running&&s.pauseId===t.id&&!t.done?' paused':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip"'+(mob?'':' draggable="true"')+' data-act="taskMenu" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
       urlsIn(t.name).map(u=>'<a class="tlink" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" title="Abrir '+esc(linkLabel(u))+'" aria-label="Abrir enlace">'+LINK_SVG+'</a>').join('')+
-      (mob?'':impBtn+noteBtn+mvBtn)+'</div>'+
+      (mob?'':(inbD?impBtn+mvBtn:impBtn+noteBtn))+'</div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Estimación (minutos)"','tmin')+
-    (t.done?'<span></span>':whenChip(t))+(mob?impBtn+noteBtn+mvBtn:'')+
+    (t.done?'<span></span>':whenChip(t))+(mob?(inbD?impBtn+mvBtn:impBtn+noteBtn):'')+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
   '</div>';
 }
@@ -4869,6 +4870,7 @@ function calHtmlT(t,ym){
 const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t.done);
 let dateClk={k:'',n:0};
 /* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
+function unHoy(t){if(t&&!t.objective&&t.section===HOY&&!t.days.length)t.section='';}
 function autoHoy(t){
   if(t&&t.nuevo&&t.objective&&onDay(t,day()))delete t.nuevo;
   if(!t||t.done||t.objective||t.imp||t.section===RECUR||t.section===HOY||!onDay(t,day()))return;
@@ -5057,8 +5059,9 @@ function onClick(e){
     case 'toggleImp':if(t){t.imp=!t.imp;if(t.imp)delete t.nuevo;save();}break;
     case 'taskNote':if(t)openTaskNote(t,b.ownerDocument||document);break;
     case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
-    case 'today':if(t){const key='t:'+t.id,w=taskWhen(t).k,steps=(w==='past'||(dateClk.k===key&&dateClk.n>=3))?3:2,n=dateClicks(key,w!=='none',steps);
-      if(n===0){t.days=[day()];autoHoy(t);save();}else if(n===1)openTaskCal(t,b);else if(n===2&&steps===3){closePop();t.days=[day()];autoHoy(t);save();}else{closePop();t.days=[];save();}}break;
+    case 'today':if(t&&!t.objective&&t.section===HOY&&onDay(t,day())&&!t.done){closePop();t.days=[];unHoy(t);dateClk={k:'t:'+t.id,n:0};save();break;}
+      if(t){const key='t:'+t.id,w=taskWhen(t).k,steps=(w==='past'||(dateClk.k===key&&dateClk.n>=3))?3:2,n=dateClicks(key,w!=='none',steps);
+      if(n===0){t.days=[day()];autoHoy(t);save();}else if(n===1)openTaskCal(t,b);else if(n===2&&steps===3){closePop();t.days=[day()];autoHoy(t);save();}else{closePop();t.days=[];unHoy(t);save();}}break;
     case 'play':start(id);break;
     case 'pause':pause();break;
     case 'finish':finish(id);break;
@@ -5137,7 +5140,7 @@ function onClick(e){
     case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.sec){pop.innerHTML=calHtmlT(secPseudo(secList(popCtx.sec)),popCtx.ym);break;}if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
     case 'calPick':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,b.dataset.val);break;}if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
     case 'calToday':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,day());break;}if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
-    case 'clearTaskDate':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,'');break;}const tt=task(id);closePop();if(tt){tt.days=[];save();}break;}
+    case 'clearTaskDate':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,'');break;}const tt=task(id);closePop();if(tt){tt.days=[];unHoy(tt);save();}break;}
     case 'clearDeadline':{const o=objective(id);closePop();if(o){o.deadline='';save();}break;}
     case 'splitSection':{leaveHoy(id,1);
       const o=objective(id);if(!o)break;
