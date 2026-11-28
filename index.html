@@ -4286,7 +4286,7 @@ function pjmRender(){
   body.scrollTop=sy;
   const tl=body.querySelector('#tlq');
   if(tl){const px=+tl.dataset.px;
-    if(pjm.anim){pjm.anim=false;tlAnim(tl,mode==='done');}
+    if(pjm.anim){pjm.anim=false;tlAnim(tl,mode==='done',ox);}
     else if(ox==null||pjm.px!==px)tl.scrollLeft=tlTarget(tl,mode==='done');
     else{tl.scrollLeft=ox;tl.scrollTop=oy;}
     pjm.px=px;}
@@ -4532,7 +4532,7 @@ function render0(){
   $$('[data-scroll]').forEach((c,i)=>{if(colScroll[i])c.scrollTop=colScroll[i];});
   const tl=$('#tl');
   if(tl){
-    if(tlScroll==='anim'){tlAnim(tl,tlMode==='done');tlScroll=null;}
+    if(tlScroll==='anim'){tlAnim(tl,tlMode==='done',tlpos?tlpos[0]:undefined);tlScroll=null;}
     else if(tlScroll==='today'||!tlpos){tl.scrollLeft=tlTarget(tl,tlMode==='done');tlScroll=null;}
     else{tl.scrollLeft=tlpos[0];tl.scrollTop=tlpos[1];}
   }
@@ -4543,8 +4543,8 @@ function render0(){
   updateFloat();
 }
 function tlTarget(tl,done){const px=+tl.dataset.px,x=diffDays(tl.dataset.first,day())*px;return Math.max(0,done?x-tl.clientWidth+px*2+40:x-160);}
-function tlAnim(tl,done){
-  const a=tlTarget(tl,!done),b=tlTarget(tl,done);tl.scrollLeft=a;
+function tlAnim(tl,done,from){
+  const b=tlTarget(tl,done),a=Number.isFinite(from)?Math.max(0,Math.min(from,tl.scrollWidth-tl.clientWidth)):tlTarget(tl,!done);tl.scrollLeft=a;
   if(Math.abs(a-b)<4||matchMedia('(prefers-reduced-motion:reduce)').matches){tl.scrollLeft=b;return;}
   const id=tl.id,D=1000,ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   setTimeout(()=>{const t0=performance.now(),step=n=>{const k=Math.min(1,(n-t0)/D),el=document.getElementById(id);if(!el)return;el.scrollLeft=a+(b-a)*ease(k);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);},450);
