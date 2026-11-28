@@ -5161,7 +5161,7 @@ function onClick(e){
     case 'tlZoom':tlZoom=id;tlScroll='today';render();break;
     case 'tlRange':tlRange=id;lsSet('focus.tlrange',id);render();break;
     case 'dayOpen':dvDay=id;syncDayModal();break;
-    case 'dayCloseBg':if(b.id==='dvm'&&e.target!==b)break;dvDay='';syncDayModal();break;
+    case 'dayCloseBg':if(b.id==='dvm'&&e.target!==b&&!e.target.classList.contains('dvm-grp'))break;dvDay='';syncDayModal();break;
     case 'dayNav':dvDay=shift(dvDay,+id);syncDayModal();break;
     case 'tlNav':{const n=RANGES.find(r=>r[0]===tlRange)[2];tlStart=shift(tlStart,+id*(n||1));render();break;}
     case 'tlLevelMenu':openPop(b,LEVELS.map(([k,l])=>pi(l+(k===tlLevel?' ✓':''),'tlLevel','data-id="'+k+'"')).join(''),{});break;
