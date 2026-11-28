@@ -2902,6 +2902,20 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 #noticeM h3{margin:0 0 8px;font-size:18px;line-height:1.25}
 #noticeM p{margin:0 0 18px;color:var(--mute);font-size:14.5px;line-height:1.45}
 #noticeM .btn{min-width:140px;font-size:15px;padding:10px 18px}
+.tb-open{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;margin-left:5px;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;opacity:.55;cursor:pointer;vertical-align:middle}
+.tb-open svg{width:13px;height:13px}
+.tb-open:hover{opacity:1;background:rgba(0,0,0,.08)}
+.pbw{flex:1;min-width:0}
+.bprog .pbw{max-width:380px}
+.plegend{display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:4px;font-size:9.5px;line-height:1.2;color:var(--mute);letter-spacing:-.05px}
+.plegend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.plegend b{font-weight:650;color:var(--ink)}
+.plegend i{width:7px;height:7px;border-radius:50%;flex:none}
+.plegend .k1 i{background:var(--g1)}.plegend .k2 i{background:var(--g2)}.plegend .k3 i{background:var(--g3);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--g1) 35%,transparent)}.plegend .k4 i{background:var(--bg3);box-shadow:inset 0 0 0 1px var(--line)}
+.bprog{align-items:flex-start}
+.bprog .num{margin-top:1px}
+.oc-bot .pbw{width:100%}
+.bprog .plegend b,.plegend b{font-size:inherit;font-weight:650}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3462,7 +3476,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const leftAll=sumMin(openAll,minutesLeft);
   const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
   const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):(leftAll>=1?'<span class="chipi tot" title="Tiempo que falta para completar el objetivo, del total estimado">Falta '+hrs(leftAll)+' de '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>':'<span class="chipi tot" title="Objetivo completo">Completo · total '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>');
-  const prog='<div class="bprog">'+barLabels(o,pr.bar.replace(/ title="[^"]*"/,' data-tip="'+tipProgress(o)+'"'))+'<b class="num">'+pr.pct+' %</b></div>';
+  const prog='<div class="bprog">'+barLabels(o,pr.bar)+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
@@ -3483,7 +3497,7 @@ function areaBar(){
 function objCard(o,sel){
   const p=project(o.project),pr=progressOf(o),all=s.tasks.filter(t=>t.objective===o.id),left=sumMin(all.filter(t=>!t.done),minutesLeft);
   return '<button class="ocard" style="--pc:'+(p?.color??PALETTE[0])+'" data-act="selectObj" data-id="'+o.id+'" aria-current="'+sel+'"><div class="oc-top"><b>'+esc(o.name)+'</b><span class="tag '+tagClass(o.status)+'">'+esc(o.status)+'</span></div>'+
-    '<div class="oc-bot">'+pr.bar+'<div class="oc-meta num"><span>'+pr.pct+' %</span><span>'+all.filter(t=>!t.done).length+' abiertas</span><span>'+all.filter(t=>t.done).length+'/'+all.length+' tareas</span></div></div></button>';
+    '<div class="oc-bot">'+barLabels(o,pr.bar)+'<div class="oc-meta num"><span>'+pr.pct+' %</span><span>'+all.filter(t=>!t.done).length+' abiertas</span><span>'+all.filter(t=>t.done).length+'/'+all.length+' tareas</span></div></div></button>';
 }
 function railGroup(p,showArea,curObj){
   const os=s.objectives.filter(o=>o.project===p.id);
@@ -4178,6 +4192,7 @@ const capParse=v=>{v=String(v).trim().toLowerCase().replace(',','.');let m;
   if((m=v.match(/^(\d+)\s*(?:m|min|minutos?)$/)))return +m[1]/60;
   const n=parseFloat(v);return Number.isFinite(n)?n:NaN;};
 let tlMode='pend';
+const OPEN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>';
 const RESET_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.6-3.6L4 9M4 4v5h5M4 13a8 8 0 0 0 14.6 3.6L20 15M20 20v-5h-5"/></svg>';
 const LEVELS=[['sub','Subproyectos'],['obj','Objetivos'],['sec','Secciones']];
 const RANGES=[['week','7 días',7],['2w','2 semanas',14],['month','Un mes',30],['all','Todo',0]];
@@ -4336,7 +4351,7 @@ function timeline(projects,embedded=false,opts={}){
     const path=p?projPath(p):'Día a día';
     const resetB=o&&o.startOn&&o.startOn>day()?'<button type="button" class="tb-reset" data-act="projCompress" data-id="'+o.project+'" title="Hay objetivos movidos a propósito. Clic: volver a compactar todo en orden, sin huecos" aria-label="Recompactar planificación">'+RESET_SVG+'</button>':'';
     const title='<div class="tb-title"'+(o?' draggable="true" data-drag="tlobj" data-id="'+oid+'" data-act="tlToggle" title="'+(open?'Plegar':'Desplegar')+' secciones · arrastra a otro día para fijar el inicio"':'')+' style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'">'+(depth?ARR:'')+
-      '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+resetB+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
+      '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+(o?'<button type="button" class="tb-open" data-act="pjOpen" data-kind="obj" data-id="'+oid+'" title="Abrir en ventana" aria-label="Abrir en ventana">'+OPEN_SVG+'</button>':'')+resetB+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
     return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" draggable="true" data-drag="tlmove" data-mk="obj" data-st="'+b.start+'" data-mem="'+oid+'@'+b.start+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+' · arrastra la barra para moverla en el tiempo"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px">'+(o?'<span class="tb-grip" aria-hidden="true"></span>':'')+'<div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
   const pgroup=(p,rsub,depth,open,thin=false,tag='')=>{
@@ -4347,7 +4362,7 @@ function timeline(projects,embedded=false,opts={}){
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
       return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(tx?'<b'+(w>=34?'':' class="ov"')+'>'+tx+'</b>':'')+'</i>';}).join('');
     if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
-      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-mk="proj" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+BL+'px;width:'+(BW+27)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+(!done&&rsub.some(r=>r.o&&r.o.startOn&&r.o.startOn>today)?'<button type="button" class="tb-reset" data-act="projCompress" data-id="'+p.id+'" title="Hay objetivos movidos a propósito. Clic: volver a compactar todo en orden, sin huecos" aria-label="Recompactar planificación">'+RESET_SVG+'</button>':'')+'</span></div></div>';}
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-mk="proj" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+BL+'px;width:'+(BW+27)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+'<button type="button" class="tb-open" data-act="pjOpen" data-kind="proj" data-id="'+p.id+'" title="Abrir en ventana" aria-label="Abrir en ventana">'+OPEN_SVG+'</button>'+(!done&&rsub.some(r=>r.o&&r.o.startOn&&r.o.startOn>today)?'<button type="button" class="tb-reset" data-act="projCompress" data-id="'+p.id+'" title="Hay objetivos movidos a propósito. Clic: volver a compactar todo en orden, sin huecos" aria-label="Recompactar planificación">'+RESET_SVG+'</button>':'')+'</span></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
@@ -4584,14 +4599,16 @@ const CAL_SVG='<svg class="cic" viewBox="0 0 24 24" fill="none" stroke="currentC
 /* tiempos dentro de la barra: completado · hecho hoy · falta hoy · restante */
 function barLabels(o,bar){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),d=selectedDate;
-  const tot=list.reduce((q,t)=>q+w(t),0);if(!tot)return bar;
+  bar=bar.replace(/ title="[^"]*"/,'');
+  const tot=list.reduce((q,t)=>q+w(t),0);if(!tot)return '<div class="pbw">'+bar+'</div>';
   const sum=f=>list.filter(f).reduce((q,t)=>q+w(t),0),
     v=[sum(t=>t.done&&day(t.done)<d),sum(t=>t.done&&day(t.done)===d),sum(t=>!t.done&&onDay(t,d))],rest=tot-v[0]-v[1]-v[2];
   let i=0;
   bar=bar.replace(/<i style="width:([\d.]+)%"><\/i>/g,(m,pw)=>{const k=i++,mins=v[k];return '<i style="width:'+pw+'%">'+(+pw>=13&&mins>0?'<span>'+mm(mins)+'</span>':'')+'</i>';});
   const rp=100*rest/tot;
   bar=bar.replace(/<\/div>$/,(rest>0&&rp>=13?'<u><span>'+mm(rest)+'</span></u>':'<u></u>')+'</div>');
-  return bar.replace('class="prog','class="prog lab');
+  const names=['Completado','Hoy','Falta hoy','Restante'],vals=[...v,rest],lg=vals.map((m,k)=>m>0?'<span class="k'+(k+1)+'"><i></i>'+names[k]+' <b>'+mm(m)+'</b></span>':'').join('');
+  return '<div class="pbw">'+bar.replace('class="prog','class="prog lab')+(lg?'<div class="plegend">'+lg+'</div>':'')+'</div>';
 }
 function tipProgress(o){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
@@ -6011,7 +6028,7 @@ function moveProjUnit(p,ref,after){
   if(mine.length&&rb.length){const ms=new Set(mine);s.objectives=s.objectives.filter(o=>!ms.has(o));const at=after?s.objectives.indexOf(rb.at(-1))+1:s.objectives.indexOf(rb[0]);s.objectives.splice(at,0,...mine);}
 }
 /* si una unidad se coloca después (o antes) de otra hermana, también cambia su turno: aquí y en la lista de la izquierda */
-function reorderByDate(kind,id,ns,plan0){
+function reorderByDate(kind,id,ns,plan0,dir=0){
   const par=x=>(x.parent&&x.parent!==x.id)?x.parent:'';
   let me,sibs;
   if(kind==='obj'){me=objective(id);if(!me)return false;sibs=s.objectives.filter(o=>o!==me&&o.project===me.project&&!objHidden(o));}
@@ -6020,15 +6037,17 @@ function reorderByDate(kind,id,ns,plan0){
   sibs=sibs.filter(x=>st(x)).sort((a,b)=>arr.indexOf(a)-arr.indexOf(b));if(!sibs.length)return false;
   const cur=sibs.filter(x=>arr.indexOf(x)<arr.indexOf(me)).length;
   let want=sibs.findIndex(x=>st(x)>ns);if(want<0)want=sibs.length;
+  if(dir>0)want=Math.max(want,Math.min(cur+1,sibs.length));
+  if(dir<0)want=Math.min(want,Math.max(cur-1,0));
   if(want===cur)return false;
   const mvTo=(ref,after)=>kind==='obj'?mv(s.objectives,me,ref,after):moveProjUnit(me,ref,after);
   if(want>=sibs.length)mvTo(sibs.at(-1),true);else mvTo(sibs[want],false);
   return true;
 }
 /* si el objetivo es lo único que tiene el subproyecto, mover el objetivo es mover el subproyecto entre sus hermanos */
-function reorderOwnerProj(o,date,plan0){
+function reorderOwnerProj(o,date,plan0,dir=0){
   const mine=s.objectives.filter(x=>x.project===o.project&&!objHidden(x)&&unitStart('obj',x.id,plan0));
-  return mine.length<=1&&project(o.project)?reorderByDate('proj',o.project,date,plan0):false;
+  return mine.length<=1&&project(o.project)?reorderByDate('proj',o.project,date,plan0,dir):false;
 }
 function noticeModal(title,text){
   document.getElementById('noticeM')?.remove();
@@ -6089,8 +6108,8 @@ document.addEventListener('drop',e=>{
     flipTl(()=>{for(const m of (dr.mem||'').split(',')){const [id,st0]=m.split('@'),o=objective(id);if(!o||!st0)continue;
       if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
       const ns=shift(st0,n);if(!minNs||ns<minNs)minNs=ns;if(ns>f0)o.startOn=ns;else delete o.startOn;}
-      if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){let moved=reorderByDate(dr.mk,dr.id,minNs,plan0);if(dr.mk==='obj'){const oo=objective(dr.id);if(oo&&reorderOwnerProj(oo,minNs,plan0))moved=true;}
-        if(moved)for(const m of (dr.mem||'').split(',')){const o2=objective(m.split('@')[0]);if(o2)delete o2.startOn;}}save();});return;
+      if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){let moved=reorderByDate(dr.mk,dr.id,minNs,plan0,Math.sign(n));if(dr.mk==='obj'){const oo=objective(dr.id);if(oo&&reorderOwnerProj(oo,minNs,plan0,Math.sign(n)))moved=true;}
+        if(moved||n<0)for(const m of (dr.mem||'').split(',')){const o2=objective(m.split('@')[0]);if(o2)delete o2.startOn;}}save();});return;
   }
   if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(descIds(dp.id)),plan0=computePlan();
       let anc=dp,n=0;while(anc&&n++<12){const k=s.hideP.indexOf(anc.id);if(k>=0)s.hideP.splice(k,1);anc=anc.parent&&anc.parent!==anc.id?project(anc.parent):null;}
@@ -6127,11 +6146,9 @@ document.addEventListener('drop',e=>{
   if(i.type==='pproj'){
     const p=project(dr.id),ref=project(i.el.dataset.proj);if(!p||!ref)return;
     const inSub=id=>new Set(descIds(id)),mineP=inSub(p.id),refP=inSub(ref.id);
-    flipTl(()=>{keepSlots(()=>{
-    mv(s.projects,p,ref,i.after);
-    const mine=s.objectives.filter(o=>mineP.has(o.project)),rb=s.objectives.filter(o=>refP.has(o.project));
-    if(mine.length&&rb.length){const ms=new Set(mine);s.objectives=s.objectives.filter(o=>!ms.has(o));const at=i.after?s.objectives.indexOf(rb.at(-1))+1:s.objectives.indexOf(rb[0]);s.objectives.splice(at,0,...mine);}
-    });save();});return;
+    flipTl(()=>{moveProjUnit(p,ref,i.after);
+      for(const o of s.objectives)if(mineP.has(o.project))delete o.startOn;/* el subproyecto movido se coloca en su nuevo turno, sin fecha fija */
+      save();});return;
   }
   if(i.type==='robj'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){keepSlots(()=>{o.project=ref.project;mv(s.objectives,o,ref,i.after);});save();}return;}
   if(i.type==='robjp'){const o=objective(dr.id),pj=project(i.el.dataset.proj);if(o&&pj){keepSlots(()=>{o.project=pj.id;});save();}return;}
