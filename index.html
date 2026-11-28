@@ -2788,6 +2788,11 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .h3l.hoyright{display:flex;flex-direction:column;gap:14px;background:transparent;padding:0 2px 40px;width:auto}
 .h3l .xcard{margin:0}
 .h3r .dvs-scroll .hoyright{padding:0 0 30px}
+
+.mvb{flex:none;width:20px;height:20px;padding:0;border:0;background:none;border-radius:50%;color:var(--mute);opacity:.6;cursor:pointer;display:grid;place-items:center;transition:opacity .1s,color .1s}
+.mvb svg{width:15px;height:15px}
+.mvb:hover{opacity:1;color:var(--ink)}
+.inbp{display:flex;align-items:center;gap:8px;padding:6px 10px 2px;font-size:12px;color:var(--mute)}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3219,6 +3224,7 @@ const IMP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 let gripSel='';
 const MQ=window.matchMedia('(max-width:760px)');const isMob=()=>MQ.matches;
 try{MQ.addEventListener('change',()=>{try{render();}catch(e){}});}catch(e){}
+const MOVE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a1 1 0 001 1h12a1 1 0 001-1v-7"/></svg>';
 const NOTE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V11"/><path d="M8.5 8h4M8.5 12h3M8.5 16h6"/><path d="M19.6 3.4a1.4 1.4 0 0 1 2 2L15 12l-2.6.6.6-2.6z"/></svg>';
 const LINK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
 function urlsIn(text){
@@ -3233,15 +3239,16 @@ function taskRow(t){
   const impBtn='<button type="button" class="impb'+(t.imp?' on':'')+'" data-act="toggleImp" data-id="'+esc(t.id)+'" aria-pressed="'+!!t.imp+'" aria-label="Importante" title="'+(t.imp?'Importante: hoy sí o sí (clic para quitar)':'Marcar como importante: hoy sí o sí')+'">'+IMP_SVG+'</button>';
   const noteBtn='<button type="button" class="noteb'+(t.note?' has':'')+'" data-act="taskNote" data-id="'+esc(t.id)+'" aria-label="Notas" title="'+(t.note?'Ver notas de la tarea':'Añadir notas a la tarea')+'">'+NOTE_SVG+'</button>';
   const inb=t.nuevo&&!t.done;
+  const mvBtn=inb?'<button type="button" class="mvb" data-act="inbPick" data-id="'+esc(t.id)+'" aria-label="Mover a un objetivo" title="Mover a un proyecto u objetivo">'+MOVE_SVG+'</button>':'';
   return '<div class="task'+(picked===t.id?' picked':'')+(t.done?' done':'')+(t.imp&&!t.done?' isimp':'')+(running?' running':'')+(!running&&s.pauseId===t.id&&!t.done?' paused':'')+'" data-task="'+esc(t.id)+'" tabindex="0">'+
     (t.done?'<span></span>':'<span class="grip"'+(mob?'':' draggable="true"')+' data-act="taskMenu" data-drag="task" data-id="'+esc(t.id)+'" title="Arrastrar">⠿</span>')+
     '<button class="check'+(t.done?' on':'')+'" data-act="toggleDone" data-id="'+esc(t.id)+'" aria-label="'+(t.done?'Reabrir':'Completar')+'"></button>'+
     '<div class="tmain fx'+(isRecur(t)?' rec':'')+'">'+editable('task.name',t.id,t.name,'title="'+esc(t.name)+'"','tname','Tarea sin nombre')+(isRecur(t)?REPEAT_SVG.replace('class="rcic"','class="rcic tr" title="Se repite cada día"'):'')+
       urlsIn(t.name).map(u=>'<a class="tlink" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer" title="Abrir '+esc(linkLabel(u))+'" aria-label="Abrir enlace">'+LINK_SVG+'</a>').join('')+
-      (mob?'':impBtn+noteBtn)+'</div>'+
+      (mob?'':impBtn+noteBtn+mvBtn)+'</div>'+
     editable('task.worked',t.id,String(shownMin(t)),'inputmode="numeric" title="Tiempo cronometrado (min). Haz clic y suma o resta: +15, -10"','tworked'+(workedMin(t)<1?' zero':''))+
     editable('task.min',t.id,String(Math.round(t.minutes)),'inputmode="numeric" title="Estimación (minutos)"','tmin')+
-    (t.done?'<span></span>':whenChip(t))+(mob?impBtn+noteBtn:'')+
+    (t.done?'<span></span>':whenChip(t))+(mob?impBtn+noteBtn+mvBtn:'')+
     (t.done?'<span></span>':'<button class="tplay'+(running?' on':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Iniciar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button>')+
   '</div>';
 }
@@ -3310,7 +3317,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>'+(spec?inboxCard():'');
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
-  if(!daily)body=newCard+body;
+  if(!daily&&!cp&&!today&&!dayOnly&&nw.length)body=dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+nw.map(taskRow).join('')+'</div>',' data-inbox="1"')+body;
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
   if(!today&&!embed&&!cp&&!open.length&&!rendered)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
   if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
@@ -3704,8 +3711,8 @@ const FLAG_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="curren
 const TRAY_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/></svg>';
 const dcCard=(cls,title,ic,body,attr='')=>'<div class="recurcard dc '+cls+'"'+attr+'><div class="sec recur ro"><span class="sname">'+title+'</span>'+ic+'</div>'+body+'</div>';
 function inboxCard(){
-  const I=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp);
-  return I.length?dcCard('dc-inb','Revisar inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+I.map(taskRow).join('')+'</div>',' data-inbox="1"'):'';
+  const I=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective);
+  return I.length?dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+I.map(taskRow).join('')+'</div>',' data-inbox="1"'):'';
 }
 function impPanel(){
   const L=s.tasks.filter(t=>t.imp&&!t.done);if(!L.length)return '';
@@ -3741,7 +3748,7 @@ function keyBlock(inboxFirst){
   return inboxFirst?inboxBlock()+red:red+inboxBlock();
 }
 function inboxBlock(){
-  const L=s.tasks.filter(t=>t.nuevo&&!t.done);if(!L.length)return '';
+  const L=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.objective);if(!L.length)return '';
   return '<section class="newcard inbub" aria-label="Inbox"><div class="newhd"><span>Inbox</span><i class="num">'+L.length+'</i></div><div class="tasks" data-mode="new">'+L.map(taskRow).join('')+'</div></section>';
 }
 /* reflexión del día: editor enriquecido por fecha */
@@ -4065,7 +4072,7 @@ function dayModalHtml(d){
   const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
-  const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&t.nuevo&&!t.imp);
+  const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&t.nuevo&&!t.imp&&!t.objective);
   const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -4087,8 +4094,8 @@ function dayRemindHtml(d){
   const ctxOf=t=>{const o=objective(t.objective);return o?o.name:'Día a día';};
   const link=(t,ctx)=>'<button type="button" class="rm-l" data-act="goTask" data-id="'+esc(t.id)+'" title="'+esc(t.name)+'"><span>'+esc(t.name)+'</span>'+(ctx?'<small>'+esc(ctx)+'</small>':'')+'</button>';
   const blk=(cls,title,L,ctx,st)=>L.length?'<section class="rm '+cls+'"'+(st?' style="'+st+'"':'')+'><header><b>'+title+'</b><i class="num">'+L.length+'</i></header>'+L.map(t=>link(t,ctx)).join('')+'</section>':'';
-  const imp=s.tasks.filter(t=>t.imp&&!t.done),inb=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp),daily=queue(d).filter(t=>!t.objective&&!t.done);
-  const out=blk('rm-imp','Importantes',imp,true)+blk('rm-inb','Revisar inbox',inb,false)+blk('rm-day','Día a día',daily,false,'--ac:'+DAILY_TONE);
+  const imp=s.tasks.filter(t=>t.imp&&!t.done),inb=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective),daily=queue(d).filter(t=>!t.objective&&!t.done);
+  const out=blk('rm-imp','Importantes',imp,true)+blk('rm-inb','Inbox',inb,false)+blk('rm-day','Día a día',daily,false,'--ac:'+DAILY_TONE);
   return out||'<p class="empty" style="padding:6px 2px">Nada pendiente de recordar.</p>';
 }
 function dvSideHtml(d,page){
@@ -4863,6 +4870,7 @@ const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t
 let dateClk={k:'',n:0};
 /* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
 function autoHoy(t){
+  if(t&&t.nuevo&&t.objective&&onDay(t,day()))delete t.nuevo;
   if(!t||t.done||t.objective||t.imp||t.section===RECUR||t.section===HOY||!onDay(t,day()))return;
   delete t.nuevo;t.section=HOY;s.tasks=s.tasks.filter(x=>x!==t);s.tasks.push(t);
 }
@@ -4887,10 +4895,11 @@ function menuFor(kind,id,anchor){
   if(kind==='pladd')return openPop(anchor,pi(LVL_ICO.sub+'Subproyecto','plNewSub','data-id="'+esc(id)+'"')+pi(LVL_ICO.obj+'Objetivo','plNewObj','data-id="'+esc(id)+'"'));
   if(kind==='inbdest'){
     const row=(lvl,html,kd,val)=>'<button class="pi" data-act="inbGo" data-id="'+esc(id)+'" data-kind="'+kd+'" data-val="'+esc(val)+'" style="padding-left:'+(10+lvl*14)+'px">'+html+'</button>';
-    const proj=(q,lvl)=>{let h=row(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>','proj',q.id);
+    const lab=(lvl,html)=>'<div class="inbp" style="padding-left:'+(10+lvl*14)+'px">'+html+'</div>';
+    const proj=(q,lvl)=>{let h=lab(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>');
       for(const o of s.objectives)if(o.project===q.id&&o.status!=='Completado')h+=row(lvl+1,'<i class="odot"></i>'+esc(o.name),'obj',o.id);
       for(const c of s.projects)if(c.parent===q.id&&c.id!==q.id)h+=proj(c,lvl+1);return h;};
-    let h=row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b>','daily','');
+    let h=pl('Enviar al Inbox de…')+row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b>','daily','');
     for(const a of s.areas){const rs=rootProjects().filter(q=>q.area===a);if(!rs.length)continue;h+=pl(esc(a))+rs.map(q=>proj(q,0)).join('');}
     return openPop(anchor,'<div class="inbl">'+h+'</div>');
   }
@@ -5215,7 +5224,9 @@ function onClick(e){
     case 'plAdd':{if(b.dataset.kind==='obj'){const o=objective(id);if(o)plNewObj(o.project,o.id);}else menuFor('pladd',id,b);break;}
     case 'plNewSub':closePop();plNewSub(id);break;
     case 'plNewObj':closePop();plNewObj(id);break;
-    case 'inbGo':closePop();openPlace(id,b.dataset.kind,b.dataset.val);break;
+    case 'inbGo':{closePop();const tk=task(id),kd=b.dataset.kind,o=kd==='obj'?objective(b.dataset.val):null;if(!tk||(kd==='obj'&&!o))break;
+      tk.objective=o?o.id:'';tk.section='';tk.nuevo=true;s.tasks=s.tasks.filter(x=>x!==tk);s.tasks.push(tk);save();
+      notify('Enviada al Inbox de «'+(o?o.name:'Día a día')+'»');break;}
     case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
     case 'qcMic':toggleMicQ();break;
     case 'qcSave':saveQuick();break;
