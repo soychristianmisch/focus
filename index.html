@@ -2945,6 +2945,8 @@ html body.paused .flcard.paused{background:transparent!important}
 .flcard.paused .fl-b:not(.ok) svg,.flcard.paused .fl-b:not(.ok) svg path{color:var(--pzb)!important;fill:var(--pzb)!important}
 .flcard.paused .fl-b.ok{background:rgba(255,255,255,.2);color:#fff}
 .flcard.paused .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
+.prog.lab,.bprog .prog.lab{height:9px;border-radius:5px}
+.plegend{gap:2px 14px;font-size:11px;color:var(--ink);font-weight:600}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3451,7 +3453,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   {
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     const tot='<span class="p tot" title="Tiempo total estimado del objetivo">Total: '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>';
-    propsH=daily?'<span class="oprops inl">'+tot+'</span>':'';
+    propsH='<span class="oprops inl">'+tot+'</span>';
     propsCp=propsH;
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
@@ -3504,7 +3506,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
   const leftAll=sumMin(openAll,minutesLeft);
   const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
-  const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):(leftAll>=1?'<span class="chipi tot" title="Tiempo que falta para completar el objetivo, del total estimado">Falta '+hrs(leftAll)+' de '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>':'<span class="chipi tot" title="Objetivo completo">Completo · total '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>');
+  const chips=(todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'');
   const prog='<div class="bprog">'+barLabels(o,pr.bar)+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
@@ -4632,12 +4634,8 @@ function barLabels(o,bar){
   const tot=list.reduce((q,t)=>q+w(t),0);if(!tot)return '<div class="pbw">'+bar+'</div>';
   const sum=f=>list.filter(f).reduce((q,t)=>q+w(t),0),
     v=[sum(t=>t.done&&day(t.done)<d),sum(t=>t.done&&day(t.done)===d),sum(t=>!t.done&&onDay(t,d))],rest=tot-v[0]-v[1]-v[2];
-  let i=0;
-  bar=bar.replace(/<i style="width:([\d.]+)%"><\/i>/g,(m,pw)=>{const k=i++,mins=v[k];return '<i style="width:'+pw+'%">'+(+pw>=13&&mins>0?'<span>'+mm(mins)+'</span>':'')+'</i>';});
-  const rp=100*rest/tot;
-  bar=bar.replace(/<\/div>$/,(rest>0&&rp>=13?'<u><span>'+mm(rest)+'</span></u>':'<u></u>')+'</div>');
-  const names=['Completado','Hoy','Falta hoy','Restante'],vals=[...v,rest],lg=vals.map((m,k)=>m>0?'<span class="k'+(k+1)+'"><i></i>'+names[k]+' <b>'+mm(m)+'</b></span>':'').join('');
-  return '<div class="pbw">'+bar.replace('class="prog','class="prog lab')+(lg?'<div class="plegend">'+lg+'</div>':'')+'</div>';
+  const vals=[...v,rest],lg=vals.map((m,k)=>m>0?'<span class="k'+(k+1)+'"><i></i>'+mm(m)+'</span>':'').join('');
+  return '<div class="pbw">'+bar+(lg?'<div class="plegend">'+lg+'</div>':'')+'</div>';
 }
 function tipProgress(o){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
