@@ -1867,7 +1867,7 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
   .runchip{flex:1;min-width:0;max-width:none;overflow:hidden}
   .runchip span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
   /* navegación inferior tipo app */
-  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:70;flex:none;gap:0;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:70;flex:none;gap:0;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
   header.top .tabs button{flex:1;min-width:0;flex-direction:column;gap:2px;padding:4px 2px;border-radius:10px;font-size:10px;font-weight:600;line-height:1.1;justify-content:center;background:none}
   header.top .tabs button .ti svg{width:22px;height:22px}
   .tlong{display:none}.tshort{display:inline-block;position:relative}
@@ -2949,18 +2949,26 @@ const fmts=new Map();
 const fmt=(o,at=Date.now())=>{const k=JSON.stringify(o);if(!fmts.has(k))fmts.set(k,new Intl.DateTimeFormat('es-ES',{timeZone:ZONE,...o}));return fmts.get(k).format(at);};
 const dayFmt=new Intl.DateTimeFormat('sv-SE',{timeZone:ZONE,dateStyle:'short'});
 const day=(at=Date.now())=>dayFmt.format(at);
-const hour=at=>fmt({hour:'2-digit',minute:'2-digit',hourCycle:'h23'},at);
+const hourFmt=new Intl.DateTimeFormat('es-ES',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+const hour=at=>hourFmt.format(at);
+const gbFmt=new Intl.DateTimeFormat('en-GB',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),dateAtMemo=new Map();
 function dateAt(date,time='12:00'){
+  const key=date+'|'+time,hit=dateAtMemo.get(key);if(hit!==undefined)return hit;
+  const r=dateAt0(date,time);if(dateAtMemo.size>4000)dateAtMemo.clear();dateAtMemo.set(key,r);return r;
+}
+function dateAt0(date,time){
   const guess=Date.parse(date+'T'+time+':00Z');
-  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:ZONE,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(guess);
+  const parts=gbFmt.format(guess);
   const mins=v=>Number(v.slice(0,2))*60+Number(v.slice(3,5));
   const est=guess-((mins(parts)-mins(time)+2160)%1440-720)*60000;
   for(const c of [est-3600000,est,est+3600000])if(day(c)===date&&hour(c)===time)return c;
   return est;
 }
-const shift=(d,n)=>day(dateAt(d)+n*86400000);
+const shiftMemo=new Map();
+const shift=(d,n)=>{const k=d+'|'+n,h=shiftMemo.get(k);if(h)return h;const r=new Date(Date.parse(d+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);if(shiftMemo.size>20000)shiftMemo.clear();shiftMemo.set(k,r);return r;};
 const diffDays=(a,b)=>Math.round((Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/86400000);
-const dow=d=>new Date(d+'T12:00:00Z').getUTCDay();
+const dowMemo=new Map();
+const dow=d=>{let r=dowMemo.get(d);if(r===undefined){r=new Date(d+'T12:00:00Z').getUTCDay();if(dowMemo.size>20000)dowMemo.clear();dowMemo.set(d,r);}return r;};
 const monday=d=>shift(d,-((dow(d)+6)%7));
 const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
 const dayLabel=d=>cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
