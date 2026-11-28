@@ -5258,15 +5258,12 @@ function onClick(e){
         setTimeout(()=>{const r=document.querySelector('#pjm '+sel);if(r)fl(r);},80);
         break;
       }
-      if(t.proj&&project(t.proj)&&!t.nuevo){
-        openPjm('proj',t.proj);
-        setTimeout(()=>{const r=document.querySelector('#pjm '+sel);if(r)fl(r);else{closePjm();showTimePop(id,b);}},80);
-        break;
-      }
       {
-        closePjm();closePop();
-        const r=document.querySelector('.hoy3 '+sel+', .wcenter '+sel);
-        if(r&&!t.done)fl(r);else showTimePop(id,b);
+        const r0=!t.done&&document.querySelector('.hoy3 '+sel+', .wcenter '+sel);
+        if(r0){fl(r0);break;}
+        if(t.done)doneOpen.add(DAILY.id),doneOpen.add('');
+        openPjm('daily','__daily');
+        setTimeout(()=>{let r=document.querySelector('#pjm '+sel);if(!r&&t.proj&&project(t.proj)){openPjm('proj',t.proj);r=document.querySelector('#pjm '+sel);}if(r)fl(r);},80);
       }
       break;
     }
