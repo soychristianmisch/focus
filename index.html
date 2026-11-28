@@ -6737,9 +6737,24 @@ async function push(now=false){
     const ver=cloud.ver||0;
     try{
       const ts=new Date().toISOString();
-      const r=await sb('/rest/v1/app_state?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:cloud.session.user_id,data:s,updated_at:ts}});
-      if(!r.ok)throw new Error(r.status);
-      cloud.remoteTs=ts;lsSet(SYNC_KEY,ts);if((cloud.ver||0)===ver){cloud.dirty=false;lsSet(DIRTY_KEY,null);setCloud('ok');}
+      const base=cloud.remoteTs;let newTs=ts;
+      if(base){
+        /* solo escribe si nadie más ha guardado desde la última sincronización */
+        const r=await sb('/rest/v1/app_state?user_id=eq.'+cloud.session.user_id+'&updated_at=eq.'+encodeURIComponent(base),{method:'PATCH',headers:{Prefer:'return=representation'},body:{data:s,updated_at:ts}});
+        if(!r.ok)throw new Error(r.status);
+        const rows=await r.json();
+        if(!rows.length){
+          try{localStorage.setItem('focus.conflict',JSON.stringify(s));}catch{}
+          cloud.dirty=false;lsSet(DIRTY_KEY,null);cloud.busy=false;
+          await pull(true);notify('Otro dispositivo había guardado cambios. He cargado la versión más reciente.');return;
+        }
+        newTs=rows[0].updated_at||ts;
+      }else{
+        const r=await sb('/rest/v1/app_state?on_conflict=user_id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:{user_id:cloud.session.user_id,data:s,updated_at:ts}});
+        if(!r.ok)throw new Error(r.status);
+        try{const rows=await r.json();if(rows[0]?.updated_at)newTs=rows[0].updated_at;}catch{}
+      }
+      cloud.remoteTs=newTs;lsSet(SYNC_KEY,newTs);if((cloud.ver||0)===ver){cloud.dirty=false;lsSet(DIRTY_KEY,null);setCloud('ok');}
     }catch(e){cloud.dirty=true;setCloud('off');cloud.timer=setTimeout(()=>push(true),15000);}
     cloud.busy=false;
   };
@@ -6792,10 +6807,10 @@ async function cloudInit(){
     if(p.get('access_token')){history.replaceState(null,'',location.pathname+location.search);await startSession(sessionFrom({access_token:p.get('access_token'),refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600}));}
   }
   if(!cloud.session){try{const t=JSON.parse(lsGet(SES_KEY)||'null');if(t?.user_id)cloud.session=t;}catch{}}
-  if(cloud.session){setCloud('sync');if(lsGet(DIRTY_KEY)){cloud.dirty=true;await push(true);}else await pull(true);}
+  if(cloud.session){setCloud('sync');cloud.remoteTs=lsGet(SYNC_KEY)||undefined;if(lsGet(DIRTY_KEY)&&cloud.remoteTs){cloud.dirty=true;await push(true);}else{lsSet(DIRTY_KEY,null);await pull(true);}}
   else if(lsGet(OFF_KEY)!=='1')loginUI();
   setInterval(()=>{if(cloud.session&&!cloud.busy&&document.visibilityState==='visible')cloud.dirty?push(true):pull();},45000);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloud.session&&!cloud.dirty)pull();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&cloud.session&&!cloud.busy)cloud.dirty?push(true):pull();});
   document.addEventListener('keydown',e=>{if(e.key==='Enter'&&cloud.session&&cloud.dirty&&!cloud.busy)setTimeout(()=>push(true),250);});
   document.addEventListener('focusout',()=>{setTimeout(()=>{if(cloud.session&&cloud.dirty&&!cloud.busy&&!typing())push(true);},300);});
   addEventListener('online',()=>{if(cloud.session)cloud.dirty?push(true):pull();});
