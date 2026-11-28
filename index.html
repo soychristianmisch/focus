@@ -2686,7 +2686,7 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dvs-top .xcard{margin:0}
 .dvs-scroll{flex:1;min-height:0;overflow-y:auto}
 .dvs-scroll .hoyright{padding:10px 14px 30px;gap:14px;background:transparent}
-.hoy3{display:grid;grid-template-columns:calc(var(--sw)*.9) minmax(0,880px) calc(var(--sw)*1.1);gap:16px;justify-content:center;height:calc(100dvh - 48px);padding:12px 14px;box-sizing:border-box;--sw:clamp(280px,calc((100vw - 880px)/2 - 16px),460px)}
+.hoy3{display:grid;grid-template-columns:calc(var(--sw)*.81) minmax(0,880px) calc(var(--sw)*1.21);gap:16px;justify-content:center;height:calc(100dvh - 48px);padding:12px 14px;box-sizing:border-box;--sw:clamp(280px,calc((100vw - 880px)/2 - 16px),460px)}
 .h3l,.h3c{min-width:0;overflow-y:auto;padding:0 2px 40px}
 .h3r{min-width:0;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 .h3r .dvs-top.hoyright{padding:0 0 10px;background:transparent}
@@ -2702,7 +2702,7 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dvl .newcard{--bg:#f7f7f5;--card:#f7f7f5;--bg3:#ecebe7;background:#f7f7f5;box-shadow:none;border-color:var(--line)}
 :root[data-theme=dark] .dvl .newcard{--ink:#ececec;--mute:#a0a0a0;--faint:#777;--line:#333;--line2:#444;--card:#202020;--bg:#202020;--bg3:#2a2a2a;background:#202020;color:#ececec}
 .dvl .newhd{color:var(--mute)}
-@media(max-width:1200px){.hoy3{grid-template-columns:minmax(0,880px) calc(var(--sw)*1.1)}.hoy3>.h3l{display:none}}
+@media(max-width:1200px){.hoy3{grid-template-columns:minmax(0,880px) calc(var(--sw)*1.21)}.hoy3>.h3l{display:none}}
 @media(max-width:900px){.hoy3{display:block;height:auto}
   .hoy3{padding:8px 10px}.h3c,.h3l{overflow:visible}.hoy3>.h3l{display:none}.hoy3 .h3r{display:contents}.hoy3 .dvs-top{position:sticky;top:46px;z-index:5;order:1}.hoy3 .dvs-scroll{order:4;overflow:visible}}
 /* columna derecha compacta */
@@ -2856,6 +2856,9 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .recurcard.dc-imp{padding-bottom:12px}
 .h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(16px,1.35vw,20.5px)}
 .h3r .bigstats small{font-size:11.5px}
+.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(19.2px,1.62vw,24.6px)}
+.h3r .bigstats,.dvm-r .bigstats{grid-template-columns:minmax(0,.85fr) minmax(0,1fr) minmax(0,1.3fr);gap:10px}
+.h3r .bigstats b,.dvm-r .bigstats b{white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
