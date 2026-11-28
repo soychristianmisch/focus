@@ -2702,23 +2702,23 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dvl .newcard{--bg:#f7f7f5;--card:#f7f7f5;--bg3:#ecebe7;background:#f7f7f5;box-shadow:none;border-color:var(--line)}
 :root[data-theme=dark] .dvl .newcard{--ink:#ececec;--mute:#a0a0a0;--faint:#777;--line:#333;--line2:#444;--card:#202020;--bg:#202020;--bg3:#2a2a2a;background:#202020;color:#ececec}
 .dvl .newhd{color:var(--mute)}
-@media(max-width:1200px){.hoy3{grid-template-columns:var(--sw) minmax(0,880px)}.hoy3>.h3r{display:none}}
+@media(max-width:1200px){.hoy3{grid-template-columns:minmax(0,880px) var(--sw)}.hoy3>.h3l{display:none}}
 @media(max-width:900px){.hoy3{display:block;height:auto}
-  .hoy3{padding:8px 10px}.h3c,.h3l{overflow:visible}.hoy3>.h3l{display:block;order:1;padding-top:0!important}.hoy3>.h3c{order:2}.hoy3>.h3r{display:block!important;order:3}.hoy3 .h3r{display:contents}.hoy3 .dvs-top{position:sticky;top:46px;z-index:5;order:1}.hoy3 .dvs-scroll{order:4;overflow:visible}}
+  .hoy3{padding:8px 10px}.h3c,.h3l{overflow:visible}.hoy3>.h3l{display:none}.hoy3 .h3r{display:contents}.hoy3 .dvs-top{position:sticky;top:46px;z-index:5;order:1}.hoy3 .dvs-scroll{order:4;overflow:visible}}
 /* columna derecha compacta */
 .h3r,.dvm-r{overflow-x:hidden}
-.h3r .hoyright,.dvm-r,.h3l .hoyright,.dvm-r .hoyright{width:auto;min-width:0}
-.h3r .xcard,.dvm-r,.h3l .xcard,.dvm-r .xcard{padding:14px 16px;min-width:0}
-.h3r .xtask,.h3l .xtask .xclock,.dvm-r .xtask .xclock{font-size:clamp(28px,2.2vw,38px);letter-spacing:-1px;margin-right:2px}
-.h3r .xtask,.h3l .xtask .xline,.dvm-r .xtask .xline{flex-wrap:wrap;gap:8px}
-.h3r .xtask,.h3l .xtask .fl-b.big,.dvm-r .xtask .fl-b.big{width:40px;height:40px}
-.h3r .xtitle,.dvm-r,.h3l .xtitle,.dvm-r .xtitle{font-size:16px}
-.h3r .bigstats,.dvm-r,.h3l .bigstats,.dvm-r .bigstats{gap:8px}
-.h3r .bigstats,.h3l .bigstats b,.dvm-r .bigstats b{font-size:clamp(17px,1.5vw,22px)}
-.h3r .bigstats,.h3l .bigstats small,.dvm-r .bigstats small{font-size:11px}
-.h3r .mini,.dvm-r,.h3l .mini,.dvm-r .mini{flex-wrap:wrap;gap:6px 14px}
-.h3r .bigstats,.dvm-r,.h3l .bigstats,.dvm-r .bigstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.h3r .bigstats,.h3l .bigstats b,.dvm-r .bigstats b{font-size:clamp(15px,1.25vw,19px);white-space:normal}
+.h3r .hoyright,.dvm-r .hoyright{width:auto;min-width:0}
+.h3r .xcard,.dvm-r .xcard{padding:14px 16px;min-width:0}
+.h3r .xtask .xclock,.dvm-r .xtask .xclock{font-size:clamp(34px,2.9vw,46px);letter-spacing:-1.5px;margin-right:2px}
+.h3r .xtask .xline,.dvm-r .xtask .xline{flex-wrap:wrap;gap:8px}
+.h3r .xtask .fl-b.big,.dvm-r .xtask .fl-b.big{width:40px;height:40px}
+.h3r .xtitle,.dvm-r .xtitle{font-size:16px}
+.h3r .bigstats,.dvm-r .bigstats{gap:8px}
+.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(17px,1.5vw,22px)}
+.h3r .bigstats small,.dvm-r .bigstats small{font-size:11px}
+.h3r .mini,.dvm-r .mini{flex-wrap:wrap;gap:6px 14px}
+.h3r .bigstats,.dvm-r .bigstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(15px,1.25vw,19px);white-space:normal}
 /* v223 recordatorios de la izquierda */
 .h3l .rm{margin:0 0 14px;padding:12px 14px 8px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--faint) 13%,var(--bg))}
 .h3l .rm-imp{background:color-mix(in srgb,var(--red) 6%,var(--card));border-color:color-mix(in srgb,var(--red) 30%,transparent)}
@@ -2785,14 +2785,16 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 :root[data-theme=dark] .recurcard.dc-inb{--tn:#161616}
 :root[data-theme=dark] .recurcard.dc-hoy .sec.recur .sname,:root[data-theme=dark] .recurcard.dc-hoy .sec.recur .rcic{color:#5fcf9a}
 
-.h3l.hoyright{display:flex;flex-direction:column;gap:14px;background:transparent;padding:0 2px 40px;width:auto}
-.h3l .xcard{margin:0}
 .h3r .dvs-scroll .hoyright{padding:0 0 30px}
 
 .mvb{flex:none;width:20px;height:20px;padding:0;border:0;background:none;border-radius:50%;color:var(--mute);opacity:.6;cursor:pointer;display:grid;place-items:center;transition:opacity .1s,color .1s}
 .mvb svg{width:15px;height:15px}
 .mvb:hover{opacity:1;color:var(--ink)}
 .inbp{display:flex;align-items:center;gap:8px;padding:6px 10px 2px;font-size:12px;color:var(--mute)}
+
+:root[data-theme=dark] .recurcard.dc.dc-imp{--tn:#ff8a82}
+:root[data-theme=dark] .recurcard.dc.dc-hoy{--tn:#5fcf9a}
+:root[data-theme=dark] .recurcard.dc.dc-inb{--tn:#161616}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3294,10 +3296,10 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
-  if(spec&&!(today||dayOnly))body+=impPanel();
+  if(spec&&!(today||dayOnly))body+=impPanel()+inboxCard();
   body+=(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
-    if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return spec?inboxCard():'';
+    if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return '';
     if((today||dayOnly)&&!list.length&&!(sec===RECUR&&daily))return '';
     if(sec&&sec!==RECUR&&!(daily&&sec===HOY)&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
     if(!sec&&!list.length&&dsec.length)return '';
@@ -3315,7 +3317,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
       endZ(oid,sec,daily?((sec===RECUR||sec===HOY)?'':sec===''?(dsec[0]||''):(dsec[dsec.indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
     if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+newCard;
-    if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>'+(spec?inboxCard():'');
+    if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>';
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(!daily&&!cp&&!today&&!dayOnly&&nw.length)body=dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+nw.map(taskRow).join('')+'</div>',' data-inbox="1"')+body;
@@ -3869,7 +3871,7 @@ function execPanel(onlyStats=false){
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
   if(onlyStats==='stats')return stats;
   if(onlyStats==='parts')return {main,rest:stats+compl+objc+lastW+extra};
-  if(onlyStats==='parts2')return {left:main+stats,right:lastW+compl+objc+extra};
+  if(onlyStats==='parts2')return {main,rest:stats+lastW+compl+objc+extra};
   if(onlyStats)return '<div class="hoyright solo" data-scroll>'+stats+'</div>';
   return '<div class="hoyright" data-scroll>'+main+stats+compl+objc+lastW+extra+'</div>';
 }
@@ -4073,7 +4075,7 @@ function dayModalHtml(d){
   const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
-  const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&t.nuevo&&!t.imp&&!t.objective);
+  const hasSpec=false;
   const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -4084,7 +4086,7 @@ function dayModalHtml(d){
   const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
   return '<div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
     '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+
-    (!done&&d===today?impPanel():'')+(cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
+    (!done&&d===today?impPanel()+inboxCard():'')+(cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!document.getElementById('pjm')&&Date.now()-pjmClosedAt>150&&!document.getElementById('tnote')&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
 function dayCenterHtml(d,nav){
@@ -4106,7 +4108,7 @@ function dvSideHtml(d,page){
 function viewDay3(){
   selectedDate=day();const d=selectedDate;
   const sd=selectedDate;let r;try{r=execPanel('parts2');}finally{selectedDate=sd;}
-  return '<div class="hoy3"><aside class="h3l hoyright" data-scroll>'+r.left+'</aside><section class="h3c" data-scroll>'+dayCenterHtml(d,false)+'</section><aside class="h3r"><div class="dvs-scroll" data-scroll><div class="hoyright">'+r.right+'</div></div></aside></div>';
+  return '<div class="hoy3"><aside class="h3l"></aside><section class="h3c" data-scroll>'+dayCenterHtml(d,false)+'</section><aside class="h3r"><div class="hoyright dvs-top">'+r.main+'</div><div class="dvs-scroll" data-scroll><div class="hoyright">'+r.rest+'</div></div></aside></div>';
 }
 function syncDayModal(){
   let m=document.getElementById('dvm');
@@ -4901,7 +4903,7 @@ function menuFor(kind,id,anchor){
     const proj=(q,lvl)=>{let h=lab(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>');
       for(const o of s.objectives)if(o.project===q.id&&o.status!=='Completado')h+=row(lvl+1,'<i class="odot"></i>'+esc(o.name),'obj',o.id);
       for(const c of s.projects)if(c.parent===q.id&&c.id!==q.id)h+=proj(c,lvl+1);return h;};
-    let h=pl('Enviar al Inbox de…')+row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b>','daily','');
+    let h=pl('Enviar a…')+row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b> <span class="psub">sección normal</span>','daily','');
     for(const a of s.areas){const rs=rootProjects().filter(q=>q.area===a);if(!rs.length)continue;h+=pl(esc(a))+rs.map(q=>proj(q,0)).join('');}
     return openPop(anchor,'<div class="inbl">'+h+'</div>');
   }
@@ -5228,8 +5230,8 @@ function onClick(e){
     case 'plNewSub':closePop();plNewSub(id);break;
     case 'plNewObj':closePop();plNewObj(id);break;
     case 'inbGo':{closePop();const tk=task(id),kd=b.dataset.kind,o=kd==='obj'?objective(b.dataset.val):null;if(!tk||(kd==='obj'&&!o))break;
-      tk.objective=o?o.id:'';tk.section='';tk.nuevo=true;s.tasks=s.tasks.filter(x=>x!==tk);s.tasks.push(tk);save();
-      notify('Enviada al Inbox de «'+(o?o.name:'Día a día')+'»');break;}
+      tk.objective=o?o.id:'';tk.section='';if(o)tk.nuevo=true;else delete tk.nuevo;s.tasks=s.tasks.filter(x=>x!==tk);s.tasks.push(tk);save();
+      notify(o?'Enviada al Inbox de «'+o.name+'»':'Pasada a Día a día (sección normal)');break;}
     case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
     case 'qcMic':toggleMicQ();break;
     case 'qcSave':saveQuick();break;
