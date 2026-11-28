@@ -2780,6 +2780,15 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .task.paused .tplay:hover{background:#2b2b27;color:#f5c542}
 .task.paused .rcic{color:#161614;opacity:.7}
 .task.paused .tworked:hover,.task.paused .tworked:focus,.task.paused .tmin:hover,.task.paused .tmin:focus{background:rgba(0,0,0,.12);color:#161614}
+
+/* v227: tareas completadas en el resumen del objetivo */
+.pj-dlist{display:grid;gap:2px;max-height:260px;overflow:auto;margin:0 -6px}
+.pj-drow{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:10px;text-align:left;border:0;background:none;color:var(--ink);padding:7px 8px;border-radius:9px;cursor:pointer;font:inherit;font-size:13px}
+.pj-drow:hover{background:var(--hover)}
+.pj-drow .pjd-ck{width:16px;height:16px;color:var(--pc,var(--g1))}
+.pj-drow .pjd-ck svg{width:100%;height:100%}
+.pj-drow .pjd-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+.pj-drow small{color:var(--mute);font-size:11.5px;white-space:nowrap}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -4331,7 +4340,12 @@ function pjmObj(o){
       card('Trabajado en total',dur(sp.worked),'estimado '+dur(sp.est))+
       card('Tareas',sp.done+' / '+sp.ts.length,left>=1?'pendiente '+dur(left):'completadas')+
       card('Periodo',sp.first?fm(sp.first):'—',sp.doneAt?'hasta '+fm(sp.doneAt):'')+'</div>'+
-      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per,tm:dayTaskMap([o.id])})+'</div></section></div></div></div>';
+      '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart({per,tm:dayTaskMap([o.id])})+'</div>'+pjDoneCard(sp.ts)+'</section></div></div></div>';
+}
+function pjDoneCard(ts){
+  const L=ts.filter(t=>t.done).sort((a,b)=>b.done-a.done);
+  const fd=x=>fmt({day:'numeric',month:'short'},new Date(x)).replace('.','');
+  return '<div class="pj-card"><h3>Tareas completadas · '+L.length+'</h3>'+(L.length?'<div class="pj-dlist">'+L.map(t=>'<button type="button" class="pj-drow" data-act="goTask" data-done="1" data-id="'+esc(t.id)+'" title="Ver esta tarea en el objetivo"><span class="pjd-ck">'+ICON.check+'</span><span class="pjd-n">'+esc(t.name)+'</span><small>'+fd(t.done)+' · '+dur(elapsed(t.id)/60000)+'</small></button>').join('')+'</div>':'<p class="empty" style="padding:0">Aún no hay tareas completadas.</p>')+'</div>';
 }
 function pjmDaily(){
   const ts=s.tasks.filter(t=>!t.objective),open=ts.filter(t=>!t.done),left=sumMin(open,minutesLeft),worked=ts.reduce((a,t)=>a+elapsed(t.id)/60000,0);
@@ -4960,6 +4974,10 @@ function onClick(e){
       const dn=b.dataset.done==='1'&&t.done,sel='.task[data-task="'+CSS.escape(id)+'"]';
       const row=!dn&&(document.querySelector('#dvm .dvm-box '+sel)||document.querySelector('.hoy3 .h3c '+sel)||document.querySelector('#dvm .dvl '+sel)||document.querySelector('.hoy3 .h3l '+sel));
       if(row){fl(row);break;}
+      if(b.closest('#pjm')&&pjm&&pjm.kind==='obj'&&pjm.id===t.objective){
+        if(t.done)doneOpen.add(t.objective);pjmRender();
+        setTimeout(()=>{const r=document.querySelector('#pjm .pj-left '+sel);if(r)fl(r);},60);break;
+      }
       if(t.objective&&objective(t.objective)){
         if(t.done)doneOpen.add(t.objective);
         openPjm('obj',t.objective);
