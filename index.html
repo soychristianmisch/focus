@@ -3801,6 +3801,15 @@ const bandOf=o=>{const p=o&&project(o.project);if(byProj()){const r=p&&rootProje
 const bandStd=(id,d)=>(bandById(id).hours[dow(d)]||0)*60;
 const bandCap=(id,d)=>{const v=s.bandOn?.[id]?.[d];return (v!=null?v:bandById(id).hours[dow(d)]||0)*60;};
 const bandSum=d=>BL().reduce((a,x)=>a+bandCap(x.id,d),0);
+/* al cambiar las horas habituales, los días pasados con trabajo conservan las horas que tenían */
+function freezePast(){
+  const today=day(),ds=[...new Set(s.entries.map(e=>day(e.start)))].filter(d=>d<today);
+  s.bandOn??={};s.hoursOn??={};
+  for(const d of ds){
+    for(const b of BL())if(s.bandOn[b.id]?.[d]==null)(s.bandOn[b.id]??={})[d]=bandCap(b.id,d)/60;
+    if(s.hoursOn[d]==null)s.hoursOn[d]=bandSum(d)/60;
+  }
+}
 /* reparto por bandas: cada banda tiene sus horas al día; las secciones se colocan en sucesión y lo que no cabe pasa al día siguiente */
 function computePlan(){
   const today=day(),from0=s.planStart&&s.planStart>today?s.planStart:today,res=new Map(),used=new Map(),usedT=usedOn(today);
@@ -3966,7 +3975,7 @@ function timeline(projects,embedded=false,opts={}){
     else if(px>=8&&wd===1)m2.push('<span class="d" style="left:'+x+'px">'+dd+'</span>');
     if(wd===0||wd===6)shades.push('<i class="shade" style="left:'+(LEFT+x)+'px;width:'+px+'px"></i>');
     const capm=capacityOn(d),tot=totals.get(d)??0,over=!done&&tot>capm+.5;
-    if(px>=36)mc.push('<span class="cp" style="left:'+x+'px;width:'+px+'px"><span class="capin ro'+(s.hoursOn?.[d]!=null?' custom':'')+'">'+capTxt(capm)+'</span></span>');
+    if(px>=36&&!done)mc.push('<span class="cp" style="left:'+x+'px;width:'+px+'px"><span class="capin ro'+(s.hoursOn?.[d]!=null?' custom':'')+'">'+capTxt(capm)+'</span></span>');
     if(tot>.5){
       const ratio=capm?Math.min(1,tot/capm):1;
       m3.push(showN?'<span class="tc'+(over?' over':'')+'" style="left:'+x+'px;width:'+px+'px"><b>'+hf(tot)+'</b><i style="width:'+ratio*100+'%"></i></span>'
@@ -3976,7 +3985,7 @@ function timeline(projects,embedded=false,opts={}){
   const tcol=dates.includes(today)?'<i class="tcol" style="left:'+(LEFT+xOf(today))+'px;width:'+px+'px"></i>':'';
   const head='<div class="tl-head"><div class="tl-row hm"><div class="tl-scale" style="--w:'+W+'px">'+m1.join('')+'</div></div>'+
     '<div class="tl-row hd"><div class="tl-scale" style="--w:'+W+'px">'+m2.join('')+'</div></div>'+
-    (px>=36?'<div class="tl-row hc"><div class="tl-scale" style="--w:'+W+'px">'+mc.join('')+'</div></div>':'')+
+    (px>=36&&!done?'<div class="tl-row hc"><div class="tl-scale" style="--w:'+W+'px">'+mc.join('')+'</div></div>':'')+
     '<div class="tl-row ht"><div class="tl-scale tl-load" style="--w:'+W+'px">'+m3.join('')+'</div></div></div>';
   const dayCap=(b,d)=>bandCap(b,d)||600;
   const chv=open=>'<svg class="plchev'+(open?'':' shut')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -4048,8 +4057,8 @@ function timeline(projects,embedded=false,opts={}){
   for(const bd of bandList()){
     if(opts.scoped&&!rows.some(r=>r.band===bd.id))continue;
     const b=bd.id,rs=rows.filter(r=>r.band===b),pendB=rs.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),endB=rs.map(r=>r.b.end).sort().at(-1);
-    const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capShort(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+' el '+d+'"></span>';}).join('')+'</div>':'';
-    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bn(bd))+'</b><input class="bandin" data-band="'+b+'" value="'+capShort(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bn(bd))+'"><small>al día</small></span></div>'+
+    const stdH=bd.hours.find(h=>h>0)??0,cells=px>=36&&!done?'<div class="tb-bd" style="left:'+LEFT+'px;width:'+W+'px">'+dates.map((d,i)=>{const ov=s.bandOn?.[b]?.[d]!=null;if(d<today)return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"></span>';return '<span class="cp" style="left:'+i*px+'px;width:'+px+'px"><input class="capin bcap'+(ov?' ov':'')+'" data-bcap="'+b+'|'+d+'" value="'+capShort(bandCap(b,d))+'" inputmode="text" aria-label="Horas de '+esc(bn(bd))+' el '+d+'"></span>';}).join('')+'</div>':'';
+    body+='<section class="tb-band" data-band="'+b+'" style="--bc:'+bandColor(b)+'"><div class="tb-bhead">'+cells+'<span class="tb-bl"><i></i><b>'+esc(bn(bd))+'</b>'+(done?'':'<input class="bandin" data-band="'+b+'" value="'+capShort(stdH*60)+'" inputmode="text" aria-label="Horas habituales al día para '+esc(bn(bd))+'"><small>al día</small>')+'</span></div>'+
       (rs.length?'<div class="tb-bn">'+dur(pendB)+(done?' trabajados':' pendientes')+(endB&&!done?' · hasta el '+fmt({day:'numeric',month:'short'},dateAt(endB)).replace('.',''):'')+'</div>':'')+
       (rs.length?renderBand(rs,bd):'<p class="tb-empty">Sin objetivos en esta banda. Arrastra uno desde Proyectos.</p>')+'</section>';
   }
@@ -5393,7 +5402,7 @@ document.addEventListener('change',e=>{
   if(oi){const o=objective(oi.dataset.onotion);if(o){let v=oi.value.trim();if(v&&!/^https?:\/\//i.test(v))v='https://'+v;o.notion=v;save();render();}return;}
   const bi=e.target.closest?.('input[data-band]');
   if(bi){const v=capParse(bi.value),bd=bandById(bi.dataset.band);
-    if(Number.isFinite(v)&&v>=0&&v<=24){const all0=bd.hours.every(h=>!h);bd.hours=bd.hours.map(h=>all0||h>0?v:0);syncHours();save();}else render();return;}
+    if(Number.isFinite(v)&&v>=0&&v<=24){freezePast();const all0=bd.hours.every(h=>!h);bd.hours=bd.hours.map(h=>all0||h>0?v:0);syncHours();save();}else render();return;}
   const ci=e.target.closest?.('input[data-bcap]');
   if(ci){const [id,d]=ci.dataset.bcap.split('|'),v=capParse(ci.value),bd=bandById(id);
     s.bandOn[id]??={};
