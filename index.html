@@ -2859,6 +2859,10 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(19.2px,1.62vw,24.6px)}
 .h3r .bigstats,.dvm-r .bigstats{grid-template-columns:minmax(0,.85fr) minmax(0,1fr) minmax(0,1.3fr);gap:10px}
 .h3r .bigstats b,.dvm-r .bigstats b{white-space:nowrap}
+.chipi.tot{background:var(--bg3);color:var(--mute);font-weight:500}
+#antip .th em strong{color:var(--ink);font-weight:650}
+#antip .tr.ok span{color:var(--mute)}
+.bprog .prog[data-tip]{cursor:default}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3357,8 +3361,8 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   {
     const ic=p=>'<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
     const tot='<span class="p tot" title="Tiempo total estimado del objetivo">Total: '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>';
-    propsH='<span class="oprops inl">'+tot+'</span>';
-    propsCp='<span class="oprops inl">'+tot+'</span>';
+    propsH=daily?'<span class="oprops inl">'+tot+'</span>':'';
+    propsCp=propsH;
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
@@ -3410,8 +3414,8 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
   const leftAll=sumMin(openAll,minutesLeft);
   const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
-  const chips=(todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy en este objetivo">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta en este objetivo">Faltan '+hrs(leftAll)+'</span>':'');
-  const prog='<div class="bprog">'+pr.bar+'<b class="num">'+pr.pct+' %</b></div>';
+  const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):'<span class="chipi tot" title="Tiempo total estimado del objetivo">Total obj.: '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>';
+  const prog='<div class="bprog">'+pr.bar.replace(/ title="[^"]*"/,' data-tip="'+tipProgress(o)+'"')+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
@@ -4520,6 +4524,22 @@ function tipTasks(head,sub,tm,cap=18,proj=false){
   return tipRaw(html+tipMore(more));
 }
 /* tarjeta de un objetivo entero: lo hecho y lo que falta */
+function tipProgress(o){
+  const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
+  const d=selectedDate,done=list.filter(t=>t.done),plan=list.filter(t=>!t.done&&onDay(t,d)),rest=list.filter(t=>!t.done&&!onDay(t,d));
+  const sum=L=>L.reduce((q,t)=>q+w(t),0),pc=m=>tot?Math.round(100*m/tot):0,ac=objAc(o.id===DAILY.id?null:o);
+  const blk=(title,sub,L,cls)=>{if(!L.length)return '';let h='<div class="tobj" style="--ac:'+ac+'"><div class="th"><b>'+title+'</b><em>'+sub+'</em></div>';
+    for(const t of L.slice(0,12))h+='<div class="tr'+cls+'"><span><i class="bx"></i>'+esc(t.name||'Sin título')+'</span><em>'+dur(w(t))+'</em></div>';
+    return h+(L.length>12?tipMore(L.length-12):'')+'</div>';};
+  const dm=sum(done),pm2=sum(plan),rm=sum(rest);
+  const nt=n=>n+' tarea'+(n===1?'':'s');
+  let html='<b>'+esc(o.name)+'</b><small>Total del objetivo · '+dur(tot)+' · '+nt(list.length)+'</small>';
+  html+=blk('✓ Completado','<strong>'+dur(dm)+'</strong> · '+nt(done.length)+' · '+pc(dm)+' %',done,' ok');
+  html+=blk('Previsto hoy','<strong>'+dur(pm2)+'</strong> · '+nt(plan.length)+' · '+pc(pm2)+' %',plan,'');
+  html+=blk('Restante','<strong>'+dur(rm)+'</strong> · '+nt(rest.length)+' · '+pc(rm)+' % por completar',rest,'');
+  if(!list.length)html+='<small>Aún no hay tareas.</small>';
+  return tipRaw(html);
+}
 function tipObjective(o,sub){
   const ts=s.tasks.filter(t=>t.objective===o.id),known=['',...o.sections];let left=44,more=0;
   let html='<b>'+esc(o.name)+'</b>'+(sub?'<small>'+esc(sub)+'</small>':'')+'<div class="tobj cols" style="--ac:'+objAc(o)+'">';
