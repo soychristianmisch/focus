@@ -2947,6 +2947,22 @@ html body.paused .flcard.paused{background:transparent!important}
 .flcard.paused .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
 .prog.lab,.bprog .prog.lab{height:9px;border-radius:5px}
 .plegend{gap:2px 14px;font-size:11px;color:var(--ink);font-weight:600}
+@media(max-width:760px){.task[data-task]{touch-action:pan-y}}
+.task.swp{overflow:hidden}
+.task.swp>*:not(.swdel){transform:translateX(var(--sx,0));position:relative;z-index:1}
+.task.swback>*:not(.swdel),.task.swout>*:not(.swdel){transition:transform .17s ease}
+.task.swp .swdel{position:absolute;top:0;bottom:0;z-index:0;background:#d6453d;color:#fff;display:flex;align-items:center;padding:0 16px;font-size:14px;font-weight:700;overflow:hidden;white-space:nowrap;grid-column:auto}
+.task.swp.swgo .swdel{background:#c0322b}
+.task.swout{opacity:0;transition:opacity .17s}
+.ptotm{display:none}
+@media(max-width:760px){
+  .bubble .bhead .chipi,.bubble .bhead .chips2{display:none!important}
+  .bubble .bhead .oprops.inl{display:none!important}
+  .bubble .bhead .bprog{flex:1 1 100%!important;width:100%!important;order:9}
+  .bubble .bhead .pbw{width:100%}
+  .bubble .bhead .plegend{width:100%}
+  .bubble .bhead .ptotm{display:inline;margin-left:auto;font-weight:700;white-space:nowrap}
+}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -4635,7 +4651,7 @@ function barLabels(o,bar){
   const sum=f=>list.filter(f).reduce((q,t)=>q+w(t),0),
     v=[sum(t=>t.done&&day(t.done)<d),sum(t=>t.done&&day(t.done)===d),sum(t=>!t.done&&onDay(t,d))],rest=tot-v[0]-v[1]-v[2];
   const vals=[...v,rest],lg=vals.map((m,k)=>m>0?'<span class="k'+(k+1)+'"><i></i>'+mm(m)+'</span>':'').join('');
-  return '<div class="pbw">'+bar+(lg?'<div class="plegend">'+lg+'</div>':'')+'</div>';
+  return '<div class="pbw">'+bar+'<div class="plegend">'+lg+'<span class="ptotm">Total '+hrs(tot)+'</span></div></div>';
 }
 function tipProgress(o){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
@@ -6270,6 +6286,42 @@ document.addEventListener('dragend',endDrag);
   document.addEventListener('touchend',end,{passive:false});document.addEventListener('touchcancel',end,{passive:false});
 })();
 
+
+/* deslizar una tarea (móvil) para eliminarla */
+(function(){
+  let sw=null,block=0;
+  const reset=(row,anim)=>{if(!row)return;row.style.removeProperty('--sx');row.querySelector(':scope>.swdel')?.remove();row.classList.remove('swp','swgo');};
+  document.addEventListener('touchstart',e=>{
+    sw=null;if(!isMob()||e.touches.length!==1)return;
+    const row=e.target.closest?.('.task[data-task]');if(!row||e.target.closest('.grip,input,textarea,[contenteditable="true"],#tlq,.tl-track'))return;
+    if(document.getElementById('pop')?.classList.contains('open'))return;
+    const t=e.touches[0];sw={row,id:row.dataset.task,x:t.clientX,y:t.clientY,lock:0,dx:0,w:row.getBoundingClientRect().width};
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!sw)return;const t=e.touches[0],dx=t.clientX-sw.x,dy=t.clientY-sw.y;
+    if(!sw.lock){
+      if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){sw=null;return;}
+      if(Math.abs(dx)<12||Math.abs(dx)<Math.abs(dy)*1.6)return;
+      sw.lock=1;sw.row.classList.add('swp');
+      const d=document.createElement('div');d.className='swdel';d.innerHTML='<span>Eliminar</span>';sw.row.append(d);sw.el=d;
+    }
+    e.preventDefault();sw.dx=dx;
+    sw.row.style.setProperty('--sx',dx+'px');
+    sw.el.style.cssText=(dx<0?'right:0;justify-content:flex-start;':'left:0;justify-content:flex-end;')+'width:'+Math.abs(dx)+'px';
+    const go=Math.abs(dx)>Math.min(sw.w*.4,150);sw.row.classList.toggle('swgo',go);sw.go=go;
+  },{passive:false});
+  const end=e=>{
+    if(!sw)return;const x=sw;sw=null;if(!x.lock)return;
+    block=Date.now();
+    if(x.go&&e.type==='touchend'){
+      x.row.classList.add('swout');x.row.style.setProperty('--sx',(x.dx<0?-1:1)*x.w+'px');
+      setTimeout(()=>{removeTask(x.id);},170);
+    }else{x.row.classList.add('swback');x.row.style.setProperty('--sx','0px');setTimeout(()=>{x.row.classList.remove('swback');reset(x.row);},180);}
+  };
+  document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',end,{passive:true});
+  document.addEventListener('click',e=>{if(Date.now()-block<400){e.preventDefault();e.stopPropagation();}},true);
+})();
+
 /* ---------- cronología: arrastrar barras ---------- */
 let tg=null;
 document.addEventListener('pointerdown',e=>{
@@ -6814,7 +6866,7 @@ async function cloudInit(){
   document.addEventListener('keydown',e=>{if(e.key==='Enter'&&cloud.session&&cloud.dirty&&!cloud.busy)setTimeout(()=>push(true),250);});
   document.addEventListener('focusout',()=>{setTimeout(()=>{if(cloud.session&&cloud.dirty&&!cloud.busy&&!typing())push(true);},300);});
   addEventListener('online',()=>{if(cloud.session)cloud.dirty?push(true):pull();});
-  addEventListener('pagehide',()=>{if(cloud.session&&cloud.dirty){try{sb('/rest/v1/app_state?on_conflict=user_id',{method:'POST',keepalive:true,headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:{user_id:cloud.session.user_id,data:s,updated_at:new Date().toISOString()}});}catch{}}});
+  addEventListener('pagehide',()=>{if(cloud.session&&cloud.dirty){try{if(cloud.remoteTs)sb('/rest/v1/app_state?user_id=eq.'+cloud.session.user_id+'&updated_at=eq.'+encodeURIComponent(cloud.remoteTs),{method:'PATCH',keepalive:true,headers:{Prefer:'return=minimal'},body:{data:s,updated_at:new Date().toISOString()}});}catch{}}});
 }
 addEventListener('storage',e=>{if(e.key===SES_KEY&&e.newValue&&!cloud.session){try{startSession(JSON.parse(e.newValue));}catch{}}});
 cloudInit();
