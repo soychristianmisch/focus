@@ -3316,6 +3316,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     return '<div class="secblock cdn">'+head+'<div class="tasks" data-mode="done">'+insDone(oid,sec,'',dl[0].id,true)+dl.map(t=>taskRow(t)+insDone(oid,sec,t.id,'',false)).join('')+'</div></div>';
   }).join(''):'');
   if((dvIds||today)&&!daily&&!cp)body+='<button class="viewall pgo" data-act="objFull" data-id="'+o.id+'">Ver objetivo completo <span>›</span></button>';
+  if((dvIds||today)&&daily&&!cp)body+='<button class="viewall pgo" data-act="dailyFull">Ver día a día completo <span>›</span></button>';
   if((today||dayOnly)&&!cp)body+='<button class="viewall" data-act="'+(today?'hoyOpen':'fViewAll')+'" data-id="'+o.id+'">Ver todas las tareas <span>⌄</span></button>';
   if(closeBtn)body+='<button class="viewall" data-act="objToggle" data-id="'+o.id+'">Clic para cerrar el objetivo <span>⌃</span></button>';
   if(embed)body+='<button class="viewall" data-act="hoyClose" data-id="'+o.id+'">Volver a la vista de hoy <span>⌃</span></button>';
@@ -4940,6 +4941,7 @@ function onClick(e){
     case 'objToggle':{pjOpenObj.has(id)?pjOpenObj.delete(id):pjOpenObj.add(id);pjOpenSave();render();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
+    case 'dailyFull':openPjm('daily','__daily');break;
     case 'objFull':{if(objective(id))openPjm('obj',id);break;}
     case 'goObjProj':{dvDay='';syncDayModal();if(objective(id)){view='Planificación';render();openPjm('obj',id);}break;}
     case 'pjGoObj':{const o=objective(id);if(!o)break;pjOpenObj.add(id);pjOpenSave();openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
