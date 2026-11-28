@@ -2590,6 +2590,12 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .pjs-empty{color:var(--faint);font-size:13px;margin:4px 6px 10px}
 .pjm-adds{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 @media (max-width:700px){.pjm-adds{grid-template-columns:1fr}}
+
+/* v210 */
+.plan2{grid-template-columns:370px minmax(0,1fr)}
+.plrail .pjsearch input{margin-left:8px;width:calc(100% - 8px)}
+.pjm .pj-right{position:sticky;top:0;align-self:start;max-height:calc(min(92vh,980px) - 90px);overflow:auto}
+@media (max-width:900px){.pjm .pj-right{position:static;max-height:none}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3995,7 +4001,7 @@ function viewPlan(){
   };
   const tree=areas.map(ar=>{
     const roots=s.projects.filter(p=>p.area===ar&&!(p.parent&&project(p.parent)&&p.parent!==p.id));
-    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><span class="lines" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área"></span><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
+    return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><i class="rgrip" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área" aria-hidden="true"></i><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
       (roots.length?roots.map(p=>item(p,0)).join(''):'<p class="pempty">Sin proyectos</p>')+'</div>';
   }).join('');
   return '<div class="plan2"><aside class="wrail plrail prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+lvlSeg('plLevel',plShowObj)+'</div>'+tree+'<button class="addrow newarea" data-act="addArea">＋ Nueva área</button></aside>'+
@@ -4007,6 +4013,7 @@ let pjm=null,pjmFocus=null;
 const tlScoped=(projects,only)=>timeline(projects,true,{scoped:true,id:'tlq',only}).replace(/ draggable="true"/g,'').replace(/ data-drag="[^"]*"/g,'');
 function openPjm(kind,id){
   closePjm();closePop();pjm={kind,id,px:0};
+  if(kind==='proj'){const ids=descIds(id);for(const o of s.objectives)if(ids.includes(o.project)&&o.status!=='Completado')pjOpenObj.add(o.id);pjOpenSave();}
   const m=document.createElement('div');m.id='pjm';m.className='pjm';
   m.innerHTML='<div class="pjm-box" role="dialog" aria-modal="true"><div class="pjm-top"><span class="pjm-k"></span><button type="button" class="pmx pjmx" aria-label="Cerrar" title="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pjm-body"></div></div>';
   document.body.appendChild(m);pjmRender();
@@ -4045,7 +4052,7 @@ function pjmProj(p){
   const lists=(kids.length?'<section class="pj-sec"><h2>Subproyectos · '+kids.length+'</h2>'+kids.map(kidCard).join('')+'</section>':'')+
     (direct.length?'<section class="pj-sec"><h2>Objetivos · '+direct.length+'</h2>'+direct.map(pjmObjCard).join('')+'</section>':'');
   const adds='<div class="pjm-adds"><button type="button" class="firstobj subp" data-act="plNewSub" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(kids.length?'Añade otro subproyecto':'Crea un subproyecto')+'</b><small>fase o etapa dentro de '+esc(p.name)+'</small></span></button><button type="button" class="firstobj subp" data-act="plNewObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(direct.length?'Crea otro objetivo':'Crea un objetivo')+'</b><small>en '+esc(p.name)+'</small></span></button></div>';
-  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left"><section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section>'+lists+adds+'</div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left">'+lists+adds+'<section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section></div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
     card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
     '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div></section>'+done+'</div></div></div>';
 }
@@ -4266,7 +4273,7 @@ function runbar(t){
 }
 function header(){
   const t=task(s.running?.id),r=t?timerReading(t):null;
-  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Proyectos','Planificación','Analítica'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'play',Proyectos:'flag','Planificación':'timeline','Analítica':'pie',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Acción':v==='Planificación'?'Planning':v==='Analítica'?'Progreso':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Acción',Proyectos:'Proyectos','Planificación':'Planning','Analítica':'Progreso',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
+  return '<div class="brand"><i></i>Focus</div><nav class="tabs" aria-label="Vistas">'+['Trabajo','Planificación','Analítica'].map(v=>'<button data-act="view" data-id="'+v+'"'+(v===view?' aria-current="page"':'')+'>'+'<span class="ti">'+glyph({Trabajo:'play',Proyectos:'flag','Planificación':'timeline','Analítica':'pie',Inbox:'mail'}[v])+'</span><span class="tlong">'+(v==='Proyectos'?'Proyectos':v==='Trabajo'?'Acción':v==='Planificación'?'Planning':v==='Analítica'?'Progreso':v)+(v==='Inbox'&&s.inbox.length?' <span class="faint">'+s.inbox.length+'</span>':'')+'</span><span class="tshort">'+({Trabajo:'Acción',Proyectos:'Proyectos','Planificación':'Planning','Analítica':'Progreso',Inbox:'Inbox'}[v])+(v==='Inbox'&&s.inbox.length?'<i class="tbadge">'+s.inbox.length+'</i>':'')+'</span></button>').join('')+'</nav>'+
     '<button class="btn" data-act="float" title="Ventana flotante del temporizador">Ventana flotante ↗</button>'+
     (typeof cloudBadge==='function'?cloudBadge():'')+'<button class="iconbtn" data-act="theme" id="themebtn" aria-label="Cambiar entre modo claro y oscuro" title="Modo claro / oscuro">'+(document.documentElement.dataset.theme==='dark'?ICON.sun:ICON.moon)+'</button>'+
     '<button class="iconbtn" data-act="settings" aria-label="Ajustes" title="Ajustes">'+ICON.gear+'</button>';
@@ -4337,11 +4344,10 @@ function render0(){
 }
 function tlTarget(tl,done){const px=+tl.dataset.px,x=diffDays(tl.dataset.first,day())*px;return Math.max(0,done?x-tl.clientWidth+px*2+40:x-160);}
 function tlAnim(tl,done){
-  const b=tlTarget(tl,done),cw=tl.clientWidth,max=Math.max(0,tl.scrollWidth-cw);
-  const a=done?Math.max(0,b-cw*.9):Math.min(max,b+cw*.9);tl.scrollLeft=a;
+  const a=tlTarget(tl,!done),b=tlTarget(tl,done);tl.scrollLeft=a;
   if(Math.abs(a-b)<4||matchMedia('(prefers-reduced-motion:reduce)').matches){tl.scrollLeft=b;return;}
-  const id=tl.id,D=1300,ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  setTimeout(()=>{const t0=performance.now(),step=n=>{const k=Math.min(1,(n-t0)/D),el=document.getElementById(id);if(!el)return;el.scrollLeft=a+(b-a)*ease(k);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);},500);
+  const id=tl.id,D=1000,ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  setTimeout(()=>{const t0=performance.now(),step=n=>{const k=Math.min(1,(n-t0)/D),el=document.getElementById(id);if(!el)return;el.scrollLeft=a+(b-a)*ease(k);if(k<1)requestAnimationFrame(step);};requestAnimationFrame(step);},450);
 }
 function autoGrow(el){el.style.height='auto';el.style.height=Math.max(320,el.scrollHeight)+'px';}
 function focusEdit(kind,id,select=false,attr=''){
@@ -4653,7 +4659,7 @@ function onClick(e){
     case 'objToggle':{pjOpenObj.has(id)?pjOpenObj.delete(id):pjOpenObj.add(id);pjOpenSave();render();break;}
     case 'pjObjOpen':{pjObj=id;render();{const m=$('.pjmain');if(m)m.scrollTop=0;window.scrollTo(0,0);}break;}
     case 'pjObjBack':{pjObj='';render();window.scrollTo(0,0);break;}
-    case 'goObjProj':dvDay='';syncDayModal();view='Proyectos';
+    case 'goObjProj':{dvDay='';syncDayModal();if(objective(id)){view='Planificación';render();openPjm('obj',id);}break;}
     case 'pjGoObj':{const o=objective(id);if(!o)break;pjOpenObj.add(id);pjOpenSave();openProj=o.project;openObj='';if(o.status==='Completado')pjObj=id;else pjObj='';
       {const nq=normQ(pjQ).trim();if(nq&&s.tasks.some(t=>t.objective===o.id&&t.done&&(normQ(t.name).includes(nq)||normQ(t.note).includes(nq))))doneOpen.add(o.id);}
       render();pjHLScroll();
@@ -4698,8 +4704,8 @@ function onClick(e){
     case 'fHoyToggle':{fHoy=!fHoy;}render();{const c=$('.wcenter');if(c)c.scrollTop=0;}break;
     case 'wProjBack':wProj='';render();break;
     case 'openNotion':{const p=project(id);if(p?.notion)window.open(p.notion,'_blank','noopener');break;}
-    case 'goProj':{const p=project(id);if(!p)break;closePop();view='Proyectos';openProj=id;openObj='';render();window.scrollTo(0,0);break;}
-    case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Proyectos';openProj=id;render();window.scrollTo(0,0);break;}
+    case 'goProj':{const p=project(id);if(!p)break;closePop();view='Planificación';render();openPjm('proj',id);break;}
+    case 'projNote':{const p=project(id);if(!p)break;if(p.notion){window.open(p.notion,'_blank','noopener');break;}view='Planificación';render();openPjm('proj',id);break;}
     case 'pjGo':document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});break;
     case 'objMoveOpen':{const a=lastAnchor&&lastAnchor.isConnected?lastAnchor:b;menuFor('objmove',id,a);break;}
     case 'objMoveTo':{const o=objective(id),np=project(b.dataset.val);closePop();if(!o||!np||o.project===np.id)break;const old=o.project;o.project=np.id;openProj=np.id;save();notify('Objetivo movido a «'+np.name+'»',()=>{o.project=old;openProj=old;save();});break;}
@@ -5718,7 +5724,7 @@ window.addEventListener('storage',e=>{
 /* al recargar, volver al apartado (y proyecto/objetivo) donde estabas */
 try{const n=JSON.parse(lsGet('focus.nav')||'null');
   if(n){
-    if(NAV_VIEWS.includes(n.view))view=n.view;
+    if(NAV_VIEWS.includes(n.view))view=n.view==='Proyectos'?'Planificación':n.view;
     if(n.openArea&&(n.openArea==='Global'||n.openArea===DAILY.id||s.areas.includes(n.openArea)))openArea=n.openArea;
     if(n.openProj&&project(n.openProj))openProj=n.openProj;
     if(n.openObj&&objective(n.openObj))openObj=n.openObj;
