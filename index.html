@@ -2978,7 +2978,7 @@ function migrate(d){
   if(d.inbox.length){for(const i of d.inbox.slice().reverse())d.tasks.push({...mkTask(i.text,10,'',''),nuevo:true});d.inbox=[];}
   d.tasks.forEach(t=>{if(t.objective==='__daily')t.objective='';});
   d.tasks.forEach(t=>{if(!t.objective){if(t.section==='Tareas diarias')t.section=RECUR;else if(t.section===DDS)t.section='';}});
-  d.dailySections??=[];d.dailySections=d.dailySections.map(x=>x==='Tareas diarias'?RECUR:x);d.dailySections=[HOY,RECUR,...d.dailySections.filter(x=>x!==RECUR&&x!==HOY)];
+  d.dailySections??=[];d.dailySections=d.dailySections.map(x=>x==='Tareas diarias'?RECUR:x);d.dailySections=[RECUR,HOY,...d.dailySections.filter(x=>x!==RECUR&&x!==HOY)];
   d.dailySections=d.dailySections.filter(x=>x!==DDS);
   d.hoursOn??={};d.bandHours??={Ministerio:5,Negocios:3,Otras:2};
   if(!d.bands){const bh=d.bandHours,T=(bh.Ministerio+bh.Negocios+bh.Otras)||1,mk=(id,name,areas,rest)=>({id,name,areas,rest,hours:[0,1,2,3,4,5,6].map(w=>Math.round((d.hours[w]||0)*bh[id]/T*100)/100)});
@@ -3283,10 +3283,10 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
   if(spec&&!(today||dayOnly))body+=impPanel();
-  body+=(daily?[HOY,RECUR,'',...dsec]:['',...sections]).map(sec=>{
+  body+=(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
+    if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return spec?inboxCard():'';
     if((today||dayOnly)&&!list.length&&!(sec===RECUR&&daily))return '';
-    if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return '';
     if(sec&&sec!==RECUR&&!(daily&&sec===HOY)&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
     if(!sec&&!list.length&&dsec.length)return '';
     lastSec=sec;const isFirst=rendered++===0;
@@ -3302,14 +3302,14 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
       endZ(oid,sec,daily?((sec===RECUR||sec===HOY)?'':sec===''?(dsec[0]||''):(dsec[dsec.indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
-    if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+(spec?inboxCard():'')+newCard;
-    if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>';
+    if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+newCard;
+    if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>'+(spec?inboxCard():'');
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
   if(!daily)body=newCard+body;
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
   if(!today&&!embed&&!cp&&!open.length&&!rendered)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
-  if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[HOY,RECUR,'',...dsec]:['',...sections]).map(sec=>{
+  if(done.length&&!cp)body+='<div class="donebox"><button data-act="toggleDoneBox" data-id="'+esc(key)+'">'+(doneOpen.has(key)?'Ocultar':'Mostrar')+' completadas · '+done.length+'</button></div>'+(doneOpen.has(key)?(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
     const dl=done.filter(t=>t.section===sec);if(!dl.length)return '';
     const hid=sec&&sec!==RECUR&&sec!==HOY&&!open.some(t=>t.section===sec)&&!reop.includes(sec);
     const head=sec?'<div class="sec ro cdn"><span class="sname">'+esc(sec)+'</span>'+''+'</div>':'';
