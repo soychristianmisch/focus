@@ -2817,15 +2817,19 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dimp .task,.dimp .tname{font-size:13px}
 .dimp .task .tmain{margin-left:6px}
 .dimp .task .tname:not(:focus){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.recurcard.dc-inb .task .tname:not(:focus){white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.recurcard.dc-inb .task .tname:focus{white-space:normal}
-.recurcard.dc-inb .task{align-items:start}
-.recurcard.dc-inb .task .check,.recurcard.dc-inb .task .grip{margin-top:9px}
 
 .h3l{padding:0 2px 40px}
 .hcal{margin-top:0}
 
 .dimp{margin:0 0 6px}
+
+/* v244 */
+.sec .lines,.bubble .sec .lines{width:12px;height:18px;background:radial-gradient(circle,var(--faint) 1.6px,transparent 2.1px) 0 0/6px 6px}
+.bubble .dimp,.bubble>.recurcard,.bubble .recurcard.dc{margin:0 0 14px}
+.bubble .dimp .recurcard{margin:0}
+.cd-row .tplay{opacity:1;width:28px;height:28px;justify-self:end;background:color-mix(in srgb,var(--play) 18%,var(--card));color:var(--play)}
+.cd-row .tplay svg{width:12px;height:12px}
+.cd-row .tplay:not(.on):hover{background:var(--play);color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3746,7 +3750,7 @@ const FLAG_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="curren
 const TRAY_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/></svg>';
 const dcCard=(cls,title,ic,body,attr='')=>'<div class="recurcard dc '+cls+'"'+attr+'><div class="sec recur ro"><span class="sname">'+title+'</span>'+ic+'</div>'+body+'</div>';
 function inboxCard(){
-  const I=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective);
+  const I=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective&&!t.proj);
   return I.length?dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+I.map(taskRow).join('')+'</div>',' data-inbox="1"'):'';
 }
 function impPanel(){
@@ -3783,7 +3787,7 @@ function keyBlock(inboxFirst){
   return inboxFirst?inboxBlock()+red:red+inboxBlock();
 }
 function inboxBlock(){
-  const L=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.objective);if(!L.length)return '';
+  const L=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.objective&&!t.proj);if(!L.length)return '';
   return '<section class="newcard inbub" aria-label="Inbox"><div class="newhd"><span>Inbox</span><i class="num">'+L.length+'</i></div><div class="tasks" data-mode="new">'+L.map(taskRow).join('')+'</div></section>';
 }
 /* reflexión del día: editor enriquecido por fecha */
@@ -3884,7 +3888,7 @@ function execPanel(onlyStats=false){
       const pr=projectOf(x),ob=objective(x.objective),real=workedMin(x);
       return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main" data-act="goTask" data-done="1" data-id="'+esc(x.id)+'" title="Ver en su objetivo"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
         '<div class="cd-time'+(real>x.minutes+.5?' over':'')+'"><b>'+editable('task.worked',x.id,dur(Math.floor(real+1e-6)),'inputmode="numeric" data-raw="'+Math.floor(real+1e-6)+'" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b><small title="Estimación">est. '+dur(x.minutes)+'</small></div>'+
-        '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
+        '<button type="button" class="tplay" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
   if(anTips.size>300)anTips=new Map();
   const exo=new Map();{let i=0;for(const bd of bandList())for(const o2 of planOrder())if(bandOf(o2)===bd.id)exo.set(o2.id,i++);exo.set('',1e9);}
@@ -3893,7 +3897,7 @@ function execPanel(onlyStats=false){
   const objc='<section class="xcard"><h3>Avance por objetivo</h3>'+(objsO.length?objsO.map(g=>{
     const ob=objective(g.k),pr=ob?project(ob.project):DAILY,pct=g.total?Math.round(g.done/g.total*100):0;
     const all2=st.todo.filter(x=>(x.objective||'')===g.k).map((x,i)=>({x,i,r:rankT(g.k,x)})).sort((a,b)=>a.r-b.r||a.i-b.i).map(z=>z.x);
-    const nDone=all2.filter(x=>x.done).length,tp=tipHtml(ob?ob.name:'Día a día',nDone+' hechas · '+(all2.length-nDone)+' por hacer',all2.slice(0,16).map(x=>[(x.done?'✓ ':'○ ')+x.name,x.done?dur(Math.round(workedMin(x))):dur(x.minutes)]),Math.max(0,all2.length-16));
+    const nDone=all2.filter(x=>x.done).length,tp=tipTasks(capz(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d))),nDone+' hechas · '+(all2.length-nDone)+' por hacer',new Map(all2.map(x=>[x.id,x.done?workedMin(x):x.minutes])),30);
     return '<div class="oprog'+(pct===100?' full':'')+'" data-tip="'+tp+'" style="--pc:'+pr.color+'"><div class="op1"><span class="nm">'+esc(ob?ob.name:'Día a día')+'</span><b class="num">'+(pct===100?'✓ ':'')+pct+' %</b></div><div class="optrack"><i style="width:'+pct+'%"></i></div><div class="op2 num">'+g.done+'/'+g.total+' tareas'+(g.min>=1?' · '+dur(g.min):'')+'</div></div>';
   }).join(''):'<p class="empty" style="padding:6px 0">Aún no hay tareas para este día.</p>')+'</section>';
   const lw=new Map();for(const e of s.entries){const m=dayMs(e,d)/60000;if(m<=0)continue;const x=lw.get(e.task)||{m:0,last:0};x.m+=m;x.last=Math.max(x.last,e.end??Date.now());lw.set(e.task,x);}
@@ -3901,7 +3905,7 @@ function execPanel(onlyStats=false){
   const lastW='<section class="xcard cdone"><h3>Últimas tareas trabajadas'+(lastL.length?' · '+lastL.length:'')+'</h3>'+(lastL.length?lastL.map(({t:x,m})=>{
     const pr=projectOf(x),ob=objective(x.objective);
     return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main" data-act="goTask" data-id="'+esc(x.id)+'" title="Ver la tarea"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
-      '<div class="cd-time"><b>'+dur(Math.round(m))+'</b><small title="Estimación">est. '+dur(x.minutes)+'</small></div><button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Empezar" title="Empezar">'+ICON.play+'</button></div>';
+      '<div class="cd-time"><b>'+dur(Math.round(m))+'</b><small title="Estimación">est. '+dur(x.minutes)+'</small></div><button type="button" class="tplay" data-act="play" data-id="'+esc(x.id)+'" aria-label="Empezar" title="Empezar">'+ICON.play+'</button></div>';
   }).join(''):'<p class="empty" style="padding:6px 0">Aún no has trabajado en ninguna tarea.</p>')+'</section>';
   const extra='';const _extra=(paused.length)?'<section class="xcard">'+
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
@@ -4112,7 +4116,7 @@ function dayModalHtml(d){
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
   impInDaily=!topPanels&&!done&&d>=today;
-  const hasSpec=impInDaily&&s.tasks.some(t=>!t.done&&(t.imp||(t.nuevo&&!t.objective)));
+  const hasSpec=impInDaily&&s.tasks.some(t=>!t.done&&(t.imp||(t.nuevo&&!t.objective&&!t.proj)));
   const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -4134,7 +4138,7 @@ function dayRemindHtml(d){
   const ctxOf=t=>{const o=objective(t.objective);return o?o.name:'Día a día';};
   const link=(t,ctx)=>'<button type="button" class="rm-l" data-act="goTask" data-id="'+esc(t.id)+'" title="'+esc(t.name)+'"><span>'+esc(t.name)+'</span>'+(ctx?'<small>'+esc(ctx)+'</small>':'')+'</button>';
   const blk=(cls,title,L,ctx,st)=>L.length?'<section class="rm '+cls+'"'+(st?' style="'+st+'"':'')+'><header><b>'+title+'</b><i class="num">'+L.length+'</i></header>'+L.map(t=>link(t,ctx)).join('')+'</section>':'';
-  const imp=s.tasks.filter(t=>t.imp&&!t.done),inb=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective),daily=queue(d).filter(t=>!t.objective&&!t.done);
+  const imp=s.tasks.filter(t=>t.imp&&!t.done),inb=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp&&!t.objective&&!t.proj),daily=queue(d).filter(t=>!t.objective&&!t.done);
   const out=blk('rm-imp','Importantes',imp,true)+blk('rm-inb','Inbox',inb,false)+blk('rm-day','Día a día',daily,false,'--ac:'+DAILY_TONE);
   return out||'<p class="empty" style="padding:6px 2px">Nada pendiente de recordar.</p>';
 }
@@ -4354,6 +4358,10 @@ function pjmDone(o,rootId){
 }
 const pjmKidOrder=q=>[...kidsOf(q.id).flatMap(pjmKidOrder),...s.objectives.filter(o=>o.project===q.id&&o.status!=='Completado')];
 const pjmObjCard=o=>{const op=pjOpenObj.has(o.id);return '<div class="pj-obj'+(op?'':' folded')+'" data-fold="'+esc(o.id)+'">'+noBack(bubble(o,false,false,!op,false,'objOpen',op))+'</div>';};
+function projInboxHtml(pid){
+  const L=s.tasks.filter(t=>t.nuevo&&!t.done&&t.proj===pid);if(!L.length)return '';
+  return '<div class="dimp">'+dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+L.map(taskRow).join('')+'</div>',' data-inbox="1"')+'</div>';
+}
 function pjmProj(p){
   const st=projStats(p),par=p.parent?project(p.parent):null;
   const tls=descIds(p.id).map(id=>project(id)).filter(Boolean);
@@ -4381,7 +4389,7 @@ function pjmProj(p){
   const lists=(kids.length?'<section class="pj-sec"><h2>Subproyectos · '+kids.length+'</h2>'+kids.map(kidCard).join('')+'</section>':'')+
     (direct.length?'<section class="pj-sec"><h2>Objetivos · '+direct.length+'</h2>'+direct.map(pjmObjCard).join('')+'</section>':'');
   const adds='<div class="pjm-adds"><button type="button" class="firstobj subp" data-act="plNewSub" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(kids.length?'Añade otro subproyecto':'Crea un subproyecto')+'</b><small>fase o etapa dentro de '+esc(p.name)+'</small></span></button><button type="button" class="firstobj subp" data-act="plNewObj" data-id="'+p.id+'"><span class="fo-plus">＋</span><span><b>'+(direct.length?'Crea otro objetivo':'Crea un objetivo')+'</b><small>en '+esc(p.name)+'</small></span></button></div>';
-  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left">'+lists+adds+'<section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section></div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
+  return '<div class="pjpage" style="--pc:'+p.color+';--ac:'+p.color+'">'+head+'<div class="pj-cols"><div class="pj-left">'+projInboxHtml(p.id)+lists+adds+'<section class="pj-sec"><h2>Línea de tiempo</h2>'+(tls.length?tlScoped(tls):'')+'</section></div><div class="pj-right"><section class="pj-sec"><h2>Resumen</h2><div class="pj-stats">'+
     card('Pendiente',dur(st.left),(n=>n+(n===1?' tarea':' tareas'))(st.ts.filter(t=>!t.done).length))+card('Trabajado en total',dur(st.total),'últimos 14 días: '+dur(st.r14))+card('Progreso',st.pct+' %',st.ts.filter(t=>t.done).length+' de '+st.ts.length+(st.ts.length===1?' tarea':' tareas'))+card('Objetivos',String(st.objs.length),st.next?'próxima fecha · '+fmt({day:'numeric',month:'short'},dateAt(st.next)):'sin fecha límite')+'</div>'+
     '<div class="pj-card"><h3>Tiempo trabajado · 30 días</h3>'+pjChart(st)+'</div></section>'+done+'</div></div></div>';
 }
@@ -4463,7 +4471,10 @@ function tipTasks(head,sub,tm,cap=18,proj=false){
     if(left<=0){more+=g.ts.length;continue;}
     html+='<div class="tobj" style="--ac:'+objAc(o)+'"><div class="th"><b>'+esc(o?o.name:'Día a día')+'</b>'+(g.m>.5?'<em>'+dur(g.m)+'</em>':'')+'</div>'+(proj&&p?'<small class="tp">'+esc(projPath(p))+'</small>':'');
     const known=o?['',...o.sections]:[''];
-    const groups=o?[...known.map(sec=>[sec,g.ts.filter(([t])=>(t.section||'')===sec)]),['\u0001',g.ts.filter(([t])=>!known.includes(t.section||''))]]:[['',g.ts]];
+    const dg=()=>{const left=new Set(g.ts),out=[],take=(lab,f)=>{const l=g.ts.filter(x=>left.has(x)&&f(x[0]));l.forEach(x=>left.delete(x));out.push([lab,l]);};
+      take('Importantes',t=>t.imp);take(HOY,t=>t.section===HOY);take(RECUR,t=>t.section===RECUR);take('',t=>!t.section);
+      for(const sc of s.dailySections||[])take(sc,t=>t.section===sc);take('\u0001',()=>true);return out;};
+    const groups=o?[...known.map(sec=>[sec,g.ts.filter(([t])=>(t.section||'')===sec)]),['\u0001',g.ts.filter(([t])=>!known.includes(t.section||''))]]:dg();
     for(const [sec,list] of groups){
       if(!list.length)continue;list.sort((a,b)=>ti.get(a[0].id)-ti.get(b[0].id));
       if(sec&&sec!=='\u0001'&&left>0)html+='<div class="ts">'+esc(sec)+'</div>';
@@ -4922,6 +4933,7 @@ let topPanels=false,impInDaily=false,hoyDate='',hoyYM='';
 /* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
 function unHoy(t){if(t&&!t.objective&&t.section===HOY&&!t.days.length)t.section='';}
 function autoHoy(t){
+  if(t&&t.proj&&onDay(t,day())){delete t.proj;delete t.nuevo;}
   if(t&&t.nuevo&&t.objective&&onDay(t,day()))delete t.nuevo;
   if(!t||t.done||t.objective||t.imp||t.section===RECUR||t.section===HOY||!onDay(t,day()))return;
   delete t.nuevo;t.section=HOY;s.tasks=s.tasks.filter(x=>x!==t);s.tasks.push(t);
@@ -4946,13 +4958,22 @@ function menuFor(kind,id,anchor){
   if(kind==='objdel')return openPop(anchor,'<div class="confirm"><p>¿Eliminar «'+esc(o?.name||'')+'»?</p><small>Se borrarán sus tareas y registros.</small><div class="crow"><button class="pi" data-act="closePopOnly">Cancelar</button>'+pi('Eliminar','delObjOk','data-id="'+id+'"','danger')+'</div></div>');
   if(kind==='pladd')return openPop(anchor,pi(LVL_ICO.sub+'Subproyecto','plNewSub','data-id="'+esc(id)+'"')+pi(LVL_ICO.obj+'Objetivo','plNewObj','data-id="'+esc(id)+'"'));
   if(kind==='inbdest'){
+    const tk=task(id);
     const row=(lvl,html,kd,val)=>'<button class="pi" data-act="inbGo" data-id="'+esc(id)+'" data-kind="'+kd+'" data-val="'+esc(val)+'" style="padding-left:'+(10+lvl*14)+'px">'+html+'</button>';
     const lab=(lvl,html)=>'<div class="inbp" style="padding-left:'+(10+lvl*14)+'px">'+html+'</div>';
-    const proj=(q,lvl)=>{let h=lab(lvl,'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>');
-      for(const o of s.objectives)if(o.project===q.id&&o.status!=='Completado')h+=row(lvl+1,'<i class="odot"></i>'+esc(o.name),'obj',o.id);
-      for(const c of s.projects)if(c.parent===q.id&&c.id!==q.id)h+=proj(c,lvl+1);return h;};
-    let h=pl('Enviar a…')+row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b> <span class="psub">sección normal</span>','daily','');
-    for(const a of s.areas){const rs=rootProjects().filter(q=>q.area===a);if(!rs.length)continue;h+=pl(esc(a))+rs.map(q=>proj(q,0)).join('');}
+    const dot=q=>'<i class="adot" style="background:'+q.color+'"></i><b>'+esc(q.name)+'</b>';
+    let h;
+    if(tk&&tk.proj&&project(tk.proj)){
+      const proj=(q,lvl)=>{let r=lab(lvl,dot(q));
+        for(const o of s.objectives)if(o.project===q.id&&o.status!=='Completado')r+=row(lvl+1,'<i class="odot"></i>'+esc(o.name),'obj',o.id);
+        for(const c of s.projects)if(c.parent===q.id&&c.id!==q.id)r+=proj(c,lvl+1);return r;};
+      h=pl('Colocar en un objetivo de…')+proj(project(tk.proj),0);
+    }else{
+      const proj=(q,lvl)=>{let r=row(lvl,dot(q),'proj',q.id);
+        for(const c of s.projects)if(c.parent===q.id&&c.id!==q.id)r+=proj(c,lvl+1);return r;};
+      h=pl('Enviar a…')+row(0,'<i class="adot" style="background:'+DAILY.color+'"></i><b>Día a día</b> <span class="psub">sección normal</span>','daily','');
+      for(const a of s.areas){const rs=rootProjects().filter(q=>q.area===a);if(!rs.length)continue;h+=pl(esc(a))+rs.map(q=>proj(q,0)).join('');}
+    }
     return openPop(anchor,'<div class="inbl">'+h+'</div>');
   }
   if(kind==='objmove'){const mv=(par,d)=>kidsOf(par).map(q=>pi('<i class="adot" style="background:'+q.color+'"></i><span style="padding-left:'+d*14+'px">'+(d?'↳ ':'')+esc(q.name)+'</span>','objMoveTo','data-id="'+id+'" data-val="'+q.id+'"',o.project===q.id?'sel':'')+mv(q.id,d+1)).join('');const ars=[...s.areas];for(const q of s.projects)if(!ars.includes(q.area))ars.push(q.area);return openPop(anchor,pl('Mover «'+esc((o?.name||'').slice(0,28))+'» a…')+ars.map(ar=>{const rs=s.projects.filter(q=>q.area===ar&&!(q.parent&&project(q.parent)&&q.parent!==q.id));return rs.length?pl(esc(ar))+rs.map(q=>pi('<i class="adot" style="background:'+q.color+'"></i>'+esc(q.name),'objMoveTo','data-id="'+id+'" data-val="'+q.id+'"',o.project===q.id?'sel':'')+mv(q.id,1)).join(''):'';}).join(''));}
@@ -5106,7 +5127,7 @@ function onClick(e){
     case 'prev':case 'next':selectedDate=shift(selectedDate,(act==='prev'?-1:1)*(calWeek?7:1));render();break;
     case 'dateToday':selectedDate=day();render();break;
     case 'calMode':calWeek=id==='1';render();break;
-    case 'toggleImp':if(t){t.imp=!t.imp;if(t.imp)delete t.nuevo;save();}break;
+    case 'toggleImp':if(t){t.imp=!t.imp;if(t.imp){delete t.nuevo;delete t.proj;}save();}break;
     case 'taskNote':if(t)openTaskNote(t,b.ownerDocument||document);break;
     case 'toggleDone':if(t){if(t.done){t.done=0;{const ob=t.objective&&objective(t.objective);if(ob&&ob.status==='Completado')ob.status='Hoy';}save();}else finish(id);}break;
     case 'today':if(t&&!t.objective&&t.section===HOY&&onDay(t,day())&&!t.done){closePop();t.days=[];unHoy(t);dateClk={k:'t:'+t.id,n:0};save();break;}
@@ -5280,9 +5301,13 @@ function onClick(e){
     case 'plAdd':{if(b.dataset.kind==='obj'){const o=objective(id);if(o)plNewObj(o.project,o.id);}else menuFor('pladd',id,b);break;}
     case 'plNewSub':closePop();plNewSub(id);break;
     case 'plNewObj':closePop();plNewObj(id);break;
-    case 'inbGo':{closePop();const tk=task(id),kd=b.dataset.kind,o=kd==='obj'?objective(b.dataset.val):null;if(!tk||(kd==='obj'&&!o))break;
-      tk.objective=o?o.id:'';tk.section='';if(o)tk.nuevo=true;else delete tk.nuevo;s.tasks=s.tasks.filter(x=>x!==tk);s.tasks.push(tk);save();
-      notify(o?'Enviada al Inbox de «'+o.name+'»':'Pasada a Día a día (sección normal)');break;}
+    case 'inbGo':{closePop();const tk=task(id),kd=b.dataset.kind,val=b.dataset.val;if(!tk)break;
+      const o=kd==='obj'?objective(val):null,q=kd==='proj'?project(val):null;if((kd==='obj'&&!o)||(kd==='proj'&&!q))break;
+      tk.section='';
+      if(q){tk.objective='';tk.proj=q.id;tk.nuevo=true;}
+      else{tk.objective=o?o.id:'';delete tk.proj;delete tk.nuevo;}
+      s.tasks=s.tasks.filter(x=>x!==tk);s.tasks.push(tk);save();
+      notify(q?'Enviada al Inbox de «'+q.name+'»':o?'Colocada en «'+o.name+'»':'Pasada a Día a día (sección normal)');break;}
     case 'qcBg':if(b.id==='qc'&&e.target!==b)break;closeQuick();break;
     case 'qcMic':toggleMicQ();break;
     case 'qcSave':saveQuick();break;
