@@ -2671,6 +2671,17 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .fltop .mini{font-size:clamp(12px,1.8vw,16px)}
 .fltop .mini b{font-size:clamp(17px,2.6vw,26px)}
 .fltop .xtask .xclock{font-size:clamp(34px,6vw,64px)}
+
+/* v219 ventana del día con la columna de ejecución */
+.dvm{z-index:95}
+.pjm{z-index:110}
+#pop{z-index:120}
+#notice{z-index:130}
+.dvm-box{display:grid;grid-template-columns:minmax(0,1fr) 400px;width:min(1400px,100%);height:92vh;max-height:92vh;overflow:hidden;padding:0}
+.dvm-left{min-width:0;overflow-y:auto;padding:14px 24px 40px}
+.dvm-right{min-width:0;overflow-y:auto;border-left:1px solid var(--line);background:var(--bg2)}
+.dvm-right .hoyright{padding:18px 18px 40px;gap:14px;background:transparent}
+@media(max-width:1000px){.dvm-box{grid-template-columns:1fr;height:auto;overflow:auto}.dvm-left,.dvm-right{overflow:visible}.dvm-right{border-left:0;border-top:1px solid var(--line)}}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3907,16 +3918,17 @@ function dayModalHtml(d){
     else for(const k of c.sec.keys())for(const [t] of dayTasks(oid,k,d,plan,today))set.add(t.id);
     nT+=set.size;dvIds=set;let h='';try{h=bubble(o||DAILY,true);}finally{dvIds=null;}return h;}).join('');
   const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
-  return '<div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
+  const side=(()=>{const o=selectedDate;selectedDate=d;try{return execPanel();}finally{selectedDate=o;}})();
+  return '<div class="dvm-left" data-scroll><div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
     '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+
-    (cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
+    (cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div></div><aside class="dvm-right">'+side+'</aside>';
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!document.getElementById('pjm')&&Date.now()-pjmClosedAt>150&&!document.getElementById('tnote')&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
 function syncDayModal(){
   let m=document.getElementById('dvm');
   if(!dvDay){m?.remove();return;}
   if(!m){m=document.createElement('div');m.id='dvm';m.className='dvm';m.dataset.act='dayCloseBg';m.innerHTML='<div class="dvm-box" role="dialog" aria-modal="true"></div>';document.body.appendChild(m);}
-  const box=m.firstChild,st=box.scrollTop;box.innerHTML=dayModalHtml(dvDay);box.scrollTop=st;
+  const box=m.firstChild,sc=()=>[...box.querySelectorAll('.dvm-left,.dvm-right')].map(x=>x.scrollTop),st=sc();box.innerHTML=dayModalHtml(dvDay);box.querySelectorAll('.dvm-left,.dvm-right').forEach((x,i)=>x.scrollTop=st[i]||0);
 }
 function timeline(projects,embedded=false,opts={}){
   const rg=RANGES.find(r=>r[0]===tlRange),nWin=0,today=day(),plan=computePlan(),wk=workedMap(),done=tlMode==='done',LEFT=0;
@@ -4094,7 +4106,8 @@ function openPjm(kind,id){
   m.innerHTML='<div class="pjm-box" role="dialog" aria-modal="true"><div class="pjm-top"><span class="pjm-k"></span><button type="button" class="pmx pjmx" aria-label="Cerrar" title="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pjm-body"></div></div>';
   document.body.appendChild(m);pjmRender();
 }
-function closePjm(){document.getElementById('pjm')?.remove();pjm=null;}
+let pjmClosedAt=0;
+function closePjm(){if(document.getElementById('pjm'))pjmClosedAt=Date.now();document.getElementById('pjm')?.remove();pjm=null;}
 function pjmDone(o,rootId){
   const p=project(o.project),sp=objSpan(o);
   return '<button type="button" class="pj-dcard" style="--ac:'+(p?.color||'#b4b4ae')+'" data-act="pjOpen" data-kind="obj" data-id="'+esc(o.id)+'"><span class="gl sm dk">'+ICON.check+'</span><span class="dt"><b>'+esc(o.name)+'</b><small>'+sp.ts.length+(sp.ts.length===1?' tarea':' tareas')+' · '+dur(sp.worked)+' trabajadas'+(sp.doneAt?' · '+fmt({day:'numeric',month:'short',year:'numeric'},sp.doneAt).replace('.',''):'')+'</small></span></button>';
@@ -4397,7 +4410,7 @@ function render0(){
   document.querySelectorAll('.rte[data-rte]').forEach(r=>{if(!r.isConnected)return;const k=r.dataset.rte;if(k.startsWith('day:')){const h=cleanHtml(r.innerHTML);s.dayNotes=s.dayNotes||{};if(h.replace(/<[^>]*>/g,'').trim()||/<(img|iframe|hr)/.test(h))s.dayNotes[k.slice(4)]=h;else delete s.dayNotes[k.slice(4)];return;}const p=project(k);if(p)p.notesHtml=cleanHtml(r.innerHTML);});
   const cs=$('#calscroll')?.scrollTop, ts=$('#tl'), tlpos=ts?[ts.scrollLeft,ts.scrollTop]:null, colScroll=$$('[data-scroll]').map(c=>c.scrollTop), pageScroll=window.scrollY;
   $('#top').innerHTML=header();
-  {const rbT=barTask();$('#runbar').innerHTML=rbT?runbar(rbT):'';document.body.classList.toggle('hasrb',!!rbT);}
+  {$('#runbar').innerHTML='';document.body.classList.remove('hasrb');}
   const html={Trabajo:viewTrabajo,Hoy:viewHoy,Proyectos:viewProyectos,'Planificación':viewPlan,'Analítica':viewAnalytics,Inbox:viewInbox}[view]();
   $('#main').innerHTML=html;
   const cal=$('#calscroll');
@@ -4761,6 +4774,18 @@ function onClick(e){
     }
     case 'goTask':{
       const t=task(id);if(!t)break;
+      if(b.closest('#dvm')){
+        const fl=r=>{r.scrollIntoView({block:'center'});r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),1400);};
+        const dn=b.dataset.done==='1'&&t.done,row=!dn&&document.querySelector('#dvm .dvm-left .task[data-task="'+CSS.escape(id)+'"]');
+        if(row){fl(row);break;}
+        if(t.objective&&objective(t.objective)){
+          if(t.done)doneOpen.add(t.objective);
+          openPjm('obj',t.objective);
+          setTimeout(()=>{const r=document.querySelector('#pjm .task[data-task="'+CSS.escape(id)+'"]');if(r)fl(r);},80);
+          break;
+        }
+        dvDay='';syncDayModal();
+      }
       if(b.ownerDocument!==document){try{window.focus();}catch{}}
       const k=t.objective||'',ko=k===''?DAILY.id:k;
       view='Trabajo';wProj='';fHoy=false;
@@ -5302,7 +5327,7 @@ function toggleMic(){
   rec.onerror=()=>{notify('No se pudo usar el micrófono.');};
   rec.start();$('#mic').classList.add('on');
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!document.getElementById('pjm')&&Date.now()-pjmClosedAt>150&&!document.getElementById('tnote')&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}
   const ed=e.target.closest?.('[data-edit]');
   if(ed){
     if(e.isComposing)return;
