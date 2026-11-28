@@ -4056,7 +4056,7 @@ function dayModalHtml(d){
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
   const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&(t.imp||t.nuevo));
-  const objs=(hasSpec?[null,...order]:[...order,null]).filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
+  const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
     const oid=o?o.id:'',c=cellsOf(oid).get(d)||{m:0,sec:new Map()},set=new Set();tot+=c.m;
