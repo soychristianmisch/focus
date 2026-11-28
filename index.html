@@ -2795,6 +2795,21 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 :root[data-theme=dark] .recurcard.dc.dc-imp{--tn:#ff8a82}
 :root[data-theme=dark] .recurcard.dc.dc-hoy{--tn:#5fcf9a}
 :root[data-theme=dark] .recurcard.dc.dc-inb{--tn:#161616}
+
+.h3l{padding:6px 2px 40px}
+.hcal{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:14px 14px 12px;margin-top:6px}
+.hch{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hch b{font-size:14px;font-weight:650}
+.hdow,.hgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.hdow span{font-size:11px;color:var(--faint);padding:4px 0}
+.hgrid .hc{position:relative;aspect-ratio:1;border:0;background:none;border-radius:50%;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;display:grid;place-items:center;padding:0}
+.hgrid .hc:hover{background:var(--hover)}
+.hgrid .hc.td{font-weight:700;color:var(--ac,#2f7bd8)}
+.hgrid .hc.has:after{content:"";position:absolute;bottom:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--faint)}
+.hgrid .hc.sel{background:var(--ink);color:var(--bg)}
+.hgrid .hc.sel:after{background:var(--bg)}
+.hto{display:block;margin:10px auto 0;border:0;background:var(--bg3,rgba(0,0,0,.06));color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;padding:6px 16px;border-radius:999px;cursor:pointer}
+.hto.on{opacity:.45}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3297,6 +3312,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
   if(spec&&!(today||dayOnly))body+=impPanel()+inboxCard();
+  else if(spec&&impInDaily)body+=impPanel();
   body+=(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
     if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return '';
@@ -4079,7 +4095,8 @@ function dayModalHtml(d){
   const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
-  const hasSpec=false;
+  impInDaily=!topPanels&&!done&&d===today;
+  const hasSpec=impInDaily&&s.tasks.some(t=>t.imp&&!t.done);
   const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -4090,11 +4107,11 @@ function dayModalHtml(d){
   const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
   return '<div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
     '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+
-    (!done&&d===today?impPanel()+inboxCard():'')+(cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
+    (topPanels&&!done&&d===today?impPanel()+inboxCard():'')+(cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!document.getElementById('pjm')&&Date.now()-pjmClosedAt>150&&!document.getElementById('tnote')&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
 function dayCenterHtml(d,nav){
-  const od=dvDay,om=tlMode;dvDay=d;if(!nav)tlMode='pend';
+  const od=dvDay,om=tlMode;dvDay=d;if(!nav)tlMode=d<day()?'done':'pend';
   try{let r=dayModalHtml(d);if(!nav)r=r.replace(/<div class="dvm-top">[\s\S]*?<\/div><div class="dayview">/,'<div class="dayview">');return r;}finally{dvDay=od;tlMode=om;}
 }
 function dayRemindHtml(d){
@@ -4109,10 +4126,21 @@ function dvSideHtml(d,page){
   const o=selectedDate;selectedDate=d;
   try{const r=execPanel('parts');return '<div class="hoyright dvs-top">'+r.main+'</div><div class="dvs-scroll"'+(page?' data-scroll':'')+'><div class="hoyright">'+r.rest+'</div></div>';}finally{selectedDate=o;}
 }
+function hoyCalHtml(d){
+  const ym=hoyYM||d.slice(0,7),first=ym+'-01',lead=(dow(first)+6)%7,today=day();
+  const has=new Set();for(const t of s.tasks){for(const x of t.days||[])has.add(x);if(t.done)has.add(day(t.done));}
+  let cells='<span></span>'.repeat(lead),x=first;
+  while(x.slice(0,7)===ym){cells+='<button type="button" class="hc'+(x===d?' sel':'')+(x===today?' td':'')+(has.has(x)?' has':'')+'" data-act="hoyDay" data-val="'+x+'">'+(+x.slice(8))+'</button>';x=shift(x,1);}
+  return '<section class="hcal"><div class="hch"><button type="button" class="cnav" data-act="hoyNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+capz(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button type="button" class="cnav" data-act="hoyNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
+    '<div class="hdow">'+[...'LMXJVSD'].map(z=>'<span>'+z+'</span>').join('')+'</div><div class="hgrid">'+cells+'</div>'+
+    '<button type="button" class="hto'+(d===today?' on':'')+'" data-act="hoyToday">Hoy</button></section>';
+}
 function viewDay3(){
-  selectedDate=day();const d=selectedDate;
+  if(hoyDate&&hoyDate<day()&&false)hoyDate='';
+  selectedDate=hoyDate||day();const d=selectedDate;
   const sd=selectedDate;let r;try{r=execPanel('parts2');}finally{selectedDate=sd;}
-  return '<div class="hoy3"><aside class="h3l"></aside><section class="h3c" data-scroll>'+dayCenterHtml(d,false)+'</section><aside class="h3r"><div class="hoyright dvs-top">'+r.main+'</div><div class="dvs-scroll" data-scroll><div class="hoyright">'+r.rest+'</div></div></aside></div>';
+  let ctr;topPanels=true;try{ctr=dayCenterHtml(d,false);}finally{topPanels=false;}
+  return '<div class="hoy3"><aside class="h3l">'+hoyCalHtml(d)+'</aside><section class="h3c" data-scroll>'+ctr+'</section><aside class="h3r"><div class="hoyright dvs-top">'+r.main+'</div><div class="dvs-scroll" data-scroll><div class="hoyright">'+r.rest+'</div></div></aside></div>';
 }
 function syncDayModal(){
   let m=document.getElementById('dvm');
@@ -4875,6 +4903,7 @@ function calHtmlT(t,ym){
 }
 const secList=sc=>s.tasks.filter(t=>t.objective===sc.obj&&t.section===sc.sec&&!t.done);
 let dateClk={k:'',n:0};
+let topPanels=false,impInDaily=false,hoyDate='',hoyYM='';
 /* 1.er clic: hoy · 2.º: calendario · 3.er: borrar fecha. Devuelve el paso (0,1,2) */
 function unHoy(t){if(t&&!t.objective&&t.section===HOY&&!t.days.length)t.section='';}
 function autoHoy(t){
@@ -5143,6 +5172,9 @@ function onClick(e){
     case 'setColor':{const p=project(id);if(p){p.color=b.dataset.val;save();}closePop();break;}
     case 'resetObj':{const o=objective(id);if(!o)break;const w=o.window,sw=o.secWin;delete o.window;delete o.secWin;save();notify('Objetivo restablecido a la secuencia automática',()=>{if(w)o.window=w;if(sw)o.secWin=sw;save();});break;}
     case 'togglePrio':{const o=objective(id);if(!o)break;if(o.priority==='Alta'){o.priority='Normal';if(o.deadline===day())o.deadline='';}else{o.priority='Alta';o.deadline=day();}save();break;}
+    case 'hoyDay':hoyDate=b.dataset.val;hoyYM=hoyDate.slice(0,7);render();break;
+    case 'hoyNav':{let [y,m]=(hoyYM||(hoyDate||day()).slice(0,7)).split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}hoyYM=y+'-'+String(m).padStart(2,'0');render();break;}
+    case 'hoyToday':hoyDate='';hoyYM='';render();break;
     case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.sec){pop.innerHTML=calHtmlT(secPseudo(secList(popCtx.sec)),popCtx.ym);break;}if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
     case 'calPick':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,b.dataset.val);break;}if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
     case 'calToday':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,day());break;}if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
