@@ -2888,6 +2888,14 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .startchip>svg:last-child{width:11px;height:11px;flex:none;opacity:.6}
 .startchip.fixed{background:color-mix(in srgb,#e8912d 16%,var(--card));color:#a8620f;font-weight:600}
 .h3r .bigstats,.dvm-r .bigstats{grid-template-columns:repeat(3,auto);justify-content:space-between;gap:8px}
+.prog.lab{height:20px;border-radius:7px;overflow:hidden}
+.bprog .prog.lab{height:20px;border-radius:7px}
+.prog.lab i{display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;font-style:normal}
+.prog.lab i span,.prog.lab u span{font-size:10.5px;font-weight:650;white-space:nowrap;line-height:1;letter-spacing:-.1px}
+.prog.lab i:nth-child(1){color:#fff}
+.prog.lab i:nth-child(2){color:#fff;text-shadow:0 0 3px rgba(0,0,0,.35)}
+.prog.lab i:nth-child(3){color:var(--ink)}
+.prog.lab u{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;padding:0 7px;text-decoration:none;color:var(--mute)}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3448,7 +3456,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const leftAll=sumMin(openAll,minutesLeft);
   const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
   const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):(leftAll>=1?'<span class="chipi tot" title="Tiempo que falta para completar el objetivo, del total estimado">Falta '+hrs(leftAll)+' de '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>':'<span class="chipi tot" title="Objetivo completo">Completo · total '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>');
-  const prog='<div class="bprog">'+pr.bar.replace(/ title="[^"]*"/,' data-tip="'+tipProgress(o)+'"')+'<b class="num">'+pr.pct+' %</b></div>';
+  const prog='<div class="bprog">'+barLabels(o,pr.bar.replace(/ title="[^"]*"/,' data-tip="'+tipProgress(o)+'"'))+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
@@ -4566,6 +4574,18 @@ function startChip(o){
   return '<button class="atag startchip'+(fx?' fixed':'')+'" data-act="menu" data-kind="objstart" data-id="'+esc(o.id)+'" title="'+(fx?'Fecha de inicio fijada. Clic para cambiarla':'Inicio previsto según el orden. Clic para fijar otra fecha')+'">'+CAL_SVG+(sd?'Empieza '+f(sd):'Elegir inicio')+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></button>';
 }
 const CAL_SVG='<svg class="cic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+/* tiempos dentro de la barra: completado · hecho hoy · falta hoy · restante */
+function barLabels(o,bar){
+  const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),d=selectedDate;
+  const tot=list.reduce((q,t)=>q+w(t),0);if(!tot)return bar;
+  const sum=f=>list.filter(f).reduce((q,t)=>q+w(t),0),
+    v=[sum(t=>t.done&&day(t.done)<d),sum(t=>t.done&&day(t.done)===d),sum(t=>!t.done&&onDay(t,d))],rest=tot-v[0]-v[1]-v[2];
+  let i=0;
+  bar=bar.replace(/<i style="width:([\d.]+)%"><\/i>/g,(m,pw)=>{const k=i++,mins=v[k];return '<i style="width:'+pw+'%">'+(+pw>=13&&mins>0?'<span>'+mm(mins)+'</span>':'')+'</i>';});
+  const rp=100*rest/tot;
+  bar=bar.replace(/<\/div>$/,(rest>0&&rp>=13?'<u><span>'+mm(rest)+'</span></u>':'<u></u>')+'</div>');
+  return bar.replace('class="prog','class="prog lab');
+}
 function tipProgress(o){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
   const d=selectedDate,prior=list.filter(t=>t.done&&day(t.done)<d),today=list.filter(t=>t.done&&day(t.done)===d),plan=list.filter(t=>!t.done&&onDay(t,d)),rest=list.filter(t=>!t.done&&!onDay(t,d));
