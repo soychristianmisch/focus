@@ -2863,6 +2863,9 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 #antip .th em strong{color:var(--ink);font-weight:650}
 #antip .tr.ok span{color:var(--mute)}
 .bprog .prog[data-tip]{cursor:default}
+.tb-reset{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;padding:0;border:0;border-radius:50%;background:#e8912d;color:#fff;cursor:pointer;box-shadow:0 0 0 3px rgba(232,145,45,.22);transition:transform .15s}
+.tb-reset svg{width:12px;height:12px}
+.tb-reset:hover{transform:rotate(180deg) scale(1.1)}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -4131,6 +4134,7 @@ const capParse=v=>{v=String(v).trim().toLowerCase().replace(',','.');let m;
   if((m=v.match(/^(\d+)\s*(?:m|min|minutos?)$/)))return +m[1]/60;
   const n=parseFloat(v);return Number.isFinite(n)?n:NaN;};
 let tlMode='pend';
+const RESET_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.6-3.6L4 9M4 4v5h5M4 13a8 8 0 0 0 14.6 3.6L20 15M20 20v-5h-5"/></svg>';
 const LEVELS=[['sub','Subproyectos'],['obj','Objetivos'],['sec','Secciones']];
 const RANGES=[['week','7 días',7],['2w','2 semanas',14],['month','Un mes',30],['all','Todo',0]];
 if(!lsGet('focus.v224')){lsSet('focus.tllevel','sub');lsSet('focus.plshowobj','0');lsSet('focus.v224','1');}
@@ -4297,7 +4301,7 @@ function timeline(projects,embedded=false,opts={}){
     const blk=[...byDay].map(([d,c])=>{const cp=dayCap(band,d),x=xOf(d)+Math.min(c.a,cp)/cp*px,w=Math.max(3,Math.min((c.z-c.a)/cp*px,xOf(d)+px-x)),tx=hf(c.m);
       return '<i class="tb-blk'+(d<today?' past':'')+'" style="left:'+rel(x)+'px;width:'+w+'px" title="'+d+' · '+dur(c.m)+'">'+(tx?'<b'+(w>=34?'':' class="ov"')+'>'+tx+'</b>':'')+'</i>';}).join('');
     if(thin){const kidsT=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
-      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-mk="proj" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+BL+'px;width:'+(BW+27)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+'</span></div></div>';}
+      return '<div class="tl-group tb-g pg thin" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-pbar" data-act="tlPFold" data-id="'+p.id+'" draggable="true" data-drag="tlmove" data-mk="proj" data-st="'+st+'" data-mem="'+rsub.filter(r=>r.o).map(r=>r.oid+'@'+r.b.start).join(',')+'" style="margin-left:'+BL+'px;width:'+(BW+27)+'px" title="'+(open?'Plegar':'Desplegar')+' '+esc(p.name)+' · arrastra la barra para mover todo el proyecto"><i class="tb-grip sm" aria-hidden="true"></i><span>'+(depth?ARR:'')+esc(p.name)+(tag?'<small class="pp">'+esc(tag)+'</small>':'')+(kidsT?chv(open):'')+(!done&&rsub.some(r=>r.o&&r.o.startOn&&r.o.startOn>today)?'<button type="button" class="tb-reset" data-act="projCompress" data-id="'+p.id+'" title="Hay objetivos movidos a propósito. Clic: volver a compactar todo en orden, sin huecos" aria-label="Recompactar planificación">'+RESET_SVG+'</button>':'')+'</span></div></div>';}
     const metric=rsub.reduce((a,r)=>a+(done?[...r.cells.values()].reduce((x,c)=>x+c.m,0):sumMin(s.tasks.filter(t=>t.objective===r.oid&&!t.done),minutesLeft)),0),nO=rsub.filter(r=>r.o).length;
     const kids=kidsOf(p.id).length+rsub.filter(r=>r.p.id===p.id).length;
     return '<div class="tl-group tb-g pg" data-proj="'+p.id+'" style="--pc:'+ac+'"><div class="tb-title" data-act="tlPFold" data-id="'+p.id+'" style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'" title="'+(open?'Plegar':'Desplegar')+'">'+(depth?ARR:'')+
@@ -5170,6 +5174,9 @@ function onClick(e){
     case 'addSubProject':{const par=project(id);if(!par)break;const p={id:uid(),name:'Nuevo subproyecto',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};s.projects.push(p);openProj=p.id;focusAfter={kind:'proj.name',id:p.id,select:true};save();break;}
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
+    case 'projCompress':{const ids=new Set(s.projects.filter(q=>q.id===id||isDesc(q.id,id)).map(q=>q.id)),os=s.objectives.filter(o=>ids.has(o.project)&&o.startOn),snap=os.map(o=>[o,o.startOn]);
+      if(!os.length)break;flipTl(()=>{os.forEach(o=>{delete o.startOn;});save();});
+      notify('Planificación compactada en orden sucesivo',()=>{flipTl(()=>{snap.forEach(([o,d])=>{o.startOn=d;});save();});});break;}
     case 'tlArrange':arrange();break;
     case 'hoyOpen':{const k=id===DAILY.id?'':id;hoyOpen.clear();hoyOpen.add(id);wSolo=k;wLast=k;render();const c=$('.wcenter');if(c)c.scrollTop=0;break;}
     case 'hoyClose':hoyOpen.delete(id);doneOpen.delete(id);render();break;
@@ -5905,6 +5912,7 @@ function dropInfo(e){
   if(k==='ritem'){const it=el.closest('.ritem');if(it&&it.dataset.id!==drag.id){const a=half(it);return {type:'ritem',el:it,after:a,cls:a?'drop-after':'drop-before'};}}
   if(k==='tobj'){const ob=el.closest('.bubble.tb,.bubble[data-obj]');if(ob&&ob.dataset.obj!==drag.id){const a=half(ob);return {type:'tobj',el:ob,after:a,cls:a?'drop-after':'drop-before'};}}
   if(k==='obj'){const ob=el.closest('.bubble[data-obj]');if(ob&&ob.dataset.obj!==drag.id){const a=e.clientY>ob.getBoundingClientRect().top+30;return {type:'obj',el:ob,after:false,cls:'drop-before'};}}
+  if(k==='pproj'&&el.closest('#tl')){const tl=el.closest('#tl'),px=+tl.dataset.px,rect=tl.getBoundingClientRect(),d=shift(tl.dataset.first,Math.max(0,Math.floor((e.clientX-rect.left+tl.scrollLeft)/px)));return {type:'tlproj',el:tl,date:d,cls:'dropping',guide:{left:diffDays(tl.dataset.first,d)*px,w:px,d}};}
   if(k==='pproj'){
     const dp=project(drag.id);if(!dp)return null;
     const par=x=>(x.parent&&x.parent!==x.id)?x.parent:'';
@@ -5975,6 +5983,10 @@ document.addEventListener('drop',e=>{
       if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
       const ns=shift(st0,n);if(ns>f0)o.startOn=ns;else delete o.startOn;}save();});return;
   }
+  if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(s.projects.filter(q=>q.id===dp.id||isDesc(q.id,dp.id)).map(q=>q.id));
+      let anc=dp,n=0;while(anc&&n++<12){const k=s.hideP.indexOf(anc.id);if(k>=0)s.hideP.splice(k,1);anc=anc.parent&&anc.parent!==anc.id?project(anc.parent):null;}
+      for(const q of ids){const k=s.hideP.indexOf(q);if(k>=0)s.hideP.splice(k,1);}
+      flipTl(()=>{for(const o of s.objectives.filter(o=>ids.has(o.project)&&o.status!=='Completado')){if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}if(i.date>f0)o.startOn=i.date;else delete o.startOn;}save();});}return;}
   if(i.type==='tlobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref)flipTl(()=>{keepSlots(()=>mv(s.objectives,o,ref,i.after));save();});return;}
   if(i.type==='pitem'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){o.sched=!!ref.sched;keepSlots(()=>mv(s.objectives,o,ref,i.after));save();}return;}
   if(i.type==='pzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.pz==='1';o.sched=on;if(!on)delete o.startOn;s.objectives=s.objectives.filter(x=>x!==o);if(on)s.objectives.push(o);else s.objectives.push(o);save();}return;}
