@@ -2918,6 +2918,33 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .bprog .plegend b,.plegend b{font-size:inherit;font-weight:650}
 .tq{z-index:5000!important}
 #noticeM{z-index:4000}
+
+/* v257: en pausa = azul normal, sin amarillo ni parpadeo */
+:root{--pzb:#2f5f94;--pzb-hi:#3a6faa}
+:root[data-theme=dark]{--pzb:#2a4f7c;--pzb-hi:#34608f}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--pzb:#2a4f7c;--pzb-hi:#34608f}}
+.task.paused,.rb.paused,.flcard.paused,html body.paused,.task.paused .tplay,.rb.paused .rbb,.flcard.paused .fl-b{animation:none!important}
+.task.paused{background:var(--pzb);color:#fff}
+.task.paused:hover{background:var(--pzb-hi)}
+.task.paused .tname,.task.paused .tworked,.task.paused .tworked:before,.task.paused .tworked:after,.task.paused .grip,.task.paused .tmin,.task.paused .tmin:after,.task.paused .noteb,.task.paused .tlink,.task.paused .impb.on{color:#fff}
+.task.paused .check{border-color:#fff;background:transparent}
+.task.paused .today,.task.paused .today.on{background:rgba(255,255,255,.22)!important;color:#fff!important;opacity:1}
+.task.paused .tplay,.task.paused .tplay:hover{background:#fff;color:var(--pzb);animation:none}
+.task.paused .rcic{color:#fff;opacity:.8}
+.task.paused .tworked:hover,.task.paused .tworked:focus,.task.paused .tmin:hover,.task.paused .tmin:focus{background:rgba(255,255,255,.2);color:#fff}
+.rb.paused,:root[data-theme=dark] .rb.paused{background:var(--pzb)!important;color:#fff!important}
+.rb.paused b,.rb.paused .rbn,.rb.paused .rbb.ok{color:#fff!important}
+.rb.paused .rbb:not(.ok),.rb.paused .rbb:not(.ok):hover{background:#fff;color:var(--pzb)}
+.rb.paused .rbb.ok{background:rgba(255,255,255,.2)}
+.flcard.paused,:root[data-theme=dark] .flcard.paused{background:var(--pzb)!important;color:#fff}
+html body.paused{background:var(--pzb)!important}
+html body.paused .flcard.paused{background:transparent!important}
+.flcard.paused h3,.flcard.paused .est,.flcard.paused .xwhere{color:rgba(255,255,255,.78)}
+.flcard.paused .xtitle,.flcard.paused .xclock,.flcard.paused .xclock.over,.xtask.flcard.paused .xclock.over{color:#fff!important}
+.flcard.paused .fl-b:not(.ok),.flcard.paused .fl-b:not(.ok):hover{background:#fff!important;color:var(--pzb)!important}
+.flcard.paused .fl-b:not(.ok) svg,.flcard.paused .fl-b:not(.ok) svg path{color:var(--pzb)!important;fill:var(--pzb)!important}
+.flcard.paused .fl-b.ok{background:rgba(255,255,255,.2);color:#fff}
+.flcard.paused .fl-b.ok:hover{background:rgba(255,255,255,.32);color:#fff}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
