@@ -2779,6 +2779,11 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .pj-drow .pjd-ck svg{width:100%;height:100%}
 .pj-drow .pjd-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none}
 .pj-drow small{color:var(--mute);font-size:11.5px;white-space:nowrap}
+
+.dimp{margin:0 0 14px}
+.dimp .recurcard{margin:0}
+:root[data-theme=dark] .recurcard.dc-inb{--tn:#161616}
+:root[data-theme=dark] .recurcard.dc-hoy .sec.recur .sname,:root[data-theme=dark] .recurcard.dc-hoy .sec.recur .rcic{color:#5fcf9a}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3261,7 +3266,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const open=mine.filter(t=>!t.done&&!t.nuevo),done=mine.filter(t=>t.done);
   const nw=cp?[]:all.filter(t=>t.nuevo&&!t.done);
   const spec=daily&&!cp&&(!(today||dayOnly)||(dvDay||selectedDate)===day());
-  const impAll=spec?s.tasks.filter(t=>t.imp&&!t.done):[],impIds=new Set(impAll.map(t=>t.id));
+  const impAll=spec?s.tasks.filter(t=>t.imp&&!t.done&&!t.objective):[],impIds=new Set(impAll.map(t=>t.id));
   const newCard='';const _nw=nw.length?'<div class="newcard" data-obj="'+esc(o.id)+'"><div class="newhd"><span>Nuevas</span><i class="num">'+nw.length+'</i></div><div class="tasks" data-mode="new">'+nw.map(taskRow).join('')+'</div></div>':'';
   const sections=o.sections,key=o.id;
   const dsec=daily?sections.filter(x=>x!==RECUR&&x!==HOY):sections;
@@ -3277,7 +3282,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   }
   const reop=(s.reopen&&s.reopen[o.id])||[];
   let lastSec='',rendered=0;
-  if(spec)body+=specialBlocks(impAll);
+  if(spec&&!(today||dayOnly))body+=impPanel();
   body+=(daily?[HOY,RECUR,'',...dsec]:['',...sections]).map(sec=>{
     const list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
     if((today||dayOnly)&&!list.length&&!(sec===RECUR&&daily))return '';
@@ -3297,7 +3302,7 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
       endZ(oid,sec,daily?((sec===RECUR||sec===HOY)?'':sec===''?(dsec[0]||''):(dsec[dsec.indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
-    if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+newCard;
+    if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+(spec?inboxCard():'')+newCard;
     if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>';
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
@@ -3692,22 +3697,21 @@ function focusStack(mob){
 const SUN_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>';
 const FLAG_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>';
 const TRAY_SVG='<svg class="rcic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 3h6l1-3h5"/></svg>';
-function specialBlocks(L){
-  const card=(cls,title,ic,body,attr='')=>'<div class="recurcard dc '+cls+'"'+attr+'><div class="sec recur ro"><span class="sname">'+title+'</span>'+ic+'</div>'+body+'</div>';
-  let out='';
+const dcCard=(cls,title,ic,body,attr='')=>'<div class="recurcard dc '+cls+'"'+attr+'><div class="sec recur ro"><span class="sname">'+title+'</span>'+ic+'</div>'+body+'</div>';
+function inboxCard(){
   const I=s.tasks.filter(t=>t.nuevo&&!t.done&&!t.imp);
-  if(I.length)out+=card('dc-inb','Revisar inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+I.map(taskRow).join('')+'</div>',' data-inbox="1"');
-  if(L.length){
-    const groups=[];
-    for(const t of L){const k=t.objective||'';let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(t);}
-    const rows=groups.map(g=>{
-      const o=objective(g.k),p=projectOf(g.items[0]),dly=!g.k;
-      const ctx=dly?'':'<div class="dsp-ctx"><span>'+esc(p?p.name:'Sin proyecto')+'</span>'+(o?'<em>'+esc(o.name)+'</em>':'')+'</div>';
-      return ctx+g.items.map(t=>taskRow(t).replace(' draggable="true" data-drag="task"','')).join('');
-    }).join('');
-    out+=card('dc-imp','Importantes',FLAG_SVG,'<div class="tasks" data-mode="imp">'+rows+'</div>');
-  }
-  return out;
+  return I.length?dcCard('dc-inb','Revisar inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+I.map(taskRow).join('')+'</div>',' data-inbox="1"'):'';
+}
+function impPanel(){
+  const L=s.tasks.filter(t=>t.imp&&!t.done);if(!L.length)return '';
+  const groups=[];
+  for(const t of L){const k=t.objective||'';let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,items:[]});g.items.push(t);}
+  const rows=groups.map(g=>{
+    const o=objective(g.k),p=projectOf(g.items[0]),dly=!g.k;
+    const ctx=dly?'':'<div class="dsp-ctx"><span>'+esc(p?p.name:'Sin proyecto')+'</span>'+(o?'<em>'+esc(o.name)+'</em>':'')+'</div>';
+    return ctx+g.items.map(t=>taskRow(t).replace(' draggable="true" data-drag="task"','')).join('');
+  }).join('');
+  return '<div class="dimp">'+dcCard('dc-imp','Importantes',FLAG_SVG,'<div class="tasks" data-mode="imp">'+rows+'</div>')+'</div>';
 }
 function keyBlock(inboxFirst){
   const L=s.tasks.filter(t=>t.imp&&!t.done);
@@ -4055,7 +4059,7 @@ function dayModalHtml(d){
   const today=day(),done=tlMode==='done',plan=computePlan(),wk=workedMap(),cellsOf=oid=>done?(wk.get(oid)??new Map()):(plan.get(oid)?.days??new Map());
   const order=[];
   for(const bd of bandList())for(const o of planOrder())if(bandOf(o)===bd.id)order.push(o);
-  const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&(t.imp||t.nuevo));
+  const hasSpec=!done&&d===today&&s.tasks.some(t=>!t.done&&t.nuevo&&!t.imp);
   const objs=[...order,null].filter(o=>(hasSpec&&!o)||cellsOf(o?o.id:'').get(d)?.m>.5);
   let nT=0,tot=0;
   const cards=objs.map(o=>{
@@ -4066,7 +4070,7 @@ function dayModalHtml(d){
   const dl=cap(fmt({weekday:'long',day:'numeric',month:'long'},dateAt(d)));
   return '<div class="dvm-top"><button class="btn line ic" data-act="dayNav" data-id="-1" aria-label="Día anterior">‹</button><button class="btn line ic" data-act="dayNav" data-id="1" aria-label="Día siguiente">›</button><button class="btn line ic" data-act="dayCloseBg" aria-label="Cerrar">✕</button></div>'+
     '<div class="dayview"><div class="colhead"><div><h2>'+esc(dl)+'</h2><span class="sub">'+nT+(nT===1?' tarea':' tareas')+(tot?' · '+dur(tot)+(done?' trabajados':' planificados'):'')+'</span></div></div>'+
-    (cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
+    (!done&&d===today?impPanel():'')+(cards?'<div class="bubbles">'+cards+'</div>':'<p class="empty">'+(done?'No hay trabajo registrado este día.':'No hay nada planificado este día.')+'</p>')+'</div>';
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dvDay&&!document.getElementById('pjm')&&Date.now()-pjmClosedAt>150&&!document.getElementById('tnote')&&!e.target.closest?.('[contenteditable],input,textarea')){dvDay='';syncDayModal();}});
 function dayCenterHtml(d,nav){
