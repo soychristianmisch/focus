@@ -2863,7 +2863,7 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 #antip .th em strong{color:var(--ink);font-weight:650}
 #antip .tr.ok span{color:var(--mute)}
 .bprog .prog[data-tip]{cursor:default}
-.tb-reset{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;padding:0;border:0;border-radius:50%;background:#e8912d;color:#fff;cursor:pointer;box-shadow:0 0 0 3px rgba(232,145,45,.22);transition:transform .15s}
+.tb-reset{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;padding:0;border:0;border-radius:50%;background:#f5c542;color:#161614;cursor:pointer;box-shadow:0 0 0 3px rgba(245,197,66,.3);transition:transform .15s}
 .tb-reset svg{width:12px;height:12px}
 .tb-reset:hover{transform:rotate(180deg) scale(1.1)}
 #antip .tpbig{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:2px 0 0}
@@ -2896,6 +2896,12 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .prog.lab i:nth-child(2){color:#fff;text-shadow:0 0 3px rgba(0,0,0,.35)}
 .prog.lab i:nth-child(3){color:var(--ink)}
 .prog.lab u{flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;padding:0 7px;text-decoration:none;color:var(--mute)}
+#noticeM{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.45)}
+#noticeM .nm-box{width:min(420px,100%);background:var(--card,#fff);color:var(--ink);border-radius:22px;padding:26px 26px 22px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+#noticeM .nm-ic{width:46px;height:46px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;background:#f5c542;color:#161614;font-size:26px;font-weight:800}
+#noticeM h3{margin:0 0 8px;font-size:18px;line-height:1.25}
+#noticeM p{margin:0 0 18px;color:var(--mute);font-size:14.5px;line-height:1.45}
+#noticeM .btn{min-width:140px;font-size:15px;padding:10px 18px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -4328,8 +4334,9 @@ function timeline(projects,embedded=false,opts={}){
     const fdt=d=>fmt({day:'numeric',month:'short'},dateAt(d)).replace('.','');
     const since=o?.startOn&&!done?'<button type="button" class="tb-since" data-act="clearStart" data-id="'+oid+'" title="Quitar la fecha de inicio">desde '+fdt(o.startOn)+' ✕</button>':'';
     const path=p?projPath(p):'Día a día';
+    const resetB=o&&o.startOn&&o.startOn>day()?'<button type="button" class="tb-reset" data-act="projCompress" data-id="'+o.project+'" title="Hay objetivos movidos a propósito. Clic: volver a compactar todo en orden, sin huecos" aria-label="Recompactar planificación">'+RESET_SVG+'</button>':'';
     const title='<div class="tb-title"'+(o?' draggable="true" data-drag="tlobj" data-id="'+oid+'" data-act="tlToggle" title="'+(open?'Plegar':'Desplegar')+' secciones · arrastra a otro día para fijar el inicio"':'')+' style="margin-left:'+Math.max(0,BL)+'px;--ac:'+ac+'">'+(depth?ARR:'')+
-      '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
+      '<div class="rt"><b>'+esc(o?o.name:'Día a día')+(o?chv(open):'')+resetB+'</b><div class="rm">'+(o?'<span class="atag sm">'+esc(rootProject(p)?.area||p.area)+'</span>':'')+'<small>'+(o?esc(path)+' · ':'')+(done?dur(metric)+' trabajados':dur(metric)+' restantes')+(o?.deadline?' · límite '+fdt(o.deadline):'')+'</small>'+warn+since+'</div></div></div>';
     return '<div class="tl-group tb-g" data-obj="'+oid+'" style="--pc:'+ac+'">'+title+'<div class="tb-bub'+(o?' clk':'')+'"'+(o?' data-act="tlToggle" data-id="'+oid+'" draggable="true" data-drag="tlmove" data-mk="obj" data-st="'+b.start+'" data-mem="'+oid+'@'+b.start+'" title="'+(open?'Clic para plegar':'Clic para ver las secciones')+' · arrastra la barra para moverla en el tiempo"':'')+' style="margin-left:'+BL+'px;width:'+BW+'px;--px:'+px+'px">'+(o?'<span class="tb-grip" aria-hidden="true"></span>':'')+'<div class="tb-r t">'+blk+'</div>'+srows+'</div></div>';
   };
   const pgroup=(p,rsub,depth,open,thin=false,tag='')=>{
@@ -5230,6 +5237,7 @@ function onClick(e){
     case 'addSubProject':{const par=project(id);if(!par)break;const p={id:uid(),name:'Nuevo subproyecto',area:par.area,parent:par.id,color:par.color,icon:'',notes:'',notesHtml:'',description:'',notion:''};s.projects.push(p);openProj=p.id;focusAfter={kind:'proj.name',id:p.id,select:true};save();break;}
     case 'pickGlyph':openPop(b,'<div class="glyphs">'+Object.keys(GLYPHS).map(k=>'<button data-act="setGlyph" data-val="'+k+'" title="'+k+'">'+glyph(k)+'</button>').join('')+'</div>',{id});break;
     case 'setGlyph':{const c=popCtx;closePop();const o=c&&objective(c.id);if(o){o.glyph=b.dataset.val;save();}break;}
+    case 'noticeOk':document.getElementById('noticeM')?.remove();break;
     case 'projCompress':{const ids=new Set(s.projects.filter(q=>q.id===id||isDesc(q.id,id)).map(q=>q.id)),os=s.objectives.filter(o=>ids.has(o.project)&&o.startOn),snap=os.map(o=>[o,o.startOn]);
       if(!os.length)break;flipTl(()=>{os.forEach(o=>{delete o.startOn;});save();});
       notify('Planificación compactada en orden sucesivo',()=>{flipTl(()=>{snap.forEach(([o,d])=>{o.startOn=d;});save();});});break;}
@@ -6006,20 +6014,27 @@ function moveProjUnit(p,ref,after){
 function reorderByDate(kind,id,ns,plan0){
   const par=x=>(x.parent&&x.parent!==x.id)?x.parent:'';
   let me,sibs;
-  if(kind==='obj'){me=objective(id);if(!me)return;sibs=s.objectives.filter(o=>o!==me&&o.project===me.project&&!objHidden(o));}
-  else{me=project(id);if(!me)return;sibs=s.projects.filter(q=>q!==me&&par(q)===par(me)&&(par(q)||q.area===me.area)&&!projHidden(q.id)&&unitStart('proj',q.id,plan0));}
+  if(kind==='obj'){me=objective(id);if(!me)return false;sibs=s.objectives.filter(o=>o!==me&&o.project===me.project&&!objHidden(o));}
+  else{me=project(id);if(!me)return false;sibs=s.projects.filter(q=>q!==me&&par(q)===par(me)&&(par(q)||q.area===me.area)&&!projHidden(q.id)&&unitStart('proj',q.id,plan0));}
   const arr=kind==='obj'?s.objectives:s.projects,idOf=x=>x.id,st=x=>unitStart(kind,idOf(x),plan0);
-  sibs=sibs.filter(x=>st(x)).sort((a,b)=>arr.indexOf(a)-arr.indexOf(b));if(!sibs.length)return;
+  sibs=sibs.filter(x=>st(x)).sort((a,b)=>arr.indexOf(a)-arr.indexOf(b));if(!sibs.length)return false;
   const cur=sibs.filter(x=>arr.indexOf(x)<arr.indexOf(me)).length;
   let want=sibs.findIndex(x=>st(x)>ns);if(want<0)want=sibs.length;
-  if(want===cur)return;
+  if(want===cur)return false;
   const mvTo=(ref,after)=>kind==='obj'?mv(s.objectives,me,ref,after):moveProjUnit(me,ref,after);
   if(want>=sibs.length)mvTo(sibs.at(-1),true);else mvTo(sibs[want],false);
+  return true;
 }
 /* si el objetivo es lo único que tiene el subproyecto, mover el objetivo es mover el subproyecto entre sus hermanos */
 function reorderOwnerProj(o,date,plan0){
   const mine=s.objectives.filter(x=>x.project===o.project&&!objHidden(x)&&unitStart('obj',x.id,plan0));
-  if(mine.length<=1&&project(o.project))reorderByDate('proj',o.project,date,plan0);
+  return mine.length<=1&&project(o.project)?reorderByDate('proj',o.project,date,plan0):false;
+}
+function noticeModal(title,text){
+  document.getElementById('noticeM')?.remove();
+  const m=document.createElement('div');m.id='noticeM';
+  m.innerHTML='<div class="nm-box" role="alertdialog" aria-modal="true"><div class="nm-ic">!</div><h3>'+esc(title)+'</h3><p>'+esc(text)+'</p><button type="button" class="btn solid" data-act="noticeOk">Aceptar</button></div>';
+  document.body.appendChild(m);m.querySelector('button').focus();
 }
 function setObjStart(oid,date){
   const o=objective(oid);if(!o)return;const f0=s.planStart&&s.planStart>day()?s.planStart:day(),plan0=computePlan();
@@ -6067,14 +6082,15 @@ document.addEventListener('drop',e=>{
   if(i.type==='stzone'){const o=objective(dr.id);if(o){o.status=i.el.dataset.st;const first=s.objectives.find(x=>x!==o&&x.status===o.status);if(first)mv(s.objectives,o,first,false);save();}return;}
   if(i.type==='fzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.fz==='1';o.focus=on;const first=s.objectives.find(x=>x!==o&&!!x.focus===on);if(first)mv(s.objectives,o,first,false);save();}return;}
   if(i.type==='tobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref){if(focusOn())o.status=ref.status;mv(s.objectives,o,ref,i.after);save();}return;}
-  if(i.type==='tldate'){const o=objective(dr.id);if(o){setObjStart(o.id,i.date);if(!s.tasks.some(t=>t.objective===o.id&&!t.done))notify('«'+o.name+'» no aparece en la planificación: te falta añadir una tarea pendiente.');}return;}
+  if(i.type==='tldate'){const o=objective(dr.id);if(o){setObjStart(o.id,i.date);if(!s.tasks.some(t=>t.objective===o.id&&!t.done))noticeModal('«'+o.name+'» no aparece en la planificación','Te falta añadir una tarea pendiente a este objetivo. Sin tareas no hay tiempo que colocar en la línea de tiempo.');}return;}
   if(i.type==='tlshift'){
     const n=i.n;if(!n)return;const f0=s.planStart&&s.planStart>day()?s.planStart:day();
     const plan0=computePlan();let minNs='';
     flipTl(()=>{for(const m of (dr.mem||'').split(',')){const [id,st0]=m.split('@'),o=objective(id);if(!o||!st0)continue;
       if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
       const ns=shift(st0,n);if(!minNs||ns<minNs)minNs=ns;if(ns>f0)o.startOn=ns;else delete o.startOn;}
-      if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){reorderByDate(dr.mk,dr.id,minNs,plan0);if(dr.mk==='obj'){const oo=objective(dr.id);if(oo)reorderOwnerProj(oo,minNs,plan0);}}save();});return;
+      if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){let moved=reorderByDate(dr.mk,dr.id,minNs,plan0);if(dr.mk==='obj'){const oo=objective(dr.id);if(oo&&reorderOwnerProj(oo,minNs,plan0))moved=true;}
+        if(moved)for(const m of (dr.mem||'').split(',')){const o2=objective(m.split('@')[0]);if(o2)delete o2.startOn;}}save();});return;
   }
   if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(descIds(dp.id)),plan0=computePlan();
       let anc=dp,n=0;while(anc&&n++<12){const k=s.hideP.indexOf(anc.id);if(k>=0)s.hideP.splice(k,1);anc=anc.parent&&anc.parent!==anc.id?project(anc.parent):null;}
@@ -6082,8 +6098,8 @@ document.addEventListener('drop',e=>{
       const os=s.objectives.filter(o=>ids.has(o.project)&&o.status!=='Completado'),withT=os.filter(o=>s.tasks.some(t=>t.objective===o.id&&!t.done));
       flipTl(()=>{for(const o of os){if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}if(i.date>f0)o.startOn=i.date;else delete o.startOn;}
         if(withT.length)reorderByDate('proj',dp.id,i.date,plan0);save();});
-      if(!os.length)notify('«'+dp.name+'» no aparece en la planificación: te falta crear un objetivo y una tarea dentro.');
-      else if(!withT.length)notify('«'+dp.name+'» no aparece en la planificación: te falta añadir una tarea pendiente a sus objetivos.');}return;}
+      if(!os.length)noticeModal('«'+dp.name+'» no aparece en la planificación','Te falta crear un objetivo y una tarea dentro de este proyecto. Sin ellos no hay nada que colocar en la línea de tiempo.');
+      else if(!withT.length)noticeModal('«'+dp.name+'» no aparece en la planificación','Te falta añadir una tarea pendiente a sus objetivos. Sin tareas no hay tiempo que colocar en la línea de tiempo.');}return;}
   if(i.type==='tlobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref)flipTl(()=>{keepSlots(()=>mv(s.objectives,o,ref,i.after));save();});return;}
   if(i.type==='pitem'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){o.sched=!!ref.sched;keepSlots(()=>mv(s.objectives,o,ref,i.after));save();}return;}
   if(i.type==='pzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.pz==='1';o.sched=on;if(!on)delete o.startOn;s.objectives=s.objectives.filter(x=>x!==o);if(on)s.objectives.push(o);else s.objectives.push(o);save();}return;}
