@@ -2866,6 +2866,28 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .tb-reset{flex:none;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;padding:0;border:0;border-radius:50%;background:#e8912d;color:#fff;cursor:pointer;box-shadow:0 0 0 3px rgba(232,145,45,.22);transition:transform .15s}
 .tb-reset svg{width:12px;height:12px}
 .tb-reset:hover{transform:rotate(180deg) scale(1.1)}
+#antip .tpbig{display:flex;justify-content:space-between;align-items:baseline;gap:18px;padding:2px 0 0}
+#antip .tpbig b{font-size:19px;font-weight:700;letter-spacing:-.3px;color:var(--g1)}
+#antip .tpbig span{font-size:15px;color:var(--mute);white-space:nowrap}
+#antip .tpbig strong,#antip .tph strong{color:var(--ink);font-weight:700}
+#antip .tpsub{display:block;margin:1px 0 8px;color:var(--mute);font-size:11.5px}
+#antip .tpb{margin-top:9px;padding:8px 11px 7px;border-radius:11px;border-left:4px solid var(--c)}
+#antip .tpb.k1{--c:var(--g1);background:color-mix(in srgb,var(--g1) 14%,transparent)}
+#antip .tpb.k2{--c:var(--g2);background:color-mix(in srgb,var(--g2) 18%,transparent)}
+#antip .tpb.k3{--c:var(--g3);background:color-mix(in srgb,var(--g3) 22%,transparent)}
+#antip .tpb.k4{--c:var(--faint);background:var(--bg3)}
+#antip .tpb.first{margin-top:0}
+#antip .tph{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:2px}
+#antip .tph b{font-size:13px;font-weight:650;display:flex;align-items:center;gap:7px}
+#antip .tph b i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+#antip .tph span{font-size:12px;color:var(--mute);white-space:nowrap}
+#antip .tpn{font-size:11.5px;color:var(--faint);padding:2px 0}
+#antip .tpb .tr i.bx{--ac:var(--c)}
+.startchip{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.startchip .cic{width:13px;height:13px;flex:none}
+.startchip>svg:last-child{width:11px;height:11px;flex:none;opacity:.6}
+.startchip.fixed{background:color-mix(in srgb,#e8912d 16%,var(--card));color:#a8620f;font-weight:600}
+.h3r .bigstats,.dvm-r .bigstats{grid-template-columns:repeat(3,auto);justify-content:space-between;gap:8px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3417,13 +3439,13 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const lateT=inDay.filter(isLate),todayAll=inDay.filter(t=>!isLate(t)),todayTot=todayAll.reduce((q,x)=>q+s.entries.filter(e=>e.task===x.id).reduce((r,e)=>r+dayMs(e,selectedDate)/60000,0),0);
   const leftAll=sumMin(openAll,minutesLeft);
   const todayLeft=sumMin(inDay.filter(t=>!t.done),minutesLeft);
-  const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):'<span class="chipi tot" title="Tiempo total estimado del objetivo">Total obj.: '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>';
+  const chips=daily?((todayLeft>=1?'<span class="chipi now" title="Tiempo previsto para hoy">Previsto hoy '+hrs(todayLeft)+'</span>':'')+(leftAll>=1?'<span class="chipi rest" title="Tiempo estimado que falta">Faltan '+hrs(leftAll)+'</span>':'')):(leftAll>=1?'<span class="chipi tot" title="Tiempo que falta para completar el objetivo, del total estimado">Falta '+hrs(leftAll)+' de '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>':'<span class="chipi tot" title="Objetivo completo">Completo · total '+hrs(sumMin(all,t=>+t.minutes||0))+'</span>');
   const prog='<div class="bprog">'+pr.bar.replace(/ title="[^"]*"/,' data-tip="'+tipProgress(o)+'"')+'<b class="num">'+pr.pct+' %</b></div>';
   const lines=(today||embed||!daily)?'<span class="lines" draggable="true" data-drag="tobj" data-id="'+esc(o.id)+'" title="Mover objetivo"></span>':'';
   const menu=((!today&&!daily)||embed||(cp&&!daily))?'<button class="iconbtn objmore" data-act="menu" data-kind="objmore" data-id="'+o.id+'" aria-label="Más opciones" title="Más opciones">'+ICON.more+'</button>':'<span></span>';
   const gl=daily?'<span class="gl static">'+glyph('sun')+'</span>':stIcon(o,'button','data-act="menu" data-kind="status" data-id="'+o.id+'"');
   const chev='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg>';
-  const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de proyecto">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="goProj" data-id="'+proj.id+'" title="Ir al proyecto '+esc(proj.name)+'" aria-label="Ir al proyecto '+esc(proj.name)+'">'+glyph('flag')+'</button>':'')+(cp?propsCp:propsH)+'</div>';
+  const tags='<div class="btags">'+(proj&&!daily?'<button class="atag pick" data-act="menu" data-kind="objproj" data-id="'+o.id+'" title="Cambiar de proyecto">'+esc(proj.name)+chev+'</button><button class="pnote ext" data-act="goProj" data-id="'+proj.id+'" title="Ir al proyecto '+esc(proj.name)+'" aria-label="Ir al proyecto '+esc(proj.name)+'">'+glyph('flag')+'</button>'+startChip(o):'')+(cp?propsCp:propsH)+'</div>';
   return '<section class="bubble'+(today?' tb':'')+(cp?' bcp':'')+(embed?' emb':'')+'" data-obj="'+esc(o.id)+'" style="--pc:'+ac+';--ac:'+ac+'"><div class="bhead"'+(cp?' data-act="'+cpAct+'" data-id="'+esc(o.id)+'" title="'+(cpAct==='objOpen'?'Clic para desplegar el objetivo':'Abrir este objetivo entero')+'"':(closeBtn?' data-act="objHeadClose" data-id="'+esc(o.id)+'" title="Clic en la cabecera para cerrar el objetivo"':''))+'>'+lines+'<div class="bh-l"><div class="bh-title">'+gl+(daily?'<span class="oname">Día a día</span>':'<div class="ttl">'+editable('obj.name',o.id,o.name,'title="'+esc(o.name)+'"','oname','Objetivo sin nombre')+'</div>')+(daily?'':(o.notion?'<a class="nbox" data-notion-edit="'+o.id+'" href="'+esc(o.notion)+'" target="_blank" rel="noopener noreferrer" title="Abrir en Notion (clic derecho para editar el enlace)" aria-label="Abrir en Notion">N</a>':'<button class="nbox off" data-act="notionEdit" data-id="'+o.id+'" title="Vincular a Notion" aria-label="Vincular a Notion">N</button>'))+'</div>'+tags+'</div>'+
     '<div class="bh-r">'+prog+'<div class="chips2">'+chips+'</div></div>'+menu+'</div><div class="bbody">'+body+'</div></section>';
 }
@@ -4528,20 +4550,23 @@ function tipTasks(head,sub,tm,cap=18,proj=false){
   return tipRaw(html+tipMore(more));
 }
 /* tarjeta de un objetivo entero: lo hecho y lo que falta */
+let _plan=null;const planOnce=()=>_plan||(_plan=computePlan());
+function startChip(o){
+  const td=day(),pl=planOnce().get(o.id),first=pl&&[...pl.days.keys()].sort()[0],fx=o.startOn&&o.startOn>td,sd=fx?o.startOn:first;
+  const f=d=>d===td?'hoy':fmt({day:'numeric',month:'short'},dateAt(d)).replace('.','');
+  return '<button class="atag startchip'+(fx?' fixed':'')+'" data-act="menu" data-kind="objstart" data-id="'+esc(o.id)+'" title="'+(fx?'Fecha de inicio fijada. Clic para cambiarla':'Inicio previsto según el orden. Clic para fijar otra fecha')+'">'+CAL_SVG+(sd?'Empieza '+f(sd):'Elegir inicio')+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l5 5 5-5"/></svg></button>';
+}
+const CAL_SVG='<svg class="cic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
 function tipProgress(o){
   const oid=o.id===DAILY.id?'':o.id,list=s.tasks.filter(t=>t.objective===oid&&!t.nuevo),w=t=>Math.max(0,+t.minutes||0),tot=list.reduce((q,t)=>q+w(t),0);
-  const d=selectedDate,done=list.filter(t=>t.done),plan=list.filter(t=>!t.done&&onDay(t,d)),rest=list.filter(t=>!t.done&&!onDay(t,d));
+  const d=selectedDate,prior=list.filter(t=>t.done&&day(t.done)<d),today=list.filter(t=>t.done&&day(t.done)===d),plan=list.filter(t=>!t.done&&onDay(t,d)),rest=list.filter(t=>!t.done&&!onDay(t,d));
   const sum=L=>L.reduce((q,t)=>q+w(t),0),pc=m=>tot?Math.round(100*m/tot):0,ac=objAc(o.id===DAILY.id?null:o);
-  const blk=(title,sub,L,cls)=>{if(!L.length)return '';let h='<div class="tobj" style="--ac:'+ac+'"><div class="th"><b>'+title+'</b><em>'+sub+'</em></div>';
-    for(const t of L.slice(0,12))h+='<div class="tr'+cls+'"><span><i class="bx"></i>'+esc(t.name||'Sin título')+'</span><em>'+dur(w(t))+'</em></div>';
-    return h+(L.length>12?tipMore(L.length-12):'')+'</div>';};
-  const dm=sum(done),pm2=sum(plan),rm=sum(rest);
-  const nt=n=>n+' tarea'+(n===1?'':'s');
-  let html='<b>'+esc(o.name)+'</b><small>Total del objetivo · '+dur(tot)+' · '+nt(list.length)+'</small>';
-  html+=blk('✓ Completado','<strong>'+dur(dm)+'</strong> · '+nt(done.length)+' · '+pc(dm)+' %',done,' ok');
-  html+=blk('Previsto hoy','<strong>'+dur(pm2)+'</strong> · '+nt(plan.length)+' · '+pc(pm2)+' %',plan,'');
-  html+=blk('Restante','<strong>'+dur(rm)+'</strong> · '+nt(rest.length)+' · '+pc(rm)+' % por completar',rest,'');
-  if(!list.length)html+='<small>Aún no hay tareas.</small>';
+  const nt=n=>n+' tarea'+(n===1?'':'s'),meta=L=>'<strong>'+dur(sum(L))+'</strong> · '+nt(L.length)+' · '+pc(sum(L))+' %';
+  const rows=(L,cls)=>L.slice(0,10).map(t=>'<div class="tr'+cls+'"><span><i class="bx"></i>'+esc(t.name||'Sin título')+'</span><em>'+dur(w(t))+'</em></div>').join('')+(L.length>10?tipMore(L.length-10):'');
+  const blk=(k,title,L,cls)=>'<div class="tpb k'+k+'"><div class="tph"><b><i></i>'+title+'</b><span>'+meta(L)+'</span></div>'+(L.length?rows(L,cls):'<div class="tpn">Nada</div>')+'</div>';
+  const html='<div class="tpbig" style="--ac:'+ac+'"><b>Completado</b><span><strong>'+dur(sum(prior))+'</strong> · '+nt(prior.length)+' · '+pc(sum(prior))+' %</span></div><small class="tpsub">'+esc(o.name)+' · total '+dur(tot)+'</small>'+
+    (prior.length?'<div class="tpb k1 first">'+rows(prior,' ok')+'</div>':'')+
+    blk(2,'Progreso hoy',today,' ok')+blk(3,'Falta hoy',plan,'')+blk(4,'Restante del proyecto',rest,'');
   return tipRaw(html);
 }
 function tipObjective(o,sub){
@@ -4739,6 +4764,7 @@ function normDaily(){
   return ch;
 }
 function render(){
+  _plan=null;
   if(normDaily()){try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}}
   const keep=captureEdit();rendering=true;
   try{render0();if(typeof pjm!=='undefined'&&pjm)pjmRender();if(typeof pm!=='undefined'&&pm)pmRender();}finally{rendering=false;}
@@ -4976,12 +5002,12 @@ function addDayHtml(q=''){
   return h||'<div class="empty" style="padding:12px">No hay tareas pendientes que coincidan.</div>';
 }
 const CH={l:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></svg>',r:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></svg>'};
-function calHtml(o,ym){
-  const first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
-  while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===o.deadline?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
+function calHtml(o,ym,start=false){
+  const first=ym+'-01',lead=(dow(first)+6)%7,today=day(),cur=start?o.startOn:o.deadline;let cells='<span></span>'.repeat(lead),d=first;
+  while(d.slice(0,7)===ym){cells+='<button class="cd'+(d===cur?' sel':'')+(d===today?' td':'')+'" data-act="calPick" data-val="'+d+'">'+(+d.slice(8))+'</button>';d=shift(d,1);}
   return '<div class="cal"><div class="calh"><button class="cnav" data-act="calNav" data-val="-1" aria-label="Mes anterior">'+CH.l+'</button><b>'+capz(fmt({month:'long',year:'numeric'},dateAt(first)))+'</b><button class="cnav" data-act="calNav" data-val="1" aria-label="Mes siguiente">'+CH.r+'</button></div>'+
     '<div class="cdow">'+[...'LMXJVSD'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="cgrid">'+cells+'</div>'+
-    '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(o.deadline?'<button class="rm" data-act="clearDeadline" data-id="'+o.id+'">Quitar fecha</button>':'<span></span>')+'</div></div>';
+    '<div class="cfoot"><button data-act="calToday">Hoy</button>'+(start?(o.startOn?'<button class="rm" data-act="clearStart" data-id="'+o.id+'">Quitar fecha</button>':'<span></span>'):o.deadline?'<button class="rm" data-act="clearDeadline" data-id="'+o.id+'">Quitar fecha</button>':'<span></span>')+'</div></div>';
 }
 function calHtmlD(ym){
   const first=ym+'-01',lead=(dow(first)+6)%7,today=day();let cells='<span></span>'.repeat(lead),d=first;
@@ -5019,6 +5045,7 @@ function menuFor(kind,id,anchor){
     return openPop(anchor,'<div class="stpick">'+pl('¿Cuándo me ocupo de él?')+ST_ORDER.map(v=>pi(stIcon({status:v},'span','',false)+'<span class="stx"><b>'+v+'</b><small>'+D[v]+'</small></span>'+(o.status===v?'<span class="stck">✓</span>':''),'setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"','stopt'+(o.status===v?' sel':''))).join('')+'</div>');}
   if(kind==='statusOLD')return openPop(anchor,STATUS.map(v=>pi('<span class="tag '+tagClass(v)+'">'+v+'</span>','setProp','data-kind="obj" data-id="'+id+'" data-key="status" data-val="'+v+'"',o.status===v?'sel':'')).join(''));
   if(kind==='priority')return openPop(anchor,PRIORITY.map(v=>pi(v,'setProp','data-kind="obj" data-id="'+id+'" data-key="priority" data-val="'+v+'"',o.priority===v?'sel':'')).join(''));
+  if(kind==='objstart'){const ym=(o.startOn||day()).slice(0,7);return openPop(anchor,calHtml(o,ym,true),{id,ym,start:true});}
   if(kind==='deadline')return openPop(anchor,calHtml(o,(o.deadline||day()).slice(0,7)),{id,ym:(o.deadline||day()).slice(0,7)});
   if(kind==='objproj')return openPop(anchor,s.projects.map(q=>pi('<i class="adot" style="background:'+areaTone(q.area)+'"></i>'+(q.parent?'&nbsp;&nbsp;↳ ':'')+esc(q.name),'setProp','data-kind="obj" data-id="'+id+'" data-key="project" data-val="'+q.id+'"',o.project===q.id?'sel':'')).join(''));
   if(kind==='area')return openPop(anchor,s.areas.map(a=>pi('<i class="adot" style="background:'+areaTone(a)+'"></i>'+esc(a),'setProp','data-kind="proj" data-id="'+id+'" data-key="area" data-val="'+esc(a)+'"',p.area===a?'sel':'')).join('')+pl('Nueva área')+'<div class="pinput"><input data-pop-input="newarea" placeholder="Nombre y Enter" data-id="'+id+'"></div>');
@@ -5185,7 +5212,7 @@ function onClick(e){
     case 'projTab':projTab=id;if(id==='Cronología')tlScroll='today';render();break;
     case 'setAreaColor':{closePop();s.areaColors??={};s.areaColors[id]=b.dataset.val;s.projects.forEach(p=>{if(p.area===id)p.color=b.dataset.val;});save();break;}
     case 'plFold':plFold.has(id)?plFold.delete(id):plFold.add(id);plFoldSave();render();break;
-    case 'clearStart':{const o=objective(id);if(o){delete o.startOn;save();}break;}
+    case 'clearStart':{const o=objective(id);closePop();if(o){delete o.startOn;save();}break;}
     case 'tlToggle':tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render();break;
     case 'tlView':if(b.closest('#pjm')&&pjm){pjm.mode=id;pjm.anim=true;}else{tlMode=id;tlScroll='anim';}render();break;
     case 'tlExpandAll':{const ids=s.objectives.map(o=>o.id);if(ids.length&&ids.every(x=>tlOpen.has(x)))tlOpen.clear();else ids.forEach(x=>tlOpen.add(x));render();break;}
@@ -5285,9 +5312,9 @@ function onClick(e){
     case 'hoyDay':hoyDate=b.dataset.val;hoyYM=hoyDate.slice(0,7);render();break;
     case 'hoyNav':{let [y,m]=(hoyYM||(hoyDate||day()).slice(0,7)).split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}hoyYM=y+'-'+String(m).padStart(2,'0');render();break;}
     case 'hoyToday':hoyDate='';hoyYM='';render();break;
-    case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.sec){pop.innerHTML=calHtmlT(secPseudo(secList(popCtx.sec)),popCtx.ym);break;}if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym);break;}
-    case 'calPick':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,b.dataset.val);break;}if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
-    case 'calToday':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,day());break;}if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];autoHoy(tt);save();}break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
+    case 'calNav':{if(!popCtx?.ym)break;if(popCtx.day){let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');pop.innerHTML=calHtmlD(popCtx.ym);break;}let [y,m]=popCtx.ym.split('-').map(Number);m+=+b.dataset.val;if(m<1){m=12;y--;}if(m>12){m=1;y++;}popCtx.ym=y+'-'+String(m).padStart(2,'0');if(popCtx.sec){pop.innerHTML=calHtmlT(secPseudo(secList(popCtx.sec)),popCtx.ym);break;}if(popCtx.task){const tt=task(popCtx.id);if(tt)pop.innerHTML=calHtmlT(tt,popCtx.ym);break;}const o=objective(popCtx.id);if(o)pop.innerHTML=calHtml(o,popCtx.ym,!!popCtx.start);break;}
+    case 'calPick':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,b.dataset.val);break;}if(popCtx?.day){selectedDate=b.dataset.val;closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[b.dataset.val];autoHoy(tt);save();}break;}if(popCtx?.start){const oid=popCtx.id;closePop();setObjStart(oid,b.dataset.val);break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=b.dataset.val;if(o.deadline===day())o.priority='Alta';save();}break;}
+    case 'calToday':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,day());break;}if(popCtx?.day){selectedDate=day();closePop();render();break;}if(popCtx?.task){const tt=task(popCtx.id);closePop();if(tt){tt.days=[day()];autoHoy(tt);save();}break;}if(popCtx?.start){const oid=popCtx.id;closePop();setObjStart(oid,day());break;}const o=objective(popCtx?.id);closePop();if(o){o.deadline=day();o.priority='Alta';save();}break;}
     case 'clearTaskDate':{if(popCtx?.sec){const L=secList(popCtx.sec);closePop();setSecDay(L,'');break;}const tt=task(id);closePop();if(tt){tt.days=[];unHoy(tt);save();}break;}
     case 'clearDeadline':{const o=objective(id);closePop();if(o){o.deadline='';save();}break;}
     case 'splitSection':{leaveHoy(id,1);
@@ -5935,6 +5962,41 @@ document.addEventListener('dragover',e=>{
   if(!drag)return;const i=dropInfo(e);clearDrop();
   if(!i)return;e.preventDefault();i.el.classList.add(i.cls);lastDrop=i;if(i.guide)showGuide(i.guide);
 });
+/* inicio de una unidad (objetivo o proyecto con sus subproyectos) según el plan */
+function unitStart(kind,id,plan){
+  const ids=kind==='obj'?[id]:s.objectives.filter(o=>new Set(descIds(id)).has(o.project)).map(o=>o.id);
+  const ds=ids.flatMap(i=>[...(plan.get(i)?.days.keys()??[])]).sort();return ds[0]||'';
+}
+function moveProjUnit(p,ref,after){
+  const mineP=new Set(descIds(p.id)),refP=new Set(descIds(ref.id));
+  mv(s.projects,p,ref,after);
+  const mine=s.objectives.filter(o=>mineP.has(o.project)),rb=s.objectives.filter(o=>refP.has(o.project));
+  if(mine.length&&rb.length){const ms=new Set(mine);s.objectives=s.objectives.filter(o=>!ms.has(o));const at=after?s.objectives.indexOf(rb.at(-1))+1:s.objectives.indexOf(rb[0]);s.objectives.splice(at,0,...mine);}
+}
+/* si una unidad se coloca después (o antes) de otra hermana, también cambia su turno: aquí y en la lista de la izquierda */
+function reorderByDate(kind,id,ns,plan0){
+  const par=x=>(x.parent&&x.parent!==x.id)?x.parent:'';
+  let me,sibs;
+  if(kind==='obj'){me=objective(id);if(!me)return;sibs=s.objectives.filter(o=>o!==me&&o.project===me.project&&!objHidden(o));}
+  else{me=project(id);if(!me)return;sibs=s.projects.filter(q=>q!==me&&par(q)===par(me)&&(par(q)||q.area===me.area)&&!projHidden(q.id)&&unitStart('proj',q.id,plan0));}
+  const arr=kind==='obj'?s.objectives:s.projects,idOf=x=>x.id,st=x=>unitStart(kind,idOf(x),plan0);
+  sibs=sibs.filter(x=>st(x)).sort((a,b)=>arr.indexOf(a)-arr.indexOf(b));if(!sibs.length)return;
+  const cur=sibs.filter(x=>arr.indexOf(x)<arr.indexOf(me)).length;
+  let want=sibs.findIndex(x=>st(x)>ns);if(want<0)want=sibs.length;
+  if(want===cur)return;
+  const mvTo=(ref,after)=>kind==='obj'?mv(s.objectives,me,ref,after):moveProjUnit(me,ref,after);
+  if(want>=sibs.length)mvTo(sibs.at(-1),true);else mvTo(sibs[want],false);
+}
+/* si el objetivo es lo único que tiene el subproyecto, mover el objetivo es mover el subproyecto entre sus hermanos */
+function reorderOwnerProj(o,date,plan0){
+  const mine=s.objectives.filter(x=>x.project===o.project&&!objHidden(x)&&unitStart('obj',x.id,plan0));
+  if(mine.length<=1&&project(o.project))reorderByDate('proj',o.project,date,plan0);
+}
+function setObjStart(oid,date){
+  const o=objective(oid);if(!o)return;const f0=s.planStart&&s.planStart>day()?s.planStart:day(),plan0=computePlan();
+  flipTl(()=>{if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
+    if(date>f0)o.startOn=date;else delete o.startOn;reorderByDate('obj',oid,date,plan0);reorderOwnerProj(o,date,plan0);save();});
+}
 function keepSlots(fn){
   const snap=()=>{const m=new Map();for(const o of planOrder()){const b=bandOf(o);(m.get(b)??m.set(b,[]).get(b)).push(o);}return m;};
   const before=snap(),starts=new Map([...before].map(([b,l])=>[b,l.map(o=>o.startOn)]));
@@ -5976,17 +6038,23 @@ document.addEventListener('drop',e=>{
   if(i.type==='stzone'){const o=objective(dr.id);if(o){o.status=i.el.dataset.st;const first=s.objectives.find(x=>x!==o&&x.status===o.status);if(first)mv(s.objectives,o,first,false);save();}return;}
   if(i.type==='fzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.fz==='1';o.focus=on;const first=s.objectives.find(x=>x!==o&&!!x.focus===on);if(first)mv(s.objectives,o,first,false);save();}return;}
   if(i.type==='tobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref){if(focusOn())o.status=ref.status;mv(s.objectives,o,ref,i.after);save();}return;}
-  if(i.type==='tldate'){const o=objective(dr.id);if(o){const f0=s.planStart&&s.planStart>day()?s.planStart:day();flipTl(()=>{if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}if(i.date>f0)o.startOn=i.date;else delete o.startOn;save();});}return;}
+  if(i.type==='tldate'){const o=objective(dr.id);if(o){setObjStart(o.id,i.date);if(!s.tasks.some(t=>t.objective===o.id&&!t.done))notify('«'+o.name+'» no aparece en la planificación: te falta añadir una tarea pendiente.');}return;}
   if(i.type==='tlshift'){
     const n=i.n;if(!n)return;const f0=s.planStart&&s.planStart>day()?s.planStart:day();
+    const plan0=computePlan();let minNs='';
     flipTl(()=>{for(const m of (dr.mem||'').split(',')){const [id,st0]=m.split('@'),o=objective(id);if(!o||!st0)continue;
       if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
-      const ns=shift(st0,n);if(ns>f0)o.startOn=ns;else delete o.startOn;}save();});return;
+      const ns=shift(st0,n);if(!minNs||ns<minNs)minNs=ns;if(ns>f0)o.startOn=ns;else delete o.startOn;}
+      if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){reorderByDate(dr.mk,dr.id,minNs,plan0);if(dr.mk==='obj'){const oo=objective(dr.id);if(oo)reorderOwnerProj(oo,minNs,plan0);}}save();});return;
   }
-  if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(s.projects.filter(q=>q.id===dp.id||isDesc(q.id,dp.id)).map(q=>q.id));
+  if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(descIds(dp.id)),plan0=computePlan();
       let anc=dp,n=0;while(anc&&n++<12){const k=s.hideP.indexOf(anc.id);if(k>=0)s.hideP.splice(k,1);anc=anc.parent&&anc.parent!==anc.id?project(anc.parent):null;}
       for(const q of ids){const k=s.hideP.indexOf(q);if(k>=0)s.hideP.splice(k,1);}
-      flipTl(()=>{for(const o of s.objectives.filter(o=>ids.has(o.project)&&o.status!=='Completado')){if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}if(i.date>f0)o.startOn=i.date;else delete o.startOn;}save();});}return;}
+      const os=s.objectives.filter(o=>ids.has(o.project)&&o.status!=='Completado'),withT=os.filter(o=>s.tasks.some(t=>t.objective===o.id&&!t.done));
+      flipTl(()=>{for(const o of os){if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}if(i.date>f0)o.startOn=i.date;else delete o.startOn;}
+        if(withT.length)reorderByDate('proj',dp.id,i.date,plan0);save();});
+      if(!os.length)notify('«'+dp.name+'» no aparece en la planificación: te falta crear un objetivo y una tarea dentro.');
+      else if(!withT.length)notify('«'+dp.name+'» no aparece en la planificación: te falta añadir una tarea pendiente a sus objetivos.');}return;}
   if(i.type==='tlobj'){const o=objective(dr.id),ref=objective(i.el.dataset.obj);if(o&&ref)flipTl(()=>{keepSlots(()=>mv(s.objectives,o,ref,i.after));save();});return;}
   if(i.type==='pitem'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){o.sched=!!ref.sched;keepSlots(()=>mv(s.objectives,o,ref,i.after));save();}return;}
   if(i.type==='pzone'){const o=objective(dr.id);if(o){const on=i.el.dataset.pz==='1';o.sched=on;if(!on)delete o.startOn;s.objectives=s.objectives.filter(x=>x!==o);if(on)s.objectives.push(o);else s.objectives.push(o);save();}return;}
