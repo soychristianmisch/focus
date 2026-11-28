@@ -2596,6 +2596,26 @@ body.hasrb .fab{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 .plrail .pjsearch input{margin-left:8px;width:calc(100% - 8px)}
 .pjm .pj-right{position:sticky;top:0;align-self:start;max-height:calc(min(92vh,980px) - 90px);overflow:auto}
 @media (max-width:900px){.pjm .pj-right{position:static;max-height:none}}
+
+/* v213 ventana flotante con lista del día */
+body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
+.fllist{flex:1;min-height:0;overflow-y:auto;background:var(--bg);padding:10px 10px 16px;display:flex;flex-direction:column;gap:8px}
+.fl-o{flex:none;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--pc);border-radius:12px;padding:8px 6px 6px}
+.fl-o h4{margin:0 6px 4px;font-size:12.5px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:baseline;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fl-o h4 small{font-weight:500;color:var(--mute);font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.fl-s{margin:6px 6px 2px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
+.fl-r{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink)}
+.fl-r:hover{background:var(--hover,var(--bg3))}
+.fl-r.on{background:color-mix(in srgb,var(--play) 14%,var(--card));cursor:default}
+.fl-r.dn{opacity:.5;cursor:default}.fl-r.dn .fl-n{text-decoration:line-through}
+.fl-dot{width:14px;height:14px;border-radius:50%;border:1.6px solid var(--line2);flex:none;box-sizing:border-box}
+.fl-ck{width:14px;height:14px;flex:none;color:var(--play);display:grid;place-items:center}.fl-ck svg{width:12px;height:12px}
+.fl-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fl-m{font-size:11px;color:var(--mute);flex:none}
+.fl-pb{width:24px;height:24px;border-radius:50%;border:0;display:grid;place-items:center;flex:none;cursor:pointer;background:var(--bg3);color:var(--mute);opacity:0}
+.fl-pb svg{width:11px;height:11px}
+.fl-r:hover .fl-pb,.fl-r.on .fl-pb{opacity:1}.fl-r.on .fl-pb{background:var(--play);color:#fff}
+.fl-e{color:var(--mute);font-size:13px;text-align:center;margin:24px 0}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -5684,25 +5704,43 @@ async function openFloat(){
   if(floating&&!floating.closed){floating.focus();return;}
   if(!window.documentPictureInPicture){notify('Abre Focus en Chrome para usar la ventana flotante.');return;}
   try{
-    floating=await window.documentPictureInPicture.requestWindow({width:440,height:196});
+    floating=await window.documentPictureInPicture.requestWindow({width:440,height:820});
     floating.document.title='Focus · Ejecución';
     floating.document.documentElement.dataset.theme=document.documentElement.dataset.theme;
     const st=floating.document.createElement('style');
-    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--play)} :root{padding:0}';
+    st.textContent=$$('style').map(x=>x.textContent).join('\n')+' body{padding:0;overflow:hidden;background:var(--card);display:flex;flex-direction:column;height:100vh} :root{padding:0}';
     floating.document.head.append(st);
     floating.document.addEventListener('click',onClick);
     floating.addEventListener('pagehide',()=>floating=null,{once:true});
     updateFloat();
   }catch{notify('Chrome no pudo abrir la ventana flotante en este contexto.');}
 }
+function floatList(){
+  const d=selectedDate,run=s.running?.id,q=queue(d),ks=dayOrder();
+  const row=t=>{const r=run===t.id;return '<div class="fl-r'+(t.done?' dn':'')+(r?' on':'')+'"'+(t.done||r?'':' data-act="play" data-id="'+esc(t.id)+'" title="Empezar esta tarea"')+'>'+
+    (t.done?'<i class="fl-ck">'+ICON.check+'</i>':'<i class="fl-dot"></i>')+'<span class="fl-n">'+esc(t.name)+'</span><span class="fl-m">'+Math.round(t.minutes)+'′</span>'+
+    (t.done?'':'<button type="button" class="fl-pb" data-act="'+(r?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(r?'Pausar':'Empezar')+'">'+(r?ICON.pause:ICON.play)+'</button>')+'</div>';};
+  const out=[];
+  for(const k of ks){
+    const o=k===''?null:objective(k),p=o?project(o.project):DAILY,ts=q.filter(t=>(t.objective||'')===k);if(!ts.length)continue;
+    const secs=k===''?[RECUR,'',...[...new Set(ts.map(t=>t.section||''))].filter(x=>x&&x!==RECUR)]:['',...(o.sections||[])];
+    const body=secs.map(sec=>{const st=ts.filter(t=>(t.section||'')===sec).sort((a,b)=>(a.done?1:0)-(b.done?1:0));if(!st.length)return '';
+      return (sec?'<div class="fl-s">'+esc(sec)+'</div>':'')+st.map(row).join('');}).join('');
+    out.push('<section class="fl-o" style="--pc:'+(p?.color||'var(--mute)')+'"><h4>'+esc(o?o.name:'Día a día')+(o&&p?'<small>'+esc(p.name)+'</small>':'')+'</h4>'+body+'</section>');
+  }
+  return '<div class="fllist">'+(out.join('')||'<p class="fl-e">Nada planificado para este día.</p>')+'</div>';
+}
 function updateFloat(){
   if(!floating||floating.closed)return;
+  const prevScroll=floating.document.querySelector('.fllist')?.scrollTop||0;
   const t=current(),running=!!t&&s.running?.id===t.id;
   const r=t?timerReading(t):null;
   const p=t?projectOf(t):null,o=t?objective(t.objective):null;
   const pzd=!!t&&!running&&!t.done&&s.pauseId===t.id;floating.document.body.classList.remove('paused');
   floating.document.body.innerHTML=t?'<section class="xcard xtask flcard'+(running||t.done?'':' idle')+'"><h3>Tarea actual</h3><h2 class="xtitle" title="'+esc(t.name)+'">'+esc(t.name)+'</h2><p class="est">'+esc(p.name)+(o?' · '+esc(o.name):'')+' · Estimación: '+Math.round(t.minutes)+' min</p><div class="xline"><span class="xclock'+(r.over?' over':'')+'" data-clock="'+esc(t.id)+'" title="Tiempo trabajado">'+r.text+'</span>'+
     (t.done?'<span class="timer-done">'+ICON.check+' Completada</span>':'<button type="button" class="fl-b big'+(running?' run':'')+'" data-act="'+(running?'pause':'play')+'" data-id="'+esc(t.id)+'" aria-label="'+(running?'Pausar':'Empezar')+'" title="'+(running?'Pausar':'Empezar')+'">'+(running?ICON.pause:ICON.play)+'</button><button type="button" class="fl-b big ok" data-act="finish" data-id="'+esc(t.id)+'" aria-label="Completar" title="Completar">'+ICON.check+'</button>')+'</div></section>':'<section class="xcard xtask flcard"><h3>Tarea actual</h3><p class="est">Sin tarea en marcha</p></section>';
+  floating.document.body.insertAdjacentHTML('beforeend',floatList());
+  {const l=floating.document.querySelector('.fllist');if(l)l.scrollTop=prevScroll;}
 }
 
 /* ---------- reloj ---------- */
