@@ -2660,6 +2660,7 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .fl-row .tplay{background:color-mix(in srgb,var(--play) 15%,var(--card));color:var(--play)}
 .fl-row .tplay.on{background:var(--play);color:#fff}
 .fl-row .tplay svg{fill:currentColor}
+.cd-main{cursor:pointer}.cd-main:hover .cd-t{text-decoration:underline}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3684,7 +3685,7 @@ function execPanel(onlyStats=false){
   const compl='<section class="xcard cdone"><h3>Tareas completadas'+(doneL.length?' · '+doneL.length:'')+'</h3>'+
     (doneL.length?'<div class="cd-sum">Tiempo <b>'+dur(dReal)+'</b></div>'+doneL.map(x=>{
       const pr=projectOf(x),ob=objective(x.objective),real=workedMin(x);
-      return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
+      return '<div class="cd-row" style="--pc:'+(pr?.color||'#b4b4ae')+'"><div class="cd-main" data-act="goTask" data-done="1" data-id="'+esc(x.id)+'" title="Ver en su objetivo"><span class="cd-t" title="'+esc(x.name)+'">'+esc(x.name)+'</span><small><i class="adot"></i>'+esc(ob?ob.name:'Día a día')+(pr&&pr.id&&ob?' · '+esc(pr.name):'')+'</small></div>'+
         '<div class="cd-time'+(real>x.minutes+.5?' over':'')+'"><b>'+editable('task.worked',x.id,dur(Math.floor(real+1e-6)),'inputmode="numeric" data-raw="'+Math.floor(real+1e-6)+'" title="Tiempo cronometrado: suma o resta con +15, -10"','tworked cdw')+'</b><small title="Estimación">est. '+dur(x.minutes)+'</small></div>'+
         '<button type="button" class="fl-b" data-act="play" data-id="'+esc(x.id)+'" aria-label="Retomar" title="Retomar">'+ICON.play+'</button></div>';
     }).join(''):'<p class="empty" style="padding:6px 0">Aún no has completado tareas este día.</p>')+'</section>';
@@ -4756,6 +4757,7 @@ function onClick(e){
       if(isMob()){wSolo=null;if(wHoy)hoyOpen.add(ko);else{mOpen.add(ko);if(wStat==='Focus'&&!s.objectives.some(o=>o.id===k&&stOk(o)))wStat='Todos';}}
       else{hoyOpen.clear();hoyOpen.add(ko);wSolo=k;wLast=k;if(!wList().includes(k)){wArea='Todas';wStat='Todos';}}
       render();
+      if(t.done&&b.dataset.done==='1'){doneOpen.add(ko);render();}
       {const r=document.querySelector('.task[data-task="'+CSS.escape(id)+'"]:not(.kt .task)')||document.querySelector('.task[data-task="'+CSS.escape(id)+'"]');
        if(r){r.scrollIntoView({block:'center'});pick(id);r.classList.add('flash');setTimeout(()=>r.classList.remove('flash'),1400);}}
       break;
