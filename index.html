@@ -2846,6 +2846,12 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .h3r .xtask.flcard,.dvm-r .xtask.flcard{padding-left:18px;padding-right:18px}
 .h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(13.5px,1.12vw,17px)}
 .h3r .bigstats small,.dvm-r .bigstats small{font-size:10px}
+.recurcard.dc-grn>.dcpart{margin-top:6px}
+.recurcard.dc-grn .sec.recur .sname,.recurcard.dc-grn .sec.recur .rcic{color:var(--tn)}
+.bubble .bhead+.dimp,.bubble .bhead+.recurcard{margin-top:14px}
+.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(14.8px,1.23vw,18.7px)}
+.h3r .bigstats small{font-size:11px}
+.bubble .bbody>.dimp:first-child,.bubble .bbody>.recurcard:first-child{margin-top:8px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3327,7 +3333,9 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   const pr=progressOf(o);
   const all=s.tasks.filter(t=>t.objective===oid);
   const inDay=(dvIds?s.tasks.filter(t=>dvIds.has(t.id)):queue(selectedDate)).filter(t=>t.objective===oid);
-  const dayIds=new Set(inDay.map(t=>t.id)),mine=(today||dayOnly)?all.filter(t=>dayIds.has(t.id)):all;
+  const dayIds=new Set(inDay.map(t=>t.id));
+  if(daily&&(dvIds?dvDay:selectedDate)===day())for(const t of all)if(!t.done&&t.section===HOY)dayIds.add(t.id);
+  const mine=(today||dayOnly)?all.filter(t=>dayIds.has(t.id)):all;
   const open=mine.filter(t=>!t.done&&!t.nuevo),done=mine.filter(t=>t.done);
   const nw=cp?[]:all.filter(t=>t.nuevo&&!t.done);
   const spec=daily&&!cp&&(!(today||dayOnly)||(dvDay||selectedDate)>=day());
@@ -3349,8 +3357,10 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
   let lastSec='',rendered=0;
   if(spec&&!(today||dayOnly))body+=impPanel()+inboxCard();
   else if(spec&&impInDaily)body+=impPanel()+inboxCard();
+  const grn={rec:'',hoy:''};
   body+=(daily?[RECUR,HOY,'',...dsec]:['',...sections]).map(sec=>{
-    const list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
+    let list=open.filter(t=>t.section===sec&&!(spec&&impIds.has(t.id)));
+    if(daily&&sec===''){const dk=t=>t.days.length?[...t.days].sort()[0]:'9999';list=list.map((t,i)=>[t,i]).sort((a,b)=>dk(a[0]).localeCompare(dk(b[0]))||a[1]-b[1]).map(x=>x[0]);}
     if(daily&&sec===HOY&&!list.length&&(today||dayOnly))return '';
     if((today||dayOnly)&&!list.length&&!(sec===RECUR&&daily))return '';
     if(sec&&sec!==RECUR&&!(daily&&sec===HOY)&&!list.length&&done.some(t=>t.section===sec)&&!reop.includes(sec))return '';
@@ -3368,10 +3378,11 @@ function bubble(o,today=false,embed=false,cp=false,dayOnly=false,cpAct='cpOpen',
     const rows=list.length?insLead(oid,sec,list[0].id,tm,isFirst,o.id)+list.map((t,i)=>taskRow(t)+(i<list.length-1?insMid(oid,sec,t.id,list[i+1].id,tm,o.id):'')).join(''):'';
     const inner=head+'<div class="tasks" data-mode="'+(today?'today':'list')+'">'+rows+'</div>'+
       endZ(oid,sec,daily?((sec===RECUR||sec===HOY)?'':sec===''?(dsec[0]||''):(dsec[dsec.indexOf(sec)+1]||'')):sec===''?(sections[0]||''):(sections[sections.indexOf(sec)+1]||''),o.id,false,today||dayOnly);
-    if(sec===RECUR&&daily)return '<div class="recurcard dc dc-rec">'+inner+'</div>'+newCard;
-    if(sec===HOY&&daily)return '<div class="recurcard dc dc-hoy">'+inner+'</div>';
+    if(sec===RECUR&&daily){grn.rec=inner;return '\u0001GREEN\u0001'+newCard;}
+    if(sec===HOY&&daily){grn.hoy=inner;return '';}
     return (sec&&!today?'<div class="secblock" data-sec="'+esc(sec)+'" data-obj="'+o.id+'">'+inner+'</div>':inner);
   }).join('');
+  if(daily)body=body.replace('\u0001GREEN\u0001','<div class="recurcard dc dc-hoy dc-grn">'+grn.rec+(grn.hoy?'<div class="dcpart">'+grn.hoy+'</div>':'')+'</div>');
   if(!daily&&!cp&&!today&&!dayOnly&&nw.length)body=dcCard('dc-inb','Inbox',TRAY_SVG,'<div class="tasks" data-mode="list" data-inbox="1">'+nw.map(taskRow).join('')+'</div>',' data-inbox="1"')+body;
   if(today&&!rendered&&!cp)body+=endZ(oid,'','',o.id,true,true);
   if(!today&&!embed&&!cp&&!open.length&&!rendered)body+='<div class="emptyz">'+endZ(oid,'','',o.id,daily,false)+'</div>';
@@ -4685,7 +4696,19 @@ function alignHoy(){
   l.style.paddingTop=Math.max(0,Math.round(tg.getBoundingClientRect().top-c.getBoundingClientRect().top+c.scrollTop))+'px';
 }
 addEventListener('resize',()=>alignHoy());
+/* tareas diarias: lo de hoy o atrasado (no importante) va a Hoy; sin fecha o futuro sale de Hoy */
+function normDaily(){
+  const td=day();let ch=false;
+  for(const t of s.tasks){
+    if(t.done||t.objective||t.proj||t.nuevo||t.imp||t.section===RECUR)continue;
+    const due=t.days.length&&t.days.some(d=>d<=td);
+    if(due&&t.section!==HOY){t.section=HOY;ch=true;}
+    else if(!due&&t.section===HOY){t.section='';ch=true;}
+  }
+  return ch;
+}
 function render(){
+  if(normDaily()){try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}}
   const keep=captureEdit();rendering=true;
   try{render0();if(typeof pjm!=='undefined'&&pjm)pjmRender();if(typeof pm!=='undefined'&&pm)pmRender();}finally{rendering=false;}
   navSave();
