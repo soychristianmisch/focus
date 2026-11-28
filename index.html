@@ -5258,7 +5258,16 @@ function onClick(e){
         setTimeout(()=>{const r=document.querySelector('#pjm '+sel);if(r)fl(r);},80);
         break;
       }
-      notify('Esa tarea no está en la vista de hoy.');
+      if(t.proj&&project(t.proj)&&!t.nuevo){
+        openPjm('proj',t.proj);
+        setTimeout(()=>{const r=document.querySelector('#pjm '+sel);if(r)fl(r);else{closePjm();showTimePop(id,b);}},80);
+        break;
+      }
+      {
+        closePjm();closePop();
+        const r=document.querySelector('.hoy3 '+sel+', .wcenter '+sel);
+        if(r&&!t.done)fl(r);else showTimePop(id,b);
+      }
       break;
     }
     case 'mTog':{const k=id;mOpen.has(k)?mOpen.delete(k):mOpen.add(k);render();if(!mOpen.has(k)){const r=document.querySelector('.ritem[data-id="'+k+'"]');r?.scrollIntoView({block:'center'});}break;}
