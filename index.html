@@ -2916,6 +2916,8 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .bprog .num{margin-top:1px}
 .oc-bot .pbw{width:100%}
 .bprog .plegend b,.plegend b{font-size:inherit;font-weight:650}
+.tq{z-index:5000!important}
+#noticeM{z-index:4000}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -6028,6 +6030,12 @@ function moveProjUnit(p,ref,after){
   if(mine.length&&rb.length){const ms=new Set(mine);s.objectives=s.objectives.filter(o=>!ms.has(o));const at=after?s.objectives.indexOf(rb.at(-1))+1:s.objectives.indexOf(rb[0]);s.objectives.splice(at,0,...mine);}
 }
 /* si una unidad se coloca después (o antes) de otra hermana, también cambia su turno: aquí y en la lista de la izquierda */
+/* al recolocar una unidad, sus tareas con fecha fija (hoy o futura) vuelven al flujo automático: si no, la anclan donde estaban */
+function unpinUnit(objIds){
+  const td=day(),ids=new Set(objIds);
+  for(const t of s.tasks){if(!t.objective||!ids.has(t.objective)||t.done||isRecur(t))continue;
+    if(t.days.some(d=>d>=td)&&!isAuto(t)){t.days=t.days.filter(d=>d<td);delete t.autoDays;delete t.plan;}}
+}
 function reorderByDate(kind,id,ns,plan0,dir=0){
   const par=x=>(x.parent&&x.parent!==x.id)?x.parent:'';
   let me,sibs;
@@ -6109,7 +6117,8 @@ document.addEventListener('drop',e=>{
       if(!o.sched){o.sched=true;s.objectives=s.objectives.filter(x=>x!==o);s.objectives.push(o);}
       const ns=shift(st0,n);if(!minNs||ns<minNs)minNs=ns;if(ns>f0)o.startOn=ns;else delete o.startOn;}
       if(minNs&&(dr.mk==='obj'||dr.mk==='proj')){let moved=reorderByDate(dr.mk,dr.id,minNs,plan0,Math.sign(n));if(dr.mk==='obj'){const oo=objective(dr.id);if(oo&&reorderOwnerProj(oo,minNs,plan0,Math.sign(n)))moved=true;}
-        if(moved||n<0)for(const m of (dr.mem||'').split(',')){const o2=objective(m.split('@')[0]);if(o2)delete o2.startOn;}}save();});return;
+        if(moved||n<0)for(const m of (dr.mem||'').split(',')){const o2=objective(m.split('@')[0]);if(o2)delete o2.startOn;}
+        if(moved)unpinUnit((dr.mem||'').split(',').map(m=>m.split('@')[0]));}save();});return;
   }
   if(i.type==='tlproj'){const dp=project(dr.id);if(dp){const f0=s.planStart&&s.planStart>day()?s.planStart:day(),ids=new Set(descIds(dp.id)),plan0=computePlan();
       let anc=dp,n=0;while(anc&&n++<12){const k=s.hideP.indexOf(anc.id);if(k>=0)s.hideP.splice(k,1);anc=anc.parent&&anc.parent!==anc.id?project(anc.parent):null;}
@@ -6148,6 +6157,7 @@ document.addEventListener('drop',e=>{
     const inSub=id=>new Set(descIds(id)),mineP=inSub(p.id),refP=inSub(ref.id);
     flipTl(()=>{moveProjUnit(p,ref,i.after);
       for(const o of s.objectives)if(mineP.has(o.project))delete o.startOn;/* el subproyecto movido se coloca en su nuevo turno, sin fecha fija */
+      unpinUnit(s.objectives.filter(o=>mineP.has(o.project)).map(o=>o.id));
       save();});return;
   }
   if(i.type==='robj'){const o=objective(dr.id),ref=objective(i.el.dataset.id);if(o&&ref){keepSlots(()=>{o.project=ref.project;mv(s.objectives,o,ref,i.after);});save();}return;}
