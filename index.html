@@ -2740,6 +2740,9 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .plrail .rhead.dly{cursor:default;color:var(--ac,#c46a9b)}
 .plrail .dailyarea .rhead.dly .ahd{color:color-mix(in srgb,var(--faint) 60%,#c46a9b)}
 .plrail .dailyarea{margin-bottom:6px}
+.plrail .pjsearch .seg.plseg{display:flex;width:calc(100% - 8px);margin-left:8px;box-sizing:border-box}
+.plrail .pjsearch .seg.plseg button{flex:1 1 0;min-width:0;justify-content:center;gap:4px;padding-left:4px;padding-right:4px;font-size:12px;white-space:nowrap;overflow:hidden}
+.plrail .pjsearch .seg.plseg svg{width:14px;height:14px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3370,8 +3373,9 @@ const PJ_PAD=32;
 let pjShowObj=lsGet('focus.pjshowobj')!=='0';
 const EYE_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.6C3.6 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
 const CHV_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const plSeg=()=>'<div class="seg lvl rlvl plseg">'+[['proj','Proyectos','Ver solo los proyectos'],['sub','Subproyectos','Ver hasta los subproyectos'],['obj','Objetivos','Ver también los objetivos']].map(([k,l,t])=>'<button data-act="plLevel" data-id="'+k+'" aria-pressed="'+(plLvl===k)+'" title="'+t+'">'+LVL_ICO[k]+l+'</button>').join('')+'</div>';
 const lvlSeg=(act,showObj)=>'<div class="seg lvl rlvl"><button data-act="'+act+'" data-id="sub" aria-pressed="'+!showObj+'" title="Ver hasta los subproyectos">'+LVL_ICO.sub+'Subproyectos</button><button data-act="'+act+'" data-id="obj" aria-pressed="'+showObj+'" title="Ver también los objetivos">'+LVL_ICO.obj+'Objetivos</button></div>';
-let plShowObj=lsGet('focus.plshowobj')==='1';
+let plLvl=['proj','sub','obj'].includes(lsGet('focus.pllvl'))?lsGet('focus.pllvl'):'sub',plShowObj=plLvl==='obj';
 function projRail(){
   const areas=[...s.areas];for(const p of s.projects)if(!areas.includes(p.area))areas.push(p.area);
   return '<aside class="prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+lvlSeg('pjLevel',pjShowObj)+'</div>'+areas.map(ar=>{
@@ -4184,7 +4188,7 @@ function viewPlan(){
   const objRow=(o,depth)=>{const off=objHidden(o);
     return '<div class="plo'+(off?' hid':'')+'" style="padding-left:'+(30+depth*16)+'px" draggable="true" data-act="pjOpen" data-kind="obj" data-drag="pitem" data-id="'+o.id+'"><i class="rgrip" style="left:'+(depth*16+18)+'px" aria-hidden="true"></i>'+OBJI+'<span class="pn">'+esc(o.name)+'</span><button type="button" class="eye addp" data-act="plAdd" data-kind="obj" data-id="'+o.id+'" title="Nuevo objetivo debajo" aria-label="Nuevo objetivo">'+PLUS+'</button><button type="button" class="eye" data-act="objEye" data-id="'+o.id+'" title="'+(off?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(off?EYE_OFF:EYE_ON)+'</button></div>';};
   const item=(p,depth)=>{
-    const kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&live(o)),flip=plFold.has(p.id),objsShown=plShowObj!==flip,kidsShown=!(plShowObj&&flip),objs=objsShown?allO:[],has=kids.length||allO.length,folded=plShowObj?flip:(allO.length>0&&!flip),hid=projHidden(p.id),pad=depth*16;
+    const kids=kidsOf(p.id),allO=s.objectives.filter(o=>o.project===p.id&&live(o)),flip=plFold.has(p.id),pr0=plLvl==='proj',objsShown=pr0?flip:plShowObj!==flip,kidsShown=pr0?flip:!(plShowObj&&flip),objs=objsShown?allO:[],has=kids.length||allO.length,folded=pr0?!flip:(plShowObj?flip:(allO.length>0&&!flip)),hid=projHidden(p.id),pad=depth*16;
     return '<div class="plp'+(hid?' hid':'')+'" data-proj="'+p.id+'" style="--ac:'+p.color+'"><div class="plph" draggable="true" data-act="pjOpen" data-kind="proj" data-drag="pproj" data-id="'+p.id+'" style="padding-left:'+(depth?pad+46:30+pad)+'px"><i class="rgrip" style="left:'+(depth?pad:(has?pad:pad+18))+'px" aria-hidden="true"></i>'+(depth?SUBI.replace('<svg ','<svg style="left:'+(pad+12)+'px" '):'')+(has?'<button type="button" class="rchev'+(folded?' shut':'')+'" style="left:'+(depth?pad+28:pad+12)+'px" data-act="plFold" data-id="'+p.id+'" aria-label="Plegar o desplegar">'+CHV_SVG+'</button>':'')+
       '<i class="pdot"></i><span class="pn">'+esc(p.name)+'</span>'+'<button type="button" class="eye addp" data-act="plAdd" data-kind="proj" data-id="'+p.id+'" title="Añadir subproyecto u objetivo" aria-label="Añadir">'+PLUS+'</button><button type="button" class="eye" data-act="projEye" data-id="'+p.id+'" title="'+(hid?'Mostrar en la timeline':'Ocultar de la timeline')+'" aria-label="Mostrar u ocultar">'+(hid?EYE_OFF:EYE_ON)+'</button></div>'+
       (kidsShown?kids.map(k=>item(k,depth+1)).join(''):'')+objs.map(o=>objRow(o,depth+1)).join('')+'</div>';
@@ -4195,7 +4199,7 @@ function viewPlan(){
     return '<div class="agroup" data-area="'+esc(ar)+'"><div class="rhead" style="--ac:'+areaTone(ar)+'"><i class="rgrip" draggable="true" data-drag="garea" data-id="'+esc(ar)+'" title="Mover área" aria-hidden="true"></i><span class="ahd">'+esc(ar)+'</span><span class="rhb"><button class="addmini" data-act="addProject" data-id="'+esc(ar)+'" title="Nuevo proyecto en '+esc(ar)+'" aria-label="Nuevo proyecto">＋</button><button class="addmini" data-act="menu" data-kind="areaedit" data-id="'+esc(ar)+'" title="Editar área" aria-label="Editar área">'+ICON.more+'</button></span></div>'+
       (roots.length?roots.map(p=>item(p,0)).join(''):'<p class="pempty">Sin proyectos</p>')+'</div>';
   }).join('');
-  return '<div class="plan2"><aside class="wrail plrail prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+lvlSeg('plLevel',plShowObj)+'</div>'+tree+'<button class="addrow newarea" data-act="addArea">＋ Nueva área</button></aside>'+
+  return '<div class="plan2"><aside class="wrail plrail prail'+(pjQ.trim()?' searching':'')+'"><div class="pjsearch"><input id="pjsearch" type="search" placeholder="Buscar en proyectos y objetivos…" value="'+esc(pjQ)+'" autocomplete="off" aria-label="Buscar"><div id="pjres">'+pjSearch(pjQ)+'</div>'+plSeg()+'</div>'+tree+'<button class="addrow newarea" data-act="addArea">＋ Nueva área</button></aside>'+
     '<div class="plmain">'+timeline(s.projects,true)+'</div></div>';
 }
 
@@ -5100,7 +5104,7 @@ function onClick(e){
     case 'tlPFold':{if(e.target.closest('input,button:not(.tb-title)'))break;tlPFold.has(id)?tlPFold.delete(id):tlPFold.add(id);render();break;}
     case 'objEye':{const o=objective(id);if(o){o.sched=!o.sched;save();}break;}
     case 'projEye':{const i=s.hideP.indexOf(id);if(i<0)s.hideP.push(id);else s.hideP.splice(i,1);save();break;}
-    case 'plLevel':plShowObj=id==='obj';lsSet('focus.plshowobj',plShowObj?'1':'0');plFold.clear();plFoldSave();render();break;
+    case 'plLevel':plLvl=id;plShowObj=id==='obj';lsSet('focus.pllvl',id);plFold.clear();plFoldSave();render();break;
     case 'pjLevel':pjShowObj=id==='obj';lsSet('focus.pjshowobj',pjShowObj?'1':'0');pjFold.clear();pjFoldSave();render();break;
     case 'tlToday':{const tl=b.closest('#pjm')?$('#tlq'):$('#tl');if(tl)tl.scrollTo({left:tlTarget(tl,tl.classList.contains('isdone')),behavior:'smooth'});break;}
     case 'clearWindow':{const o=objective(id);closePop();if(o){delete o.window;save();}break;}
