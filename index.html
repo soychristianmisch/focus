@@ -2702,23 +2702,23 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dvl .newcard{--bg:#f7f7f5;--card:#f7f7f5;--bg3:#ecebe7;background:#f7f7f5;box-shadow:none;border-color:var(--line)}
 :root[data-theme=dark] .dvl .newcard{--ink:#ececec;--mute:#a0a0a0;--faint:#777;--line:#333;--line2:#444;--card:#202020;--bg:#202020;--bg3:#2a2a2a;background:#202020;color:#ececec}
 .dvl .newhd{color:var(--mute)}
-@media(max-width:1200px){.hoy3{grid-template-columns:minmax(0,880px) var(--sw)}.hoy3>.h3l{display:none}}
+@media(max-width:1200px){.hoy3{grid-template-columns:var(--sw) minmax(0,880px)}.hoy3>.h3r{display:none}}
 @media(max-width:900px){.hoy3{display:block;height:auto}
-  .hoy3{padding:8px 10px}.h3c,.h3l{overflow:visible}.hoy3>.h3l{display:block;order:3}.hoy3 .h3r{display:contents}.hoy3 .dvs-top{position:sticky;top:46px;z-index:5;order:1}.hoy3 .dvs-scroll{order:4;overflow:visible}}
+  .hoy3{padding:8px 10px}.h3c,.h3l{overflow:visible}.hoy3>.h3l{display:block;order:1;padding-top:0!important}.hoy3>.h3c{order:2}.hoy3>.h3r{display:block!important;order:3}.hoy3 .h3r{display:contents}.hoy3 .dvs-top{position:sticky;top:46px;z-index:5;order:1}.hoy3 .dvs-scroll{order:4;overflow:visible}}
 /* columna derecha compacta */
 .h3r,.dvm-r{overflow-x:hidden}
-.h3r .hoyright,.dvm-r .hoyright{width:auto;min-width:0}
-.h3r .xcard,.dvm-r .xcard{padding:14px 16px;min-width:0}
-.h3r .xtask .xclock,.dvm-r .xtask .xclock{font-size:clamp(28px,2.2vw,38px);letter-spacing:-1px;margin-right:2px}
-.h3r .xtask .xline,.dvm-r .xtask .xline{flex-wrap:wrap;gap:8px}
-.h3r .xtask .fl-b.big,.dvm-r .xtask .fl-b.big{width:40px;height:40px}
-.h3r .xtitle,.dvm-r .xtitle{font-size:16px}
-.h3r .bigstats,.dvm-r .bigstats{gap:8px}
-.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(17px,1.5vw,22px)}
-.h3r .bigstats small,.dvm-r .bigstats small{font-size:11px}
-.h3r .mini,.dvm-r .mini{flex-wrap:wrap;gap:6px 14px}
-.h3r .bigstats,.dvm-r .bigstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-.h3r .bigstats b,.dvm-r .bigstats b{font-size:clamp(15px,1.25vw,19px);white-space:normal}
+.h3r .hoyright,.dvm-r,.h3l .hoyright,.dvm-r .hoyright{width:auto;min-width:0}
+.h3r .xcard,.dvm-r,.h3l .xcard,.dvm-r .xcard{padding:14px 16px;min-width:0}
+.h3r .xtask,.h3l .xtask .xclock,.dvm-r .xtask .xclock{font-size:clamp(28px,2.2vw,38px);letter-spacing:-1px;margin-right:2px}
+.h3r .xtask,.h3l .xtask .xline,.dvm-r .xtask .xline{flex-wrap:wrap;gap:8px}
+.h3r .xtask,.h3l .xtask .fl-b.big,.dvm-r .xtask .fl-b.big{width:40px;height:40px}
+.h3r .xtitle,.dvm-r,.h3l .xtitle,.dvm-r .xtitle{font-size:16px}
+.h3r .bigstats,.dvm-r,.h3l .bigstats,.dvm-r .bigstats{gap:8px}
+.h3r .bigstats,.h3l .bigstats b,.dvm-r .bigstats b{font-size:clamp(17px,1.5vw,22px)}
+.h3r .bigstats,.h3l .bigstats small,.dvm-r .bigstats small{font-size:11px}
+.h3r .mini,.dvm-r,.h3l .mini,.dvm-r .mini{flex-wrap:wrap;gap:6px 14px}
+.h3r .bigstats,.dvm-r,.h3l .bigstats,.dvm-r .bigstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.h3r .bigstats,.h3l .bigstats b,.dvm-r .bigstats b{font-size:clamp(15px,1.25vw,19px);white-space:normal}
 /* v223 recordatorios de la izquierda */
 .h3l .rm{margin:0 0 14px;padding:12px 14px 8px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--faint) 13%,var(--bg))}
 .h3l .rm-imp{background:color-mix(in srgb,var(--red) 6%,var(--card));border-color:color-mix(in srgb,var(--red) 30%,transparent)}
@@ -2784,6 +2784,10 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .dimp .recurcard{margin:0}
 :root[data-theme=dark] .recurcard.dc-inb{--tn:#161616}
 :root[data-theme=dark] .recurcard.dc-hoy .sec.recur .sname,:root[data-theme=dark] .recurcard.dc-hoy .sec.recur .rcic{color:#5fcf9a}
+
+.h3l.hoyright{display:flex;flex-direction:column;gap:14px;background:transparent;padding:0 2px 40px;width:auto}
+.h3l .xcard{margin:0}
+.h3r .dvs-scroll .hoyright{padding:0 0 30px}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
@@ -3857,6 +3861,7 @@ function execPanel(onlyStats=false){
     (paused.length?'<h3 style="margin-top:'+(byProj.size?18:0)+'px">En pausa</h3>'+paused.map(x=>'<div class="pauseitem"><span>'+esc(x.name)+'</span><button class="btn" data-act="play" data-id="'+esc(x.id)+'">Reanudar</button></div>').join(''):'')+'</section>':'';
   if(onlyStats==='stats')return stats;
   if(onlyStats==='parts')return {main,rest:stats+compl+objc+lastW+extra};
+  if(onlyStats==='parts2')return {left:main+stats,right:lastW+compl+objc+extra};
   if(onlyStats)return '<div class="hoyright solo" data-scroll>'+stats+'</div>';
   return '<div class="hoyright" data-scroll>'+main+stats+compl+objc+lastW+extra+'</div>';
 }
@@ -4092,7 +4097,8 @@ function dvSideHtml(d,page){
 }
 function viewDay3(){
   selectedDate=day();const d=selectedDate;
-  return '<div class="hoy3"><aside class="h3l" data-scroll>'+dayRemindHtml(d)+'</aside><section class="h3c" data-scroll>'+dayCenterHtml(d,false)+'</section><aside class="h3r">'+dvSideHtml(d,true)+'</aside></div>';
+  const sd=selectedDate;let r;try{r=execPanel('parts2');}finally{selectedDate=sd;}
+  return '<div class="hoy3"><aside class="h3l hoyright" data-scroll>'+r.left+'</aside><section class="h3c" data-scroll>'+dayCenterHtml(d,false)+'</section><aside class="h3r"><div class="dvs-scroll" data-scroll><div class="hoyright">'+r.right+'</div></div></aside></div>';
 }
 function syncDayModal(){
   let m=document.getElementById('dvm');
@@ -4587,12 +4593,20 @@ function restoreEdit(k){
 }
 const NAV_VIEWS=['Trabajo','Hoy','Proyectos','Planificación','Analítica','Inbox'];
 function navSave(){lsSet('focus.nav',JSON.stringify({view,openArea,openProj,openObj,projTab,pjObj}));}
+function alignHoy(){
+  const l=document.querySelector('.hoy3 .h3l'),h=document.querySelector('.hoy3 .h3c .colhead');if(!l||!h)return;
+  if(matchMedia('(max-width:900px)').matches){l.style.paddingTop='';return;}
+  const c=h.closest('.h3c'),tg=h.nextElementSibling;if(!c||!tg)return;
+  l.style.paddingTop=Math.max(0,Math.round(tg.getBoundingClientRect().top-c.getBoundingClientRect().top+c.scrollTop))+'px';
+}
+addEventListener('resize',()=>alignHoy());
 function render(){
   const keep=captureEdit();rendering=true;
   try{render0();if(typeof pjm!=='undefined'&&pjm)pjmRender();if(typeof pm!=='undefined'&&pm)pmRender();}finally{rendering=false;}
   navSave();
   restoreEdit(keep);
   try{applyHL();}catch(e){}
+  try{alignHoy();}catch(e){}
 }
 function render0(){
   {const sk=[view,wStat,wHoy,wSolo].join('|');if(sk!==doneSK){doneSK=sk;doneOpen.clear();}}
