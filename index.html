@@ -1678,16 +1678,6 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .task:hover .impb,.task.picked .impb{opacity:.8}
 .impb:hover{opacity:1;color:var(--red)}
 .impb.on{opacity:1;color:var(--red)}
-.task.isimp:not(.running){background:var(--red);color:#fff}
-.task.isimp:not(.running):hover{filter:brightness(1.07)}
-.task.isimp:not(.running) .tname,.task.isimp:not(.running) .tworked,.task.isimp:not(.running) .tworked:before,.task.isimp:not(.running) .tworked:after,.task.isimp:not(.running) .grip,.task.isimp:not(.running) .rcic{color:#fff}
-.task.isimp:not(.running) .tworked.zero{opacity:1}
-.task.isimp:not(.running) .check{border-color:#fff;background:transparent}
-.task.isimp:not(.running) .today,.task.isimp:not(.running) .today.on{background:rgba(255,255,255,.22)!important;color:#fff!important;opacity:1}
-.task.isimp:not(.running) .impb.on{color:#fff}
-.task.isimp:not(.running) .tplay:not(.on){background:rgba(255,255,255,.22);color:#fff}
-.task.isimp:not(.running) .tplay:not(.on):hover{background:#fff;color:var(--red)}
-.task.isimp:not(.running) .tworked:hover,.task.isimp:not(.running) .tworked:focus{background:rgba(255,255,255,.2);color:#fff}
 .task.running .impb.on{color:#fff}
 
 /* v124 Focus apilado + modo Hoy compacto */
@@ -1785,8 +1775,6 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 /* v134 estimación de vuelta */
 .task.running .tmin,.task.running .tmin:after{color:#fff}
 .task.running .tmin:hover,.task.running .tmin:focus{background:rgba(255,255,255,.2);color:#fff}
-.task.isimp:not(.running) .tmin,.task.isimp:not(.running) .tmin:after{color:#fff}
-.task.isimp:not(.running) .tmin:hover,.task.isimp:not(.running) .tmin:focus{background:rgba(255,255,255,.2);color:#fff}
 .task.done .tmin{opacity:.6}
 
 /* v136 grupos de Focus movibles */
@@ -1823,7 +1811,7 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .task:hover .noteb,.task.picked .noteb{opacity:.8}
 .noteb:hover{opacity:1;color:var(--ink)}
 .noteb.has{opacity:1;color:var(--mute)}
-.task.isimp:not(.running) .noteb,.task.running .noteb{color:#fff}
+.task.running .noteb{color:#fff}
 #tnote{position:fixed;inset:0;z-index:150;background:rgba(15,15,15,.45);display:flex;align-items:center;justify-content:center;padding:18px}
 #tnote .tncard{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
 #tnote .tnhead{display:flex;align-items:flex-start;gap:10px;padding:18px 20px 10px}
@@ -1856,7 +1844,7 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 .tlink{flex:none;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;color:#2f6fdb;opacity:.9;text-decoration:none}
 .tlink svg{width:15px;height:15px}
 .tlink:hover{background:var(--bg3);opacity:1}
-.task.isimp:not(.running) .tlink,.task.running .tlink{color:#fff}
+.task.running .tlink{color:#fff}
 .tnlinks{margin:10px 20px 0;display:flex;flex-wrap:wrap;gap:6px}
 .tnlinks[hidden]{display:none}
 .tnlinks a{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 11px;border-radius:999px;background:var(--bg3);color:#2f6fdb;font-size:12.5px;text-decoration:none}
@@ -1969,9 +1957,9 @@ button.gl.sti{cursor:pointer;border:0;font:inherit}
 @media(min-width:761px){.addtxt{padding-left:26px}}
 @media(max-width:760px){.addtxt{padding-left:15px;gap:34px}.addtxt button{font-size:12.5px;padding:8px 2px}}
 /* v147 play en verde suave */
-.task:not(.running):not(.isimp) .tplay{background:color-mix(in srgb,var(--play) 15%,var(--card));color:var(--play)}
-.task:not(.running):not(.isimp) .tplay:hover{background:color-mix(in srgb,var(--play) 26%,var(--card))}
-.task:not(.running):not(.isimp) .tplay svg{color:var(--play);fill:currentColor}
+.task:not(.running) .tplay{background:color-mix(in srgb,var(--play) 15%,var(--card));color:var(--play)}
+.task:not(.running) .tplay:hover{background:color-mix(in srgb,var(--play) 26%,var(--card))}
+.task:not(.running) .tplay svg{color:var(--play);fill:currentColor}
 
 /* v148 */
 .ez.s{display:none!important}
@@ -2616,6 +2604,12 @@ body>.flcard{height:auto;flex:none;padding:16px 24px 14px}
 .fl-pb svg{width:11px;height:11px}
 .fl-r:hover .fl-pb,.fl-r.on .fl-pb{opacity:1}.fl-r.on .fl-pb{background:var(--play);color:#fff}
 .fl-e{color:var(--mute);font-size:13px;text-align:center;margin:24px 0}
+
+/* v214 tarea importante: recuadro con el fondo del bloque Importantes */
+.task.isimp:not(.running){background:color-mix(in srgb,var(--red) 6%,var(--card));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--red) 30%,transparent);border-radius:12px}
+.task.isimp:not(.running):hover{background:color-mix(in srgb,var(--red) 10%,var(--card))}
+/* al escribir, el icono se desplaza bajo el cursor: no reaccionar al hover */
+.task:has([data-edit]:focus) .impb:not(.on){pointer-events:none;color:var(--faint);opacity:.35}
 </style></head>
 <body><header class="top" id="top"></header><div id="runbar"></div><main id="main"></main><div id="pop"></div><div id="notice" role="status"></div>
 <input id="file" type="file" accept=".json,application/json" hidden>
