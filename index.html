@@ -5470,7 +5470,7 @@ function openQuick(){
   m.innerHTML='<div class="qc-box" role="dialog" aria-modal="true" aria-label="Nuevo"><textarea id="qcin" rows="4" placeholder="Escribe o dicta lo que quieras apuntar…" aria-label="Nueva idea"></textarea>'+
     '<div class="qc-row"><button class="iconbtn mic" id="qmic" type="button" data-act="qcMic" aria-label="Dictar" title="Dictar">'+ICON.mic+'</button><span class="grow"></span><button class="btn solid" type="button" data-act="qcSave">Guardar</button></div>'+
     '<div class="qcl-list" id="qcl" hidden></div>'+
-    '<p class="qc-h">N abre y dicta (Alt+N activa o para el micrófono) · Enter guarda · Mayús+Enter añade línea · Esc cierra</p></div>';
+    '<p class="qc-h">⌘⇧N abre y dicta (otra vez activa o para el micrófono) · Enter guarda · Mayús+Enter añade línea · Esc cierra</p></div>';
   document.body.appendChild(m);
   const ta=document.getElementById('qcin');ta.focus();
 }
@@ -5492,11 +5492,11 @@ function toggleMicQ(){
   r.start();document.getElementById('qmic').classList.add('on');
 }
 document.addEventListener('keydown',e=>{
-  /* atajo: N (fuera de cuadros de texto) o Alt+N abre Nuevo y empieza a dictar */
-  if(!e.metaKey&&!e.ctrlKey&&!e.isComposing&&!e.repeat){
-    const typing=!!e.target.closest?.('input,textarea,select,[contenteditable="true"],[contenteditable=""]'),lg=document.getElementById('login');
-    const plain=!e.altKey&&!e.shiftKey&&e.code==='KeyN'&&!typing,alt=e.altKey&&e.code==='KeyN';
-    if((plain||alt)&&!(lg&&lg.offsetParent)){
+  /* atajo: Cmd+Mayús+N (Ctrl+Mayús+N fuera de Mac; Alt+N de reserva) abre Nuevo y empieza a dictar */
+  if(!e.isComposing&&!e.repeat){
+    const lg=document.getElementById('login');
+    const cmd=(e.metaKey||e.ctrlKey)&&e.shiftKey&&!e.altKey&&e.code==='KeyN',alt=e.altKey&&!e.metaKey&&!e.ctrlKey&&e.code==='KeyN';
+    if((cmd||alt)&&!(lg&&lg.offsetParent)){
       e.preventDefault();
       if(!document.getElementById('qc'))openQuick();
       toggleMicQ();return;
